@@ -1,0 +1,470 @@
+package client_2finance
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"time"
+
+	"gitlab.com/2finance/2finance-network/blockchain/contract"
+	"gitlab.com/2finance/2finance-network/blockchain/keys"
+	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
+	"gitlab.com/2finance/2finance-network/blockchain/transaction"
+	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
+	"gitlab.com/2finance/2finance-network/blockchain/block"
+
+	"gitlab.com/2finance/2finance-network/infra/mqtt"
+
+
+	"strings"
+
+	"github.com/google/uuid"
+	"gitlab.com/2finance/2finance-network/infra/event"
+)
+
+// Interface exposes the client behavior
+type Client2FinanceNetwork interface {
+	// Client
+	SetPrivateKey(privateKey string)
+	GenerateKeyEd25519() (string, string, error)
+	HandlerRequest(method string, tx interface{}, replyTo string) (outputBytes []byte, err error)
+
+	// CHAIN
+	GetNonce(publicKey string) (uint64, error)
+	ListTransactions(from, to, hash string, dataFilter map[string]interface{}, nonce uint64,
+		page, limit int,
+		ascending bool) ([]transaction.Transaction, error)
+	ListLogs(logType string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
+		page, limit int,
+		ascending bool) ([]blockchainLog.Log, error)
+	SendTransaction(
+		from string,
+		to string,
+		contractVersion string,
+		method string,
+		data map[string]interface{}) (types.ContractOutput, error)
+	GetState(
+		contractVersion string,
+		method string,
+		data map[string]interface{}) (types.ContractOutput, error)
+	ListBlocks(blockNumber uint64, blockTimestamp time.Time, hash string, previousHash string,
+		merkleRoot string,
+		page, limit int,
+		ascending bool) ([]block.Block, error)
+
+	// WALLET
+	AddWallet(pubKey string) (types.ContractOutput, error)
+	GetWallet(pubKey string) (types.ContractOutput, error)
+	TransferWallet(to, amount string, decimals int) (types.ContractOutput, error)
+
+	// TOKEN
+	AddToken(symbol string,
+		name string,
+		decimals int,
+		totalSupply string,
+		description string,
+		owner string,
+		image string,
+		website string,
+		tagsSocialMedia map[string]string,
+		tagsCategory map[string]string,
+		tags map[string]string,
+		creator string,
+		creatorWebsite string,
+		allowUsers map[string]bool,
+		blockUsers map[string]bool,
+		feeTiersList []map[string]interface{},
+		feeAddress string,
+		freezeAuthorityRevoked bool,
+		mintAuthorityRevoked bool,
+		updateAuthorityRevoked bool,
+		paused bool,
+		expired_at time.Time) (types.ContractOutput, error)
+	MintToken(to, mintTo, amount string, decimals int) (types.ContractOutput, error)
+	BurnToken(to, amount string, decimals int) (types.ContractOutput, error)
+	TransferToken(to, transferTo, amount string, decimals int) (types.ContractOutput, error)
+	AllowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
+	DisallowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
+	BlockUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
+	UnblockUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
+	RevokeFreezeAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)
+	RevokeMintAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)
+	RevokeUpdateAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)
+	UpdateMetadata(tokenAddress, symbol, name string, decimals int, description, image, website string,
+		tagsSocialMedia, tagsCategory, tags map[string]string,
+		creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error)
+	PauseToken(tokenAddress string, pause bool) (types.ContractOutput, error)
+	UnpauseToken(tokenAddress string, unpause bool) (types.ContractOutput, error)
+	UpdateFeeTiers(tokenAddress string, feeTierList []map[string]interface{}) (types.ContractOutput, error)
+	UpdateFeeAddress(tokenAddress, feeAddress string) (types.ContractOutput, error)
+	GetToken(tokenAddress string, symbol string, name string) (types.ContractOutput, error)
+	ListTokens(ownerAddress, symbol, name string, page, limit int, ascending bool) (types.ContractOutput, error)
+
+	GetTokenBalance(tokenAddress, ownerAddress string) (types.ContractOutput, error)
+	ListTokenBalances(tokenAddress, ownerAddress string, page, limit int, ascending bool) (types.ContractOutput, error)
+
+	// FAUCET
+	AddFaucet(
+		owner string,
+		tokenAddress string,
+		startTime time.Time,
+		expireTime time.Time,
+		paused bool,
+		requestLimit int,
+	) (types.ContractOutput, error)
+	UpdateFaucet(
+		address string,
+		startTime time.Time,
+		expireTime time.Time,
+		requestLimit int,
+		requestsByUser map[string]int,
+	) (types.ContractOutput, error)
+	DepositFunds(address, tokenAddress, amount string) (types.ContractOutput, error)
+	WithdrawFunds(address, tokenAddress, amount string) (types.ContractOutput, error)
+	PauseFaucet(address string, pause bool) (types.ContractOutput, error)
+	UnpauseFaucet(address string, pause bool) (types.ContractOutput, error)
+
+	GetFaucet(faucetAddress string) (types.ContractOutput, error)
+	ListFaucets(
+		address, ownerAddress, tokenAddress string,
+		requestLimit int,
+		requestsByUser map[string]int,
+		page, limit int,
+		ascending bool,
+	) (types.ContractOutput, error)
+}
+
+type networkClient struct {
+	mqttClient mqtt.MQTT
+	privateKey string
+	publicKey  string
+	replyTo    string
+}
+
+// New creates a new client
+func New(broker, clientID string, debug bool) Client2FinanceNetwork {
+
+	mqttClient := mqtt.New(broker, clientID, debug)
+	mqttClient.Connect()
+	replyTo := uuid.NewString()
+	return &networkClient{
+		mqttClient: mqttClient,
+		replyTo:    replyTo,
+	}
+}
+
+func (c *networkClient) SetPrivateKey(privateKey string) {
+	c.privateKey = privateKey
+	pubKey, err := keys.PublicKeyFromEd25519PrivateHex(privateKey)
+	if err != nil {
+		log.Fatalf("Error getting public key from private key: %v", err)
+	}
+	hex := keys.PublicKeyToHex(pubKey)
+	if err != nil {
+		log.Fatalf("Error converting public key to hex: %v", err)
+	}
+	c.publicKey = hex
+}
+
+func (c *networkClient) GetPrivateKey() string {
+	return c.privateKey
+}
+
+// SendRequest publishes the payload to the MQTT broker
+func (c *networkClient) sendRequest(topic string, payload interface{}) error {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal payload error: %w", err)
+	}
+
+	if err := c.mqttClient.Publish(topic, data); err != nil {
+		return fmt.Errorf("publish error: %w", err)
+	}
+
+	log.Printf("✅ Published to topic %s\n", topic)
+	return nil
+}
+
+func (c *networkClient) GenerateKeyEd25519() (string, string, error) {
+	publicKey, privateKey, err := keys.GenerateKeyEd25519()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate public key: %w", err)
+	}
+
+	return publicKey, privateKey, nil
+}
+
+func (c *networkClient) GetNonce(publicKey string) (uint64, error) {
+	if publicKey == "" {
+		return 0, fmt.Errorf("public key not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(publicKey); err != nil {
+		return 0, fmt.Errorf("invalid public key: %w", err)
+	}
+
+	transactionInput := transaction.TransactionInput{
+		From: publicKey,
+	}
+	nonceBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_GET_NONCE, transactionInput, c.replyTo)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get nonce: %w", err)
+	}
+
+	var nonce uint64
+	if err := json.Unmarshal(nonceBytes, &nonce); err != nil {
+		return 0, fmt.Errorf("failed to unmarshal nonce: %w", err)
+	}
+
+	return nonce, nil
+}
+
+func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[string]interface{}, nonce uint64,
+	page, limit int,
+	ascending bool) ([]transaction.Transaction, error) {
+
+	if from == "" && to == "" && hash == "" {
+		return nil, fmt.Errorf("at least one of from, to or hash must be set")
+	}
+
+	if from != "" {
+		if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+			return nil, fmt.Errorf("invalid from address: %w", err)
+		}
+	}
+
+	if to != "" {
+		if err := keys.ValidateEDDSAPublicKey(to); err != nil {
+			return nil, fmt.Errorf("invalid to address: %w", err)
+		}
+	}
+
+	transactionInput := transaction.TransactionInput{
+		From:      from,
+		To:        to,
+		Hash:      hash,
+		Data:      dataFilter,
+		Nonce:     nonce,
+		Page:      page,
+		Limit:     limit,
+		Ascending: ascending,
+	}
+	transactionBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_GET_TRANSACTIONS, transactionInput, c.replyTo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send transaction - List Transactions: %w", err)
+	}
+
+	var transactions []transaction.Transaction
+	if err := json.Unmarshal(transactionBytes, &transactions); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal transactions: %w", err)
+	}
+
+	return transactions, nil
+}
+
+func (c *networkClient) ListLogs(logType string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
+	page, limit int,
+	ascending bool) ([]blockchainLog.Log, error) {
+	if logType == "" && transactionHash == "" && contractAddress == "" {
+		return nil, fmt.Errorf("at least one of logType, transactionHash or contractAddress must be set")
+	}
+
+	logInput := blockchainLog.LogParams{
+		LogType:         logType,
+		LogIndex:        logIndex,
+		TransactionHash: transactionHash,
+		Event:           event,
+		ContractAddress: contractAddress,
+		Page:            page,
+		Limit:           limit,
+		Ascending:       ascending,
+	}
+
+	logsBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_GET_LOGS, logInput, c.replyTo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send transaction: - List Logs %w", err)
+	}
+
+	var logs []blockchainLog.Log
+	if err := json.Unmarshal(logsBytes, &logs); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal logs: %w", err)
+	}
+
+	return logs, nil
+}
+
+func (c *networkClient) sendAndWaitResponse(method string, params interface{}, replyTo string) ([]byte, error) {
+	replyTopic := fmt.Sprintf("%s/%s", event.TRANSACTIONS_RESPONSE_TOPIC, replyTo)
+	responseChan := make(chan []byte, 1)
+	if err := c.receiveResponse(replyTopic, func(data []byte) {
+		responseChan <- data
+	}); err != nil {
+		return nil, fmt.Errorf("failed to subscribe to reply topic: %w", err)
+	}
+
+	payload := event.RequestPayload{
+		Method: method,
+		Params: params,
+	}
+	// Use the original topic and append the replyTo
+	orig := event.TRANSACTIONS_REQUEST_TOPIC
+	base := strings.TrimSuffix(orig, "/+")
+	newTopic := fmt.Sprintf("%s/%s", base, replyTo)
+	if err := c.sendRequest(newTopic, payload); err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+
+	select {
+	case resp := <-responseChan:
+		return resp, nil
+	case <-time.After(10 * time.Second):
+		return nil, fmt.Errorf("timeout waiting for response on topic %s", replyTo)
+	}
+}
+
+// ReceiveResponse subscribes to a topic and calls the handler with raw payload
+func (c *networkClient) receiveResponse(topic string, handler func([]byte)) error {
+	return c.mqttClient.SubscribeWithHandler(topic, func(_ mqtt.Client, msg mqtt.Message) {
+		handler(msg.Payload())
+	})
+}
+
+func (c *networkClient) HandlerRequest(method string, tx interface{}, replyTo string) (outputBytes []byte, err error) {
+
+	// Send the transaction to the network
+	bytes, err := c.sendAndWaitResponse(method, tx, replyTo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send transaction: - Handler Request %w", err)
+	}
+
+	// Decode the response envelope
+	var resp event.ResponsePayload
+	if err := json.Unmarshal(bytes, &resp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+
+	// Re-encode the inner Data to raw JSON bytes
+	outputBytes, err = json.Marshal(resp.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response data: %w", err)
+	}
+
+	if resp.Status == event.RESPONSE_STATUS_ERROR {
+		return nil, fmt.Errorf("error in response: %s", resp.Message)
+	}
+
+	return outputBytes, nil
+}
+
+// SendTransaction builds, signs, and sends a transaction to the blockchain.
+func (c *networkClient) SendTransaction(
+	from string,
+	to string,
+	contractVersion string,
+	method string,
+	data map[string]interface{},
+) (types.ContractOutput, error) {
+	// Validate public key (from address)
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	// Get current nonce and increment
+	nonce, err := c.GetNonce(from)
+	if err != nil {
+		if strings.Contains(err.Error(), "record not found") {
+			// If nonce not found, start from 0
+			nonce = 0
+		} else {
+			// If any other error, return it
+			return types.ContractOutput{}, fmt.Errorf("failed to get nonce: %w", err)
+		}
+	}
+
+	nonce++
+
+	// Create new transaction object
+	timestamp := time.Now().UTC()
+	newTx := transaction.NewTransaction(from, to, timestamp, contractVersion, method, data, nonce)
+
+	// Get tx proto or serialized form
+	tx := newTx.Get()
+
+	// Sign the transaction
+	txSigned, err := transaction.SignTransactionHexKey(c.privateKey, tx)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
+	}
+
+	contractOutputBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_SEND, txSigned, c.replyTo)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	var contractOutput types.ContractOutput
+	if err := json.Unmarshal(contractOutputBytes, &contractOutput); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to unmarshal contract output: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
+func (c *networkClient) GetState(
+	contractVersion string,
+	method string,
+	data map[string]interface{},
+) (types.ContractOutput, error) {
+	// Convert data map to JSONB
+	jsonData, err := utils.MapToJSONB(data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to marshal data to JSONB: %w", err)
+	}
+
+	// Build a transaction input without signature and hash for query
+	txInput := transaction.TransactionInput{
+		ContractVersion: contractVersion,
+		Method:          method,
+		Data:            jsonData,
+	}
+
+	// Use a unique reply topic
+	contractOutputBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_GET_STATE, txInput, c.replyTo)
+	if err != nil {
+		return types.ContractOutput{}, err
+	}
+
+	var contractOutput types.ContractOutput
+	if err := json.Unmarshal(contractOutputBytes, &contractOutput); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to unmarshal contract output: %w", err)
+	}
+	return contractOutput, nil
+}
+
+func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time, hash string, previousHash string,
+	merkleRoot string,
+	page, limit int,
+	ascending bool) ([]block.Block, error) {
+
+	blockParams := block.BlockParams{
+		BlockNumber:     blockNumber,
+		BlockTimestamp:  blockTimestamp,
+		Hash:            hash,
+		PreviousHash:    previousHash,
+		MerkleRoot:      merkleRoot,
+		Page:            page,
+		Limit:           limit,
+		Ascending:       ascending,
+	}
+
+	blockBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_GET_BLOCKS, blockParams, c.replyTo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send transaction - List Blocks %w", err)
+	}
+
+	var blocks []block.Block
+	if err := json.Unmarshal(blockBytes, &blocks); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal blocks: %w", err)
+	}
+
+	return blocks, nil
+}
