@@ -12,7 +12,7 @@ import (
 
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
-	"gitlab.com/2finance/2finance-network/client_2finance_network/client_2finance"
+	"github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	"gitlab.com/2finance/2finance-network/config"
 )
 
