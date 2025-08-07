@@ -298,6 +298,87 @@ func (c *networkClient) WithdrawFunds(address, tokenAddress, amount string) (typ
 	return contractOutput, nil
 }
 
+func (c *networkClient) UpdateRequestLimitPerUser(address string, requestLimit int) (types.ContractOutput, error) {
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+
+	if requestLimit < 0 {
+		return types.ContractOutput{}, fmt.Errorf("request limit less than zero: %d", requestLimit)
+	}
+
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := address
+	contractVersion := faucetV1.FAUCET_CONTRACT_V1
+	method := faucetV1.METHOD_REQUEST_LIMIT_PER_USER
+
+	data := map[string]interface{}{
+		"address":			address,
+		"request_limit":	requestLimit,
+	}
+
+	contractOutput, err := c.SendTransaction(
+		from,
+		to,
+		contractVersion,
+		method,
+		data,
+	)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
+func (c *networkClient) ClaimFunds(address string) (types.ContractOutput, error) {
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := address
+	contractVersion := faucetV1.FAUCET_CONTRACT_V1
+	method := faucetV1.METHOD_CLAIM_FUNDS
+
+	data := map[string]interface{}{
+		"address":			address,
+	}
+
+	contractOutput, err := c.SendTransaction(
+		from,
+		to,
+		contractVersion,
+		method,
+		data,
+	)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
 func (c *networkClient) GetFaucet(faucetAddress string) (types.ContractOutput, error) {
 	from := c.publicKey
 	if from == "" {

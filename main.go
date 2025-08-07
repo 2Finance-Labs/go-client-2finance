@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
-	"github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	"gitlab.com/2finance/2finance-network/config"
 )
 
@@ -105,12 +105,11 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 	log.Printf("List Logs: %+v\n", listLogs)
 
-
-	blocks, err := client.ListBlocks(0, time.Time{}, "", "", "", 1, 10, true)
-	if err != nil {
-		log.Fatalf("Error listing blocks: %v", err)
-	}
-	log.Printf("List Blocks: %+v\n", blocks)
+	// blocks, err := client.ListBlocks(0, time.Time{}, "", "", "", 1, 10, true)
+	// if err != nil {
+	// 	log.Fatalf("Error listing blocks: %v", err)
+	// }
+	// log.Printf("List Blocks: %+v\n", blocks)
 
 	// //TODOOOOOOOOOOOOOOOOOOOOOO
 	// //client.SetPrivateKey(pvtKeyDefault)
@@ -941,6 +940,20 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		log.Fatalf("Error unpausing faucet: %v", err)
 	}
 	log.Printf("Faucet Unpaused Successfully:\n%+v\n", faucetUnpause)
+
+	//✅ REQUEST LIMIT FAUCETS
+	updateRequestLimit, err := client.UpdateRequestLimitPerUser(faucetAddress, 2)
+	if err != nil {
+		log.Fatalf("Error udating request limit: %v", err)
+	}
+	log.Printf("Faucet Updating Request Limit Successfully:\n%+v\n", updateRequestLimit)
+
+	//✅ CLAIM FUNDS FAUCETS
+	claimFunds, err := client.ClaimFunds(faucetAddress)
+	if err != nil {
+		log.Fatalf("Error claim funds: %v", err)
+	}
+	log.Printf("Faucet Claim Funds Successfully:\n%+v\n", claimFunds)
 
 	// ✅ GET FAUCET
 	getFaucet, err := client.GetFaucet(faucetAddress)

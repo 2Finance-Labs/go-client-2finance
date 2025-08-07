@@ -124,6 +124,8 @@ type Client2FinanceNetwork interface {
 	WithdrawFunds(address, tokenAddress, amount string) (types.ContractOutput, error)
 	PauseFaucet(address string, pause bool) (types.ContractOutput, error)
 	UnpauseFaucet(address string, pause bool) (types.ContractOutput, error)
+	UpdateRequestLimitPerUser(address string, requestLimit int) (types.ContractOutput, error)
+	ClaimFunds(address string) (types.ContractOutput, error)
 
 	GetFaucet(faucetAddress string) (types.ContractOutput, error)
 	ListFaucets(
