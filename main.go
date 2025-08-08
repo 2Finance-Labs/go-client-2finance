@@ -12,6 +12,7 @@ import (
 
 	"github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	faucetV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
 	"gitlab.com/2finance/2finance-network/config"
 )
@@ -870,24 +871,35 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 	log.Printf("Faucet Added Successfully:\n%+v\n", faucetAdd)
 
+	rawFaucet := faucetAdd.States[0].Object
+	faucetBytes, err := json.Marshal(rawFaucet)
+	if err != nil {
+		log.Fatalf("Error marshaling faucet object: %v", err)
+	}
+	var faucet faucetV1Domain.Faucet
+	err = json.Unmarshal(faucetBytes, &faucet)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.Faucet: %v", err)
+	}
+
 	// ✅ UPDATE FAUCET
-	faucetAddress := ""
-	if len(faucetAdd.States) > 0 {
-		obj := faucetAdd.States[0].Object
-		if faucetMap, ok := obj.(map[string]interface{}); ok {
-			if addr, ok := faucetMap["Address"].(string); ok {
-				faucetAddress = addr
-			}
-		}
-	}
-	if faucetAddress == "" {
-		log.Fatalf("Failed to get faucet address from AddFaucet output")
-	}
+	// faucetAddress := ""
+	// if len(faucetAdd.States) > 0 {
+	// 	obj := faucetAdd.States[0].Object
+	// 	if faucetMap, ok := obj.(map[string]interface{}); ok {
+	// 		if addr, ok := faucetMap["Address"].(string); ok {
+	// 			faucetAddress = addr
+	// 		}
+	// 	}
+	// }
+	// if faucetAddress == "" {
+	// 	log.Fatalf("Failed to get faucet address from AddFaucet output")
+	// }
 
 	requestLimit = 10
 
 	faucetUpdate, err := client.UpdateFaucet(
-		faucetAddress,
+		faucet.Address,
 		startAt,
 		expireAt,
 		requestLimit,
@@ -902,21 +914,21 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Token AllowUsers: %+v\n", token2.AllowUsersMap)
 
 	// ✅ DEPOSIT FUNDS FAUCET
-	allowUsers[faucetAddress] = true
+	allowUsers[faucet.Address] = true
 	_, err = client.AllowUsers(token2.Address, allowUsers)
 	if err != nil {
 		log.Fatalf("Error adding allow list: %v", err)
 	}
 	log.Printf("Token AllowUsers: %+v\n", token2.AllowUsersMap)
 	amount := "10"
-	depositFunds, err := client.DepositFunds(faucetAddress, tokenAddr, amount)
+	depositFunds, err := client.DepositFunds(faucet.Address, tokenAddr, amount)
 	if err != nil {
 		log.Fatalf("Error depositing funds in faucet: %v", err)
 	}
 	log.Printf("Faucet Deposit Funds Successfully:\n%+v\n", depositFunds)
 
 	// ✅ DEPOSIT FUNDS FAUCET
-	withdrawFunds, err := client.WithdrawFunds(faucetAddress, tokenAddr, amount)
+	withdrawFunds, err := client.WithdrawFunds(faucet.Address, tokenAddr, amount)
 	if err != nil {
 		log.Fatalf("Error withdrawing funds in faucet: %v", err)
 	}
@@ -924,7 +936,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 
 	// ✅ PAUSE FAUCET
 	paused = true
-	faucetPause, err := client.PauseFaucet(faucetAddress, paused)
+	faucetPause, err := client.PauseFaucet(faucet.Address, paused)
 	if err != nil {
 		log.Fatalf("Error pausing faucet: %v", err)
 	}
@@ -933,7 +945,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	// ✅ UNPAUSE FAUCET
 	paused = false
 	faucetUnpause, err := client.UnpauseFaucet(
-		faucetAddress,
+		faucet.Address,
 		paused,
 	)
 	if err != nil {
@@ -942,28 +954,32 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Faucet Unpaused Successfully:\n%+v\n", faucetUnpause)
 
 	//✅ REQUEST LIMIT FAUCETS
-	updateRequestLimit, err := client.UpdateRequestLimitPerUser(faucetAddress, 2)
+	updateRequestLimit, err := client.UpdateRequestLimitPerUser(faucet.Address, 2)
 	if err != nil {
 		log.Fatalf("Error udating request limit: %v", err)
 	}
 	log.Printf("Faucet Updating Request Limit Successfully:\n%+v\n", updateRequestLimit)
 
+	log.Printf("Paused: %t\n", paused)
+	log.Printf("Paused: %t\n", )
+	log.Printf("Paused: %t\n", paused)
+
 	//✅ CLAIM FUNDS FAUCETS
-	claimFunds, err := client.ClaimFunds(faucetAddress)
+	claimFunds, err := client.ClaimFunds(faucet.Address)
 	if err != nil {
 		log.Fatalf("Error claim funds: %v", err)
 	}
 	log.Printf("Faucet Claim Funds Successfully:\n%+v\n", claimFunds)
 
 	// ✅ GET FAUCET
-	getFaucet, err := client.GetFaucet(faucetAddress)
+	getFaucet, err := client.GetFaucet(faucet.Address)
 	if err != nil {
 		log.Fatalf("Error geting faucet: %v", err)
 	}
 	log.Printf("Faucet Geted Successfully:\n%+v\n", getFaucet)
 
 	// ✅ LIST FAUCETS
-	listFaucets, err := client.ListFaucets(faucetAddress, owner, tokenAddr, requestLimit, requestsByUser, 1, 10, true)
+	listFaucets, err := client.ListFaucets(faucet.Address, owner, tokenAddr, requestLimit, requestsByUser, 1, 10, true)
 	if err != nil {
 		log.Fatalf("Error listing faucets: %v", err)
 	}
