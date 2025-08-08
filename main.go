@@ -851,6 +851,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	requestsByUser := map[string]int{
 		token.Owner: 1,
 	}
+	amountState := "10"
 
 	// mint token to owner
 
@@ -865,6 +866,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		expireAt,
 		paused,
 		requestLimit,
+		amountState,
 	)
 	if err != nil {
 		log.Fatalf("Error adding faucet: %v", err)
@@ -904,6 +906,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		expireAt,
 		requestLimit,
 		requestsByUser,
+		amountState,
 	)
 	if err != nil {
 		log.Fatalf("Error updating faucet: %v", err)
@@ -920,7 +923,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		log.Fatalf("Error adding allow list: %v", err)
 	}
 	log.Printf("Token AllowUsers: %+v\n", token2.AllowUsersMap)
-	amount := "10"
+	amount := "200"
 	depositFunds, err := client.DepositFunds(faucet.Address, tokenAddr, amount)
 	if err != nil {
 		log.Fatalf("Error depositing funds in faucet: %v", err)
@@ -928,6 +931,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Faucet Deposit Funds Successfully:\n%+v\n", depositFunds)
 
 	// ✅ DEPOSIT FUNDS FAUCET
+	amount = "100"
 	withdrawFunds, err := client.WithdrawFunds(faucet.Address, tokenAddr, amount)
 	if err != nil {
 		log.Fatalf("Error withdrawing funds in faucet: %v", err)
