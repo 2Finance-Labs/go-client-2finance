@@ -7,7 +7,7 @@ toolchain go1.23.11
 require (
 	github.com/2Finance-Labs/go-client-2finance v0.0.0-20250805232104-ce4d80e380ba
 	github.com/google/uuid v1.6.0
-	gitlab.com/2finance/2finance-network v0.0.0-20250805235603-fa6a893ed86d
+	gitlab.com/2finance/2finance-network v0.0.0-20250807145508-3f26c06de52c
 )
 
 require (
