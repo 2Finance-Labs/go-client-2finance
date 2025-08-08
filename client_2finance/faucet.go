@@ -16,6 +16,7 @@ func (c *networkClient) AddFaucet(
 	expireTime time.Time,
 	paused bool,
 	requestLimit int,
+	amount string,
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
@@ -37,6 +38,9 @@ func (c *networkClient) AddFaucet(
 	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
+	if amount == "" {
+		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
 
 	to := types.DEPLOY_CONTRACT_ADDRESS
 	contractVersion := faucetV1.FAUCET_CONTRACT_V1
@@ -49,6 +53,7 @@ func (c *networkClient) AddFaucet(
 		"expire_time":      expireTime,
 		"paused":           paused,
 		"request_limit":    requestLimit,
+		"amount":			amount,
 	}
 
 	contractOutput, err := c.SendTransaction(
@@ -71,6 +76,7 @@ func (c *networkClient) UpdateFaucet(
 	expireTime time.Time,
 	requestLimit int,
 	requestsByUser map[string]int,
+	amount string,
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
@@ -94,6 +100,7 @@ func (c *networkClient) UpdateFaucet(
 		"expire_time":      expireTime,
 		"request_limit":    requestLimit,
 		"requests_by_user": requestsByUser,
+		"amount":			amount,
 	}
 
 	contractOutput, err := c.SendTransaction(
