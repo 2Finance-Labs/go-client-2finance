@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/2Finance-Labs/go-client-2finance/client_2finance"
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	faucetV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1/domain"
+	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
 	"gitlab.com/2finance/2finance-network/config"
 )
@@ -846,6 +846,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 
 	tokenAddr := token2.Address
 	startAt := time.Now().Add(1 * time.Minute)
+	fmt.Print("Tempo no contract:", startAt)
 	expireAt := time.Now().Add(10 * time.Minute)
 	requestLimit := 5
 	requestsByUser := map[string]int{
@@ -964,11 +965,12 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 	log.Printf("Faucet Updating Request Limit Successfully:\n%+v\n", updateRequestLimit)
 
-	log.Printf("Paused: %t\n", paused)
-	log.Printf("Paused: %t\n", )
-	log.Printf("Paused: %t\n", paused)
-
 	//✅ CLAIM FUNDS FAUCETS
+	now := time.Now()
+	expire := now.Add(24 * time.Hour)
+	faucet.StartTime = &now
+	faucet.ExpireTime = &expire
+
 	claimFunds, err := client.ClaimFunds(faucet.Address)
 	if err != nil {
 		log.Fatalf("Error claim funds: %v", err)
