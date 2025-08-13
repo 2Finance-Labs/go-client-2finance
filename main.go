@@ -853,6 +853,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		token.Owner: 1,
 	}
 	amountState := "10"
+	claimIntervalDuration := time.Duration(5 * time.Minute)
 
 	// mint token to owner
 
@@ -868,6 +869,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		paused,
 		requestLimit,
 		amountState,
+		claimIntervalDuration,
 	)
 	if err != nil {
 		log.Fatalf("Error adding faucet: %v", err)
@@ -884,21 +886,23 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	if err != nil {
 		log.Fatalf("Error unmarshalling into domain.Faucet: %v", err)
 	}
+	
+	//✅ CLAIM FUNDS FAUCETS
+	now := time.Now()
+	expire := now.Add(24 * time.Hour)
+	faucet.StartTime = &now
+	faucet.ExpireTime = &expire
+
+	claimFunds, err := client.ClaimFunds(faucet.Address)
+	if err != nil {
+		log.Fatalf("Error claim funds: %v", err)
+	}
+	log.Printf("Faucet Claim Funds Successfully:\n%+v\n", claimFunds)
 
 	// ✅ UPDATE FAUCET
-	// faucetAddress := ""
-	// if len(faucetAdd.States) > 0 {
-	// 	obj := faucetAdd.States[0].Object
-	// 	if faucetMap, ok := obj.(map[string]interface{}); ok {
-	// 		if addr, ok := faucetMap["Address"].(string); ok {
-	// 			faucetAddress = addr
-	// 		}
-	// 	}
-	// }
-	// if faucetAddress == "" {
-	// 	log.Fatalf("Failed to get faucet address from AddFaucet output")
-	// }
-
+	lastClaimByUser := map[string]time.Time{
+		faucet.Address: time.Now().Add(3 * time.Second).UTC().Truncate(time.Second),
+	}
 	requestLimit = 10
 
 	faucetUpdate, err := client.UpdateFaucet(
@@ -908,6 +912,8 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		requestLimit,
 		requestsByUser,
 		amountState,
+		claimIntervalDuration,
+		lastClaimByUser,
 	)
 	if err != nil {
 		log.Fatalf("Error updating faucet: %v", err)
@@ -964,18 +970,6 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		log.Fatalf("Error udating request limit: %v", err)
 	}
 	log.Printf("Faucet Updating Request Limit Successfully:\n%+v\n", updateRequestLimit)
-
-	//✅ CLAIM FUNDS FAUCETS
-	now := time.Now()
-	expire := now.Add(24 * time.Hour)
-	faucet.StartTime = &now
-	faucet.ExpireTime = &expire
-
-	claimFunds, err := client.ClaimFunds(faucet.Address)
-	if err != nil {
-		log.Fatalf("Error claim funds: %v", err)
-	}
-	log.Printf("Faucet Claim Funds Successfully:\n%+v\n", claimFunds)
 
 	// ✅ GET FAUCET
 	getFaucet, err := client.GetFaucet(faucet.Address)

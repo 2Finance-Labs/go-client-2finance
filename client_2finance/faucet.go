@@ -17,6 +17,7 @@ func (c *networkClient) AddFaucet(
 	paused bool,
 	requestLimit int,
 	amount string,
+	claimIntervalDuration time.Duration,
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
@@ -77,6 +78,8 @@ func (c *networkClient) UpdateFaucet(
 	requestLimit int,
 	requestsByUser map[string]int,
 	amount string,
+	claimIntervalDuration time.Duration,
+	lastClaimByUser map[string]time.Time,
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
