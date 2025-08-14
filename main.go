@@ -1046,8 +1046,6 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Faucet Claim Funds Successfully with periodicity:\n%+v\n", claimFunds3)
 
 
-	time.Sleep(2 * time.Second) // Wait for the transaction to be processed
-
 		// ✅ LIST FAUCETS
 	listFaucets, err := client.ListFaucets(owner, tokenAddr, requestLimit, 1, 10, true)
 	if err != nil {
