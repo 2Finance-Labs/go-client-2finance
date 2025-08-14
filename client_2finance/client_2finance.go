@@ -138,6 +138,53 @@ type Client2FinanceNetwork interface {
 		page, limit int,
 		ascending bool,
 	) (types.ContractOutput, error)
+
+	// CASHBACK
+
+	AddCashback(
+        address string,
+        tokenAddress string,
+        programType string,
+        percentage string, // basis points, e.g. "250" = 2.50%
+        startAt time.Time,
+        expiredAt time.Time,
+		paused bool,
+    ) (types.ContractOutput, error)
+
+    UpdateCashBack(
+        address string,
+        tokenAddress string,
+        programType string,
+        percentage string,
+        startAt time.Time,
+        expiredAt time.Time,
+    ) (types.ContractOutput, error)
+
+    Deposit(
+        address string,
+        tokenAddress string,
+        amount string,
+    ) (types.ContractOutput, error)
+
+    Withdraw(
+        address string,
+        tokenAddress string,
+        amount string,
+    ) (types.ContractOutput, error)
+
+    Pause(address string, paused bool) (types.ContractOutput, error)
+    Unpause(address string, paused bool) (types.ContractOutput, error)
+
+    PayCashBack(
+        address string,     // cashback program address
+        tokenAddress string, // must match tx.To
+        payTo string,        // must match tx.From
+        amount string,       // purchase amount in token units (as string)
+    ) (types.ContractOutput, error)
+
+	// getters
+	GetCashBack(address string) (types.ContractOutput, error)
+	ListCashBack(owner string, tokenAddress string, programType string, paused bool, page int, limit int, ascending bool) (types.ContractOutput, error)
 }
 
 type networkClient struct {
