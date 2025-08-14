@@ -856,12 +856,12 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	startAt := time.Now().Add(5 * time.Second)
 	fmt.Print("Tempo no contract:", startAt)
 	expireAt := time.Now().Add(10 * time.Minute)
-	requestLimit := 5
+	requestLimit := 2
 	requestsByUser := map[string]int{
 		token.Owner: 1,
 	}
 	amountState := "10"
-	claimIntervalDuration := time.Duration(5 * time.Minute)
+	claimIntervalDuration := time.Duration(1 * time.Second)
 
 	getTokenBalances, err = client.GetTokenBalance(tokenAddr, wallet2.PublicKey)
 	if err != nil {
@@ -1027,13 +1027,8 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 	log.Printf("Faucet Claim Funds Successfully:\n%+v\n", claimFunds)
 	
-
-	// ✅ LIST FAUCETS
-	listFaucets, err := client.ListFaucets(owner, tokenAddr, requestLimit, 1, 10, true)
-	if err != nil {
-		log.Fatalf("Error listing faucets: %v", err)
-	}
-	log.Printf("Faucet Listed Successfully:\n%+v\n", listFaucets)
+	//Comment the line below to wait for the periodicity to take effect
+	time.Sleep(2 * time.Second)
 
 	//✅ CLAIM FUNDS FAUCETS - Periodicity
 	claimFunds2, err := client.ClaimFunds(faucet.Address)
@@ -1041,8 +1036,6 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		log.Fatalf("Error claim funds with periodicity: %v", err)
 	}
 	log.Printf("Faucet Claim Funds Successfully with periodicity:\n%+v\n", claimFunds2)
-
-
 	
 
 	//✅ CLAIM FUNDS FAUCETS - Periodicity
@@ -1052,7 +1045,15 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 	log.Printf("Faucet Claim Funds Successfully with periodicity:\n%+v\n", claimFunds3)
 
-	
+
+	time.Sleep(2 * time.Second) // Wait for the transaction to be processed
+
+		// ✅ LIST FAUCETS
+	listFaucets, err := client.ListFaucets(owner, tokenAddr, requestLimit, 1, 10, true)
+	if err != nil {
+		log.Fatalf("Error listing faucets: %v", err)
+	}
+	log.Printf("Faucet Listed Successfully:\n%+v\n", listFaucets)
 }
 
 func main() {
