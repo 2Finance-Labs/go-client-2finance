@@ -769,7 +769,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 	symbol = symbol + suffix
 	name = "2Finance"
-	decimals = 3
+	decimals = 0
 	totalSupply = "10000"
 	description = "2Finance is a decentralized finance platform that offers a range of financial services, including lending, borrowing, and trading."
 	owner = wallet2.PublicKey
@@ -855,7 +855,10 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	amountState := "10"
 	claimIntervalDuration := time.Duration(5 * time.Minute)
 
-	// mint token to owner
+	mintContract, err = client.MintToken(token2.Address, wallet2.PublicKey, "35", decimals)
+	if err != nil {
+		log.Fatalf("Error minting token with expiration: %v", err)
+	}
 
 	log.Printf("Owner %s\n", owner)
 	log.Printf("Token Address %s", tokenAddr)
@@ -886,25 +889,21 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	if err != nil {
 		log.Fatalf("Error unmarshalling into domain.Faucet: %v", err)
 	}
-	
-	//✅ CLAIM FUNDS FAUCETS
-	now := time.Now()
-	expire := now.Add(24 * time.Hour)
-	faucet.StartTime = &now
-	faucet.ExpireTime = &expire
 
-	claimFunds, err := client.ClaimFunds(faucet.Address)
+	// ✅ GET FAUCET
+	getFaucet, err := client.GetFaucet(faucet.Address)
 	if err != nil {
-		log.Fatalf("Error claim funds: %v", err)
+		log.Fatalf("Error geting faucet: %v", err)
 	}
-	log.Printf("Faucet Claim Funds Successfully:\n%+v\n", claimFunds)
+	log.Printf("Faucet Geted Successfully:\n%+v\n", getFaucet)
 
 	// ✅ UPDATE FAUCET
 	lastClaimByUser := map[string]time.Time{
-		faucet.Address: time.Now().Add(3 * time.Second).UTC().Truncate(time.Second),
+		faucet.Address: time.Now().Add(8 * time.Second).UTC().Truncate(time.Second),
 	}
 	requestLimit = 10
 
+	amountState = "7"
 	faucetUpdate, err := client.UpdateFaucet(
 		faucet.Address,
 		startAt,
@@ -922,6 +921,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 
 	log.Printf("Token BlockUsers: %+v\n", token2.BlockUsersMap)
 	log.Printf("Token AllowUsers: %+v\n", token2.AllowUsersMap)
+	
 
 	// ✅ DEPOSIT FUNDS FAUCET
 	allowUsers[faucet.Address] = true
@@ -930,6 +930,15 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		log.Fatalf("Error adding allow list: %v", err)
 	}
 	log.Printf("Token AllowUsers: %+v\n", token2.AllowUsersMap)
+	// ✅ GET FAUCET
+	getFaucet, err = client.GetFaucet(faucet.Address)
+	if err != nil {
+		log.Fatalf("Error geting faucet: %v", err)
+	}
+	
+	
+
+	log.Printf("Faucet Geted Successfully:\n%+v\n", getFaucet)
 	amount := "200"
 	depositFunds, err := client.DepositFunds(faucet.Address, tokenAddr, amount)
 	if err != nil {
@@ -937,7 +946,13 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 	log.Printf("Faucet Deposit Funds Successfully:\n%+v\n", depositFunds)
 
-	// ✅ DEPOSIT FUNDS FAUCET
+	getTokenBalances, err = client.GetTokenBalance(token2.Address, wallet2.PublicKey)
+	if err != nil {
+		log.Fatalf("Error getting token balance: %v", err)
+	}
+	log.Printf("Get Token Balance Wallet2: %+v\n", getTokenBalances)
+
+	// ✅ WITHDRAW FUNDS FAUCET
 	amount = "100"
 	withdrawFunds, err := client.WithdrawFunds(faucet.Address, tokenAddr, amount)
 	if err != nil {
@@ -972,14 +987,35 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Faucet Updating Request Limit Successfully:\n%+v\n", updateRequestLimit)
 
 	// ✅ GET FAUCET
-	getFaucet, err := client.GetFaucet(faucet.Address)
+	getFaucet, err = client.GetFaucet(faucet.Address)
 	if err != nil {
 		log.Fatalf("Error geting faucet: %v", err)
 	}
 	log.Printf("Faucet Geted Successfully:\n%+v\n", getFaucet)
 
+	//✅ CLAIM FUNDS FAUCETS
+	now := time.Now()
+	expire := now.Add(24 * time.Hour)
+	faucet.StartTime = &now
+	faucet.ExpireTime = &expire
+
+	claimFunds, err := client.ClaimFunds(faucet.Address)
+	if err != nil {
+		log.Fatalf("Error claim funds: %v", err)
+	}
+	log.Printf("Faucet Claim Funds Successfully:\n%+v\n", claimFunds)
+	
+
+	//✅ CLAIM FUNDS FAUCETS - Periodicity
+	claimFunds2, err := client.ClaimFunds(faucet.Address)
+	if err == nil {
+		log.Fatalf("Error: periodicity doesn't work: %v", claimFunds2)
+	}
+	log.Printf("Faucet Claim Funds Periodicity Successfully:\n%+v\n", err)
+
+
 	// ✅ LIST FAUCETS
-	listFaucets, err := client.ListFaucets(faucet.Address, owner, tokenAddr, requestLimit, requestsByUser, 1, 10, true)
+	listFaucets, err := client.ListFaucets(faucet.Address, owner, tokenAddr, requestLimit, 1, 10, true)
 	if err != nil {
 		log.Fatalf("Error listing faucets: %v", err)
 	}

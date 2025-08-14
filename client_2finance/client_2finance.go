@@ -136,7 +136,6 @@ type Client2FinanceNetwork interface {
 	ListFaucets(
 		address, ownerAddress, tokenAddress string,
 		requestLimit int,
-		requestsByUser map[string]int,
 		page, limit int,
 		ascending bool,
 	) (types.ContractOutput, error)
