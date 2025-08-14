@@ -732,6 +732,14 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		log.Fatalf("Erro ao gerar chave: %v", err)
 	}
 
+	pubKeyFaucetClaimer, _, err := client.GenerateKeyEd25519()
+	if err != nil {
+		log.Fatalf("Erro ao gerar chave: %v", err)
+	}
+
+	fmt.Println("Public Key:", pubKey)
+	fmt.Println("Public Key Faucet Claimer:", pubKeyFaucetClaimer)
+
 	client.SetPrivateKey(privKey)
 
 	log.Printf("Public Key: %s\n", pubKey)
@@ -769,7 +777,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 	symbol = symbol + suffix
 	name = "2Finance"
-	decimals = 0
+	decimals = 3
 	totalSupply = "10000"
 	description = "2Finance is a decentralized finance platform that offers a range of financial services, including lending, borrowing, and trading."
 	owner = wallet2.PublicKey
@@ -831,7 +839,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		log.Fatalf("Error adding token: %v", err)
 	}
 
-	fmt.Printf("Token Contract: %+v\n", tokenContract)
+	fmt.Printf("Token Contract Wallet2: %+v\n", tokenContract)
 
 	rawToken = tokenContract.States[0].Object
 	tokenBytes, err = json.Marshal(rawToken)
@@ -845,7 +853,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 
 	tokenAddr := token2.Address
-	startAt := time.Now().Add(1 * time.Minute)
+	startAt := time.Now().Add(5 * time.Second)
 	fmt.Print("Tempo no contract:", startAt)
 	expireAt := time.Now().Add(10 * time.Minute)
 	requestLimit := 5
@@ -855,10 +863,23 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	amountState := "10"
 	claimIntervalDuration := time.Duration(5 * time.Minute)
 
-	mintContract, err = client.MintToken(token2.Address, wallet2.PublicKey, "35", decimals)
+	getTokenBalances, err = client.GetTokenBalance(tokenAddr, wallet2.PublicKey)
+	if err != nil {
+		log.Fatalf("Error getting token balance: %v", err)
+	}
+	log.Printf("Get Token Balance Wallet2 Before Mint: %+v\n", getTokenBalances)
+
+	mintContract, err = client.MintToken(tokenAddr, wallet2.PublicKey, "35", decimals)
 	if err != nil {
 		log.Fatalf("Error minting token with expiration: %v", err)
 	}
+
+
+	getTokenBalances, err = client.GetTokenBalance(tokenAddr, wallet2.PublicKey)
+	if err != nil {
+		log.Fatalf("Error getting token balance: %v", err)
+	}
+	log.Printf("Get Token Balance Wallet2 After Mint: %+v\n", getTokenBalances)
 
 	log.Printf("Owner %s\n", owner)
 	log.Printf("Token Address %s", tokenAddr)
@@ -920,7 +941,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Faucet Updated Successfully:\n%+v\n", faucetUpdate)
 
 	log.Printf("Token BlockUsers: %+v\n", token2.BlockUsersMap)
-	log.Printf("Token AllowUsers: %+v\n", token2.AllowUsersMap)
+	log.Printf("Token AllowUsers Before Added: %+v\n", token2.AllowUsersMap)
 	
 
 	// ✅ DEPOSIT FUNDS FAUCET
@@ -929,16 +950,9 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	if err != nil {
 		log.Fatalf("Error adding allow list: %v", err)
 	}
-	log.Printf("Token AllowUsers: %+v\n", token2.AllowUsersMap)
-	// ✅ GET FAUCET
-	getFaucet, err = client.GetFaucet(faucet.Address)
-	if err != nil {
-		log.Fatalf("Error geting faucet: %v", err)
-	}
-	
-	
+	log.Printf("Token AllowUsers After Added: %+v\n", token2.AllowUsersMap)
 
-	log.Printf("Faucet Geted Successfully:\n%+v\n", getFaucet)
+	// ✅ GET FAUCET
 	amount := "200"
 	depositFunds, err := client.DepositFunds(faucet.Address, tokenAddr, amount)
 	if err != nil {
@@ -946,19 +960,32 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 	log.Printf("Faucet Deposit Funds Successfully:\n%+v\n", depositFunds)
 
-	getTokenBalances, err = client.GetTokenBalance(token2.Address, wallet2.PublicKey)
+	getTokenBalances, err = client.GetTokenBalance(tokenAddr, faucet.Address)
 	if err != nil {
 		log.Fatalf("Error getting token balance: %v", err)
 	}
-	log.Printf("Get Token Balance Wallet2: %+v\n", getTokenBalances)
+	log.Printf("Get Token Balance Faucet Address After Deposit: %+v\n", getTokenBalances)
 
 	// ✅ WITHDRAW FUNDS FAUCET
-	amount = "100"
+	amount = "119"
 	withdrawFunds, err := client.WithdrawFunds(faucet.Address, tokenAddr, amount)
 	if err != nil {
 		log.Fatalf("Error withdrawing funds in faucet: %v", err)
 	}
 	log.Printf("Faucet Withdraw Funds Successfully:\n%+v\n", withdrawFunds)
+
+	getTokenBalances, err = client.GetTokenBalance(tokenAddr, faucet.Address)
+	if err != nil {
+		log.Fatalf("Error getting token balance: %v", err)
+	}
+	log.Printf("Get Token Balance Faucet Address After Deposit: %+v\n", getTokenBalances)
+
+	getTokenBalances, err = client.GetTokenBalance(tokenAddr, wallet2.PublicKey)
+	if err != nil {
+		log.Fatalf("Error getting token balance: %v", err)
+	}
+	log.Printf("Get Token Balance Wallet2 After Withdraw: %+v\n", getTokenBalances)
+
 
 	// ✅ PAUSE FAUCET
 	paused = true
@@ -993,11 +1020,6 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 	log.Printf("Faucet Geted Successfully:\n%+v\n", getFaucet)
 
-	//✅ CLAIM FUNDS FAUCETS
-	now := time.Now()
-	expire := now.Add(24 * time.Hour)
-	faucet.StartTime = &now
-	faucet.ExpireTime = &expire
 
 	claimFunds, err := client.ClaimFunds(faucet.Address)
 	if err != nil {
@@ -1006,20 +1028,31 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Faucet Claim Funds Successfully:\n%+v\n", claimFunds)
 	
 
-	//✅ CLAIM FUNDS FAUCETS - Periodicity
-	claimFunds2, err := client.ClaimFunds(faucet.Address)
-	if err == nil {
-		log.Fatalf("Error: periodicity doesn't work: %v", claimFunds2)
-	}
-	log.Printf("Faucet Claim Funds Periodicity Successfully:\n%+v\n", err)
-
-
 	// ✅ LIST FAUCETS
-	listFaucets, err := client.ListFaucets(faucet.Address, owner, tokenAddr, requestLimit, 1, 10, true)
+	listFaucets, err := client.ListFaucets(owner, tokenAddr, requestLimit, 1, 10, true)
 	if err != nil {
 		log.Fatalf("Error listing faucets: %v", err)
 	}
 	log.Printf("Faucet Listed Successfully:\n%+v\n", listFaucets)
+
+	//✅ CLAIM FUNDS FAUCETS - Periodicity
+	claimFunds2, err := client.ClaimFunds(faucet.Address)
+	if err != nil {
+		log.Fatalf("Error claim funds with periodicity: %v", err)
+	}
+	log.Printf("Faucet Claim Funds Successfully with periodicity:\n%+v\n", claimFunds2)
+
+
+	
+
+	//✅ CLAIM FUNDS FAUCETS - Periodicity
+	claimFunds3, err := client.ClaimFunds(faucet.Address)
+	if err != nil {
+		log.Fatalf("Error claim funds with periodicity: %v", err)
+	}
+	log.Printf("Faucet Claim Funds Successfully with periodicity:\n%+v\n", claimFunds3)
+
+	
 }
 
 func main() {

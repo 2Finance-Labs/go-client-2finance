@@ -425,7 +425,7 @@ func (c *networkClient) GetFaucet(faucetAddress string) (types.ContractOutput, e
 }
 
 func (c *networkClient) ListFaucets(
-	address, ownerAddress, tokenAddress string,
+	ownerAddress, tokenAddress string,
 	requestLimit int,
 	page, limit int,
 	ascending bool,
@@ -442,12 +442,6 @@ func (c *networkClient) ListFaucets(
 	if ownerAddress != "" {
 		if err := keys.ValidateEDDSAPublicKey(ownerAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
-		}
-	}
-
-	if address != "" {
-		if err := keys.ValidateEDDSAPublicKey(address); err != nil {
-			return types.ContractOutput{}, fmt.Errorf("invalid faucet address: %w", err)
 		}
 	}
 
@@ -468,7 +462,6 @@ func (c *networkClient) ListFaucets(
 	method := faucetV1.METHOD_LIST_FAUCETS
 
 	data := map[string]interface{}{
-		"address":          address,
 		"owner":            ownerAddress,
 		"token_address":    tokenAddress,
 		"request_limit":    requestLimit,

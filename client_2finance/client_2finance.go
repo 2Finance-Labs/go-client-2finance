@@ -134,7 +134,7 @@ type Client2FinanceNetwork interface {
 
 	GetFaucet(faucetAddress string) (types.ContractOutput, error)
 	ListFaucets(
-		address, ownerAddress, tokenAddress string,
+		ownerAddress, tokenAddress string,
 		requestLimit int,
 		page, limit int,
 		ascending bool,
