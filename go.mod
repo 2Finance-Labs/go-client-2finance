@@ -12,7 +12,7 @@ require (
 	// github.com/2Finance-Labs/go-client-2finance v0.0.0-20250805232104-ce4d80e380ba
 	github.com/google/uuid v1.6.0
 	gitlab.com/2finance/2finance-network v0.0.0-20250808154925-de39c193922f
-	// gitlab.com/2finance/2finance-network v0.0.0-20250807145508-3f26c06de52c
+// gitlab.com/2finance/2finance-network v0.0.0-20250807145508-3f26c06de52c
 )
 
 require (
