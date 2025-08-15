@@ -16,7 +16,7 @@ func (c *networkClient) AddFaucet(
 	expireTime time.Time,
 	paused bool,
 	requestLimit int,
-	amount string,
+	claimAmount string,
 	claimIntervalDuration time.Duration,
 ) (types.ContractOutput, error) {
 
@@ -39,7 +39,7 @@ func (c *networkClient) AddFaucet(
 	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
-	if amount == "" {
+	if claimAmount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
 
@@ -54,7 +54,7 @@ func (c *networkClient) AddFaucet(
 		"expire_time":             expireTime,
 		"paused":                  paused,
 		"request_limit":           requestLimit,
-		"amount":                  amount,
+		"claim_amount":            claimAmount,
 		"claim_interval_duration": claimIntervalDuration,
 	}
 
@@ -78,7 +78,7 @@ func (c *networkClient) UpdateFaucet(
 	expireTime time.Time,
 	requestLimit int,
 	requestsByUser map[string]int,
-	amount string,
+	claimAmount string,
 	claimIntervalDuration time.Duration,
 	lastClaimByUser map[string]time.Time,
 ) (types.ContractOutput, error) {
@@ -104,7 +104,7 @@ func (c *networkClient) UpdateFaucet(
 		"expire_time":             expireTime,
 		"request_limit":           requestLimit,
 		"requests_by_user":        requestsByUser,
-		"amount":                  amount,
+		"claim_amount":            claimAmount,
 		"claim_interval_duration": claimIntervalDuration,
 		"last_claim_by_user":      lastClaimByUser,
 	}
@@ -425,8 +425,7 @@ func (c *networkClient) GetFaucet(faucetAddress string) (types.ContractOutput, e
 }
 
 func (c *networkClient) ListFaucets(
-	ownerAddress, tokenAddress string,
-	requestLimit int,
+	ownerAddress string,
 	page, limit int,
 	ascending bool,
 ) (types.ContractOutput, error) {
@@ -445,12 +444,6 @@ func (c *networkClient) ListFaucets(
 		}
 	}
 
-	if tokenAddress != "" {
-		if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
-			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
-		}
-	}
-
 	if page < 1 {
 		return types.ContractOutput{}, fmt.Errorf("page must be greater than 0")
 	}
@@ -462,12 +455,10 @@ func (c *networkClient) ListFaucets(
 	method := faucetV1.METHOD_LIST_FAUCETS
 
 	data := map[string]interface{}{
-		"owner":            ownerAddress,
-		"token_address":    tokenAddress,
-		"request_limit":    requestLimit,
-		"page":             page,
-		"limit":            limit,
-		"ascending":        ascending,
+		"owner":         ownerAddress,
+		"page":          page,
+		"limit":         limit,
+		"ascending":     ascending,
 	}
 
 	contractOutput, err := c.GetState(contractVersion, method, data)

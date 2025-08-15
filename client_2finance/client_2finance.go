@@ -112,7 +112,7 @@ type Client2FinanceNetwork interface {
 		expireTime time.Time,
 		paused bool,
 		requestLimit int,
-		amount string,
+		claimAmount string,
 		claimIntervalDuration time.Duration,
 	) (types.ContractOutput, error)
 	UpdateFaucet(
@@ -121,7 +121,7 @@ type Client2FinanceNetwork interface {
 		expireTime time.Time,
 		requestLimit int,
 		requestsByUser map[string]int,
-		amount string,
+		claimAmount string,
 		claimIntervalDuration time.Duration,
 		lastClaimByUser map[string]time.Time,
 	) (types.ContractOutput, error)
@@ -134,8 +134,7 @@ type Client2FinanceNetwork interface {
 
 	GetFaucet(faucetAddress string) (types.ContractOutput, error)
 	ListFaucets(
-		ownerAddress, tokenAddress string,
-		requestLimit int,
+		ownerAddress string,
 		page, limit int,
 		ascending bool,
 	) (types.ContractOutput, error)

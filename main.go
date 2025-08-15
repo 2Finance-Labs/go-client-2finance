@@ -1046,8 +1046,8 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Faucet Claim Funds Successfully with periodicity:\n%+v\n", claimFunds3)
 
 
-		// ✅ LIST FAUCETS
-	listFaucets, err := client.ListFaucets(owner, tokenAddr, requestLimit, 1, 10, true)
+	// ✅ LIST FAUCETS
+	listFaucets, err := client.ListFaucets(owner, 1, 10, true)
 	if err != nil {
 		log.Fatalf("Error listing faucets: %v", err)
 	}
