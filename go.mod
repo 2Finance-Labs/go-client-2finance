@@ -5,14 +5,10 @@ go 1.23.0
 
 toolchain go1.23.11
 
-replace gitlab.com/2finance/2finance-network => /home/gabriel-hausmann/Work/2finance-network
-// replace gitlab.com/2finance/2finance-network => /home/lmenniti/myrepo/2finance-network
-
 require (
-	// github.com/2Finance-Labs/go-client-2finance v0.0.0-20250805232104-ce4d80e380ba
+	github.com/2Finance-Labs/go-client-2finance v0.0.0-20250811153417-02a312c1efdc
 	github.com/google/uuid v1.6.0
-	gitlab.com/2finance/2finance-network v0.0.0-20250808154925-de39c193922f
-// gitlab.com/2finance/2finance-network v0.0.0-20250807145508-3f26c06de52c
+	gitlab.com/2finance/2finance-network v0.0.0-20250819114523-0fe3e5cfbfe3
 )
 
 require (

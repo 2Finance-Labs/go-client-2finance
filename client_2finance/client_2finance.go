@@ -35,7 +35,7 @@ type Client2FinanceNetwork interface {
 	ListTransactions(from, to, hash string, dataFilter map[string]interface{}, nonce uint64,
 		page, limit int,
 		ascending bool) ([]transaction.Transaction, error)
-	ListLogs(logType string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
+	ListLogs(logType []string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
 		page, limit int,
 		ascending bool) ([]blockchainLog.Log, error)
 	SendTransaction(
@@ -138,6 +138,45 @@ type Client2FinanceNetwork interface {
 		page, limit int,
 		ascending bool,
 	) (types.ContractOutput, error)
+
+	// CASHBACK
+	AddCashback(
+        owner string,
+        tokenAddress string,
+        programType string,
+        percentage string, // basis points, e.g. "250" = 2.50%
+        startAt time.Time,
+        expiredAt time.Time,
+		paused bool,
+    ) (types.ContractOutput, error)
+
+    UpdateCashback(
+        address string,
+        tokenAddress string,
+        programType string,
+        percentage string,
+        startAt time.Time,
+        expiredAt time.Time,
+    ) (types.ContractOutput, error)
+
+    DepositCashbackFunds(
+        address string,
+		tokenAddress string,
+        amount string,
+    ) (types.ContractOutput, error)
+
+    WithdrawCashbackFunds(
+        address string,
+        tokenAddress string,
+        amount string,
+    ) (types.ContractOutput, error)
+
+    PauseCashback(address string, paused bool) (types.ContractOutput, error)
+    UnpauseCashback(address string, paused bool) (types.ContractOutput, error)
+	ClaimCashback(address, amount string) (types.ContractOutput, error)
+	// getters
+	GetCashback(address string) (types.ContractOutput, error)
+	ListCashback(owner string, tokenAddress string, programType string, paused bool, page int, limit int, ascending bool) (types.ContractOutput, error)
 }
 
 type networkClient struct {
@@ -267,10 +306,10 @@ func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[s
 	return transactions, nil
 }
 
-func (c *networkClient) ListLogs(logType string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
+func (c *networkClient) ListLogs(logType []string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
 	page, limit int,
 	ascending bool) ([]blockchainLog.Log, error) {
-	if logType == "" && transactionHash == "" && contractAddress == "" {
+	if len(logType) == 0 && transactionHash == "" && contractAddress == "" {
 		return nil, fmt.Errorf("at least one of logType, transactionHash or contractAddress must be set")
 	}
 
