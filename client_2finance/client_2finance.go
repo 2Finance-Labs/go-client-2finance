@@ -35,7 +35,7 @@ type Client2FinanceNetwork interface {
 	ListTransactions(from, to, hash string, dataFilter map[string]interface{}, nonce uint64,
 		page, limit int,
 		ascending bool) ([]transaction.Transaction, error)
-	ListLogs(logType string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
+	ListLogs(logType []string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
 		page, limit int,
 		ascending bool) ([]blockchainLog.Log, error)
 	SendTransaction(
@@ -140,9 +140,8 @@ type Client2FinanceNetwork interface {
 	) (types.ContractOutput, error)
 
 	// CASHBACK
-
 	AddCashback(
-        address string,
+        owner string,
         tokenAddress string,
         programType string,
         percentage string, // basis points, e.g. "250" = 2.50%
@@ -151,7 +150,7 @@ type Client2FinanceNetwork interface {
 		paused bool,
     ) (types.ContractOutput, error)
 
-    UpdateCashBack(
+    UpdateCashback(
         address string,
         tokenAddress string,
         programType string,
@@ -160,31 +159,24 @@ type Client2FinanceNetwork interface {
         expiredAt time.Time,
     ) (types.ContractOutput, error)
 
-    Deposit(
+    DepositCashbackFunds(
+        address string,
+		tokenAddress string,
+        amount string,
+    ) (types.ContractOutput, error)
+
+    WithdrawCashbackFunds(
         address string,
         tokenAddress string,
         amount string,
     ) (types.ContractOutput, error)
 
-    Withdraw(
-        address string,
-        tokenAddress string,
-        amount string,
-    ) (types.ContractOutput, error)
-
-    Pause(address string, paused bool) (types.ContractOutput, error)
-    Unpause(address string, paused bool) (types.ContractOutput, error)
-
-    PayCashBack(
-        address string,     // cashback program address
-        tokenAddress string, // must match tx.To
-        payTo string,        // must match tx.From
-        amount string,       // purchase amount in token units (as string)
-    ) (types.ContractOutput, error)
-
+    PauseCashback(address string, paused bool) (types.ContractOutput, error)
+    UnpauseCashback(address string, paused bool) (types.ContractOutput, error)
+	ClaimCashback(address, amount string) (types.ContractOutput, error)
 	// getters
-	GetCashBack(address string) (types.ContractOutput, error)
-	ListCashBack(owner string, tokenAddress string, programType string, paused bool, page int, limit int, ascending bool) (types.ContractOutput, error)
+	GetCashback(address string) (types.ContractOutput, error)
+	ListCashback(owner string, tokenAddress string, programType string, paused bool, page int, limit int, ascending bool) (types.ContractOutput, error)
 }
 
 type networkClient struct {
@@ -314,10 +306,10 @@ func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[s
 	return transactions, nil
 }
 
-func (c *networkClient) ListLogs(logType string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
+func (c *networkClient) ListLogs(logType []string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
 	page, limit int,
 	ascending bool) ([]blockchainLog.Log, error) {
-	if logType == "" && transactionHash == "" && contractAddress == "" {
+	if len(logType) == 0 && transactionHash == "" && contractAddress == "" {
 		return nil, fmt.Errorf("at least one of logType, transactionHash or contractAddress must be set")
 	}
 

@@ -4,13 +4,13 @@ package client_2finance
 import (
 	"fmt"
 	"time"
-
-	cashbackV1 "gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
 	"gitlab.com/2finance/2finance-network/blockchain/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
 
-// AddCashback deploys a new cashback program (to = DEPLOY address).
+
+// AddCashBack deploys a new cashback program (to = DEPLOY address).
 func (c *networkClient) AddCashback(
 	owner string,
 	tokenAddress string,
@@ -61,7 +61,11 @@ func (c *networkClient) AddCashback(
 		"paused":        paused,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	cashback, err := c.SendTransaction(from, to, contractVersion, method, data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to add cashback: %w", err)
+	}
+	return cashback, nil
 }
 
 // UpdateCashback updates an existing cashback program (to = program address). OnlyOwner.
@@ -116,7 +120,7 @@ func (c *networkClient) UpdateCashback(
 	return c.SendTransaction(from, to, contractVersion, method, data)
 }
 
-// PauseCashback pauses a cashback program. OnlyOwner.
+// PauseCashBack pauses a cashback program. OnlyOwner.
 func (c *networkClient) PauseCashback(address string, pause bool) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
@@ -180,8 +184,8 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 	return c.SendTransaction(from, to, contractVersion, method, data)
 }
 
-// DepositCashback funds the cashback pool (token inferred from state).
-func (c *networkClient) DepositCashback(address, amount string) (types.ContractOutput, error) {
+// DepositCashBack funds the cashback pool (token inferred from state).
+func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -192,6 +196,13 @@ func (c *networkClient) DepositCashback(address, amount string) (types.ContractO
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
 
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+	fmt.Println("DepositCashBackFunds: from:", c.publicKey, "to:", address, "tokenAddress:", tokenAddress, "amount:", amount)
 	from := c.publicKey
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
@@ -199,6 +210,7 @@ func (c *networkClient) DepositCashback(address, amount string) (types.ContractO
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
+	fmt.Println("DepositCashBackFunds: from:", from, "to:", address, "tokenAddress:", tokenAddress, "amount:", amount)
 
 	to := address
 	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
@@ -206,14 +218,19 @@ func (c *networkClient) DepositCashback(address, amount string) (types.ContractO
 
 	data := map[string]interface{}{
 		"address": address,
+		"token_address": tokenAddress, // token address inferred from state
 		"amount":  amount,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	contractOutput, err := c.SendTransaction(from, to, contractVersion, method, data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to deposit cashback: %w", err)
+	}
+	return contractOutput, nil
 }
 
 // WithdrawCashback withdraws funds from the cashback pool. OnlyOwner.
-func (c *networkClient) WithdrawCashback(address, amount string) (types.ContractOutput, error) {
+func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -222,6 +239,13 @@ func (c *networkClient) WithdrawCashback(address, amount string) (types.Contract
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
 	from := c.publicKey
@@ -239,40 +263,13 @@ func (c *networkClient) WithdrawCashback(address, amount string) (types.Contract
 	data := map[string]interface{}{
 		"address": address,
 		"amount":  amount,
+		"token_address": tokenAddress, // token address inferred from state
 	}
 
 	return c.SendTransaction(from, to, contractVersion, method, data)
 }
 
-// ClaimCashback triggers a payout claim (contract enforces OnlyTo/OnlyFrom using tx To/From).
-func (c *networkClient) ClaimCashback(address string) (types.ContractOutput, error) {
-	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("address not set")
-	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
-	}
-
-	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
-	}
-
-	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
-	method := cashbackV1.METHOD_CLAIM_CASHBACK
-
-	data := map[string]interface{}{
-		"address": address,
-	}
-
-	return c.SendTransaction(from, to, contractVersion, method, data)
-}
-
-// GetCashback reads a single cashback state.
+// GetCashBack reads a single cashback state.
 func (c *networkClient) GetCashback(address string) (types.ContractOutput, error) {
 	from := c.publicKey
 	if from == "" {
@@ -297,8 +294,8 @@ func (c *networkClient) GetCashback(address string) (types.ContractOutput, error
 	return c.GetState(contractVersion, method, data)
 }
 
-// ListCashbacks queries cashback programs with filters + pagination.
-func (c *networkClient) ListCashbacks(
+// ListCashBack queries cashback programs with filters + pagination.
+func (c *networkClient) ListCashback(
 	owner string,
 	tokenAddress string,
 	programType string,
@@ -348,4 +345,35 @@ func (c *networkClient) ListCashbacks(
 	}
 
 	return c.GetState(contractVersion, method, data)
+}
+
+func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOutput, error) {
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if amount == "" {
+		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := address
+	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
+	method := cashbackV1.METHOD_CLAIM_CASHBACK
+
+	data := map[string]interface{}{
+		"address": address,
+		"amount":  amount,
+	}
+
+	return c.SendTransaction(from, to, contractVersion, method, data)
 }
