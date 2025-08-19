@@ -16,7 +16,8 @@ func (c *networkClient) AddFaucet(
 	expireTime time.Time,
 	paused bool,
 	requestLimit int,
-	amount string,
+	claimAmount string,
+	claimIntervalDuration time.Duration,
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
@@ -38,7 +39,7 @@ func (c *networkClient) AddFaucet(
 	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
-	if amount == "" {
+	if claimAmount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
 
@@ -47,13 +48,14 @@ func (c *networkClient) AddFaucet(
 	method := faucetV1.METHOD_ADD_FAUCET
 
 	data := map[string]interface{}{
-		"owner":            owner,
-		"token_address":    tokenAddress,
-		"start_time":       startTime,
-		"expire_time":      expireTime,
-		"paused":           paused,
-		"request_limit":    requestLimit,
-		"amount":			amount,
+		"owner":                   owner,
+		"token_address":           tokenAddress,
+		"start_time":              startTime,
+		"expire_time":             expireTime,
+		"paused":                  paused,
+		"request_limit":           requestLimit,
+		"claim_amount":            claimAmount,
+		"claim_interval_duration": claimIntervalDuration,
 	}
 
 	contractOutput, err := c.SendTransaction(
@@ -76,7 +78,9 @@ func (c *networkClient) UpdateFaucet(
 	expireTime time.Time,
 	requestLimit int,
 	requestsByUser map[string]int,
-	amount string,
+	claimAmount string,
+	claimIntervalDuration time.Duration,
+	lastClaimByUser map[string]time.Time,
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
@@ -95,12 +99,14 @@ func (c *networkClient) UpdateFaucet(
 	method := faucetV1.METHOD_UPDATE_FAUCET
 
 	data := map[string]interface{}{
-		"address":          address,
-		"start_time":       startTime,
-		"expire_time":      expireTime,
-		"request_limit":    requestLimit,
-		"requests_by_user": requestsByUser,
-		"amount":			amount,
+		"address":                 address,
+		"start_time":              startTime,
+		"expire_time":             expireTime,
+		"request_limit":           requestLimit,
+		"requests_by_user":        requestsByUser,
+		"claim_amount":            claimAmount,
+		"claim_interval_duration": claimIntervalDuration,
+		"last_claim_by_user":      lastClaimByUser,
 	}
 
 	contractOutput, err := c.SendTransaction(
@@ -146,8 +152,8 @@ func (c *networkClient) PauseFaucet(
 	method := faucetV1.METHOD_PAUSE_FAUCET
 
 	data := map[string]interface{}{
-		"address":       address,
-		"paused":         pause,
+		"address": address,
+		"paused":  pause,
 	}
 
 	contractOutput, err := c.SendTransaction(
@@ -193,8 +199,8 @@ func (c *networkClient) UnpauseFaucet(
 	method := faucetV1.METHOD_UNPAUSE_FAUCET
 
 	data := map[string]interface{}{
-		"address":       address,
-		"pause":         pause,
+		"address": address,
+		"pause":   pause,
 	}
 
 	contractOutput, err := c.SendTransaction(
@@ -239,9 +245,9 @@ func (c *networkClient) DepositFunds(address, tokenAddress, amount string) (type
 	method := faucetV1.METHOD_DEPOSIT_FUNDS
 
 	data := map[string]interface{}{
-		"address":			address,
-		"token_address":	tokenAddress,
-		"amount":			amount,
+		"address":       address,
+		"token_address": tokenAddress,
+		"amount":        amount,
 	}
 
 	contractOutput, err := c.SendTransaction(
@@ -286,9 +292,9 @@ func (c *networkClient) WithdrawFunds(address, tokenAddress, amount string) (typ
 	method := faucetV1.METHOD_WITHDRAW_FUNDS
 
 	data := map[string]interface{}{
-		"address":			address,
-		"token_address":	tokenAddress,
-		"amount":			amount,
+		"address":       address,
+		"token_address": tokenAddress,
+		"amount":        amount,
 	}
 
 	contractOutput, err := c.SendTransaction(
@@ -330,8 +336,8 @@ func (c *networkClient) UpdateRequestLimitPerUser(address string, requestLimit i
 	method := faucetV1.METHOD_REQUEST_LIMIT_PER_USER
 
 	data := map[string]interface{}{
-		"address":			address,
-		"request_limit":	requestLimit,
+		"address":       address,
+		"request_limit": requestLimit,
 	}
 
 	contractOutput, err := c.SendTransaction(
@@ -369,7 +375,7 @@ func (c *networkClient) ClaimFunds(address string) (types.ContractOutput, error)
 	method := faucetV1.METHOD_CLAIM_FUNDS
 
 	data := map[string]interface{}{
-		"address":			address,
+		"address": address,
 	}
 
 	contractOutput, err := c.SendTransaction(
@@ -391,7 +397,7 @@ func (c *networkClient) GetFaucet(faucetAddress string) (types.ContractOutput, e
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	
+
 	if faucetAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("faucet address must be set")
 	}
@@ -419,9 +425,7 @@ func (c *networkClient) GetFaucet(faucetAddress string) (types.ContractOutput, e
 }
 
 func (c *networkClient) ListFaucets(
-	address, ownerAddress, tokenAddress string,
-	requestLimit int,
-	requestsByUser map[string]int,
+	ownerAddress string,
 	page, limit int,
 	ascending bool,
 ) (types.ContractOutput, error) {
@@ -440,18 +444,6 @@ func (c *networkClient) ListFaucets(
 		}
 	}
 
-	if address != "" {
-		if err := keys.ValidateEDDSAPublicKey(address); err != nil {
-			return types.ContractOutput{}, fmt.Errorf("invalid faucet address: %w", err)
-		}
-	}
-
-	if tokenAddress != "" {
-		if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
-			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
-		}
-	}
-
 	if page < 1 {
 		return types.ContractOutput{}, fmt.Errorf("page must be greater than 0")
 	}
@@ -463,14 +455,10 @@ func (c *networkClient) ListFaucets(
 	method := faucetV1.METHOD_LIST_FAUCETS
 
 	data := map[string]interface{}{
-		"address":         address,
-		"owner":           ownerAddress,
-		"token_address":   tokenAddress,
-		"request_limit":   requestLimit,
-		"requests_by_user": requestsByUser,
-		"page":            page,
-		"limit":           limit,
-		"ascending":       ascending,
+		"owner":         ownerAddress,
+		"page":          page,
+		"limit":         limit,
+		"ascending":     ascending,
 	}
 
 	contractOutput, err := c.GetState(contractVersion, method, data)

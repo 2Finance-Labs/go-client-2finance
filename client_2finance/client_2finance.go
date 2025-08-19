@@ -112,7 +112,8 @@ type Client2FinanceNetwork interface {
 		expireTime time.Time,
 		paused bool,
 		requestLimit int,
-		amount string,
+		claimAmount string,
+		claimIntervalDuration time.Duration,
 	) (types.ContractOutput, error)
 	UpdateFaucet(
 		address string,
@@ -120,7 +121,9 @@ type Client2FinanceNetwork interface {
 		expireTime time.Time,
 		requestLimit int,
 		requestsByUser map[string]int,
-		amount string,
+		claimAmount string,
+		claimIntervalDuration time.Duration,
+		lastClaimByUser map[string]time.Time,
 	) (types.ContractOutput, error)
 	DepositFunds(address, tokenAddress, amount string) (types.ContractOutput, error)
 	WithdrawFunds(address, tokenAddress, amount string) (types.ContractOutput, error)
@@ -131,9 +134,7 @@ type Client2FinanceNetwork interface {
 
 	GetFaucet(faucetAddress string) (types.ContractOutput, error)
 	ListFaucets(
-		address, ownerAddress, tokenAddress string,
-		requestLimit int,
-		requestsByUser map[string]int,
+		ownerAddress string,
 		page, limit int,
 		ascending bool,
 	) (types.ContractOutput, error)
