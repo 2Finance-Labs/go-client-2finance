@@ -6,16 +6,15 @@ import (
 	"log"
 	"time"
 
+	"gitlab.com/2finance/2finance-network/blockchain/block"
 	"gitlab.com/2finance/2finance-network/blockchain/contract"
 	"gitlab.com/2finance/2finance-network/blockchain/keys"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
-	"gitlab.com/2finance/2finance-network/blockchain/block"
 
 	"gitlab.com/2finance/2finance-network/infra/mqtt"
-
 
 	"strings"
 
@@ -264,6 +263,31 @@ type Client2FinanceNetwork interface {
 
 	GetPayment(address string) (types.ContractOutput, error)
 	ListPayments(payer, payee, orderId, tokenAddress string, status []string, page, limit int, ascending bool) (types.ContractOutput, error)
+	//MEMBER GET MEMBER
+	AddMgM(
+		owner string,
+		tokenAddress string,
+		amount string,
+		startAt time.Time,
+		expireAt time.Time,
+		paused bool,
+	) (types.ContractOutput, error)
+	UpdateMgM(
+		mgmAddress string,
+		amount string,
+		startAt time.Time,
+		expireAt time.Time,
+	) (types.ContractOutput, error)
+	PauseMgM(mgmAddress string, pause bool) (types.ContractOutput, error)
+	UnpauseMgM(mgmAddress string, pause bool) (types.ContractOutput, error)
+	DepositMgM(
+		mgmAddress string,
+		amount string,
+	) (types.ContractOutput, error)
+	WithdrawMgM(
+		mgmAddress string,
+		amount string,
+	) (types.ContractOutput, error)
 }
 
 type networkClient struct {
@@ -577,14 +601,14 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 	ascending bool) ([]block.Block, error) {
 
 	blockParams := block.BlockParams{
-		BlockNumber:     blockNumber,
-		BlockTimestamp:  blockTimestamp,
-		Hash:            hash,
-		PreviousHash:    previousHash,
-		MerkleRoot:      merkleRoot,
-		Page:            page,
-		Limit:           limit,
-		Ascending:       ascending,
+		BlockNumber:    blockNumber,
+		BlockTimestamp: blockTimestamp,
+		Hash:           hash,
+		PreviousHash:   previousHash,
+		MerkleRoot:     merkleRoot,
+		Page:           page,
+		Limit:          limit,
+		Ascending:      ascending,
 	}
 
 	blockBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_GET_BLOCKS, blockParams, c.replyTo)
