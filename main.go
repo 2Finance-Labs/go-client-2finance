@@ -13,7 +13,7 @@ import (
 
 	"github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
-	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
+	mgmV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/memberGetMemberV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
 	"gitlab.com/2finance/2finance-network/config"
 )
@@ -727,23 +727,14 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("List Token Balances: %+v\n", listTokenBalances2)
 
 	// GERAÇÃO DE INFORMAÇÕES PARA A FAUCET
-
 	pubKey, privKey, err := client.GenerateKeyEd25519()
 	if err != nil {
 		log.Fatalf("Erro ao gerar chave: %v", err)
 	}
 
-	pubKeyFaucetClaimer, _, err := client.GenerateKeyEd25519()
-	if err != nil {
-		log.Fatalf("Erro ao gerar chave: %v", err)
-	}
-
 	fmt.Println("Public Key:", pubKey)
-	fmt.Println("Public Key Faucet Claimer:", pubKeyFaucetClaimer)
 
 	client.SetPrivateKey(privKey)
-
-	log.Printf("Public Key: %s\n", pubKey)
 	//log.Printf("Private Key: %s\n", privKey)
 
 	walletContract2, err := client.AddWallet(pubKey)
@@ -888,20 +879,35 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	fixedAmount := "" // required if programType is "fixed-amount"
 	minOrder := "" // optional, "" means none
 	startAt := time.Now().Add(5 * time.Second)
-	expiredAt := time.Now().Add(30 * time.Minute)
-	paused = false
-	stackable := true
-	maxRedemptions := 100
-	perUserLimit := 5
-	rawHash := sha256.Sum256([]byte("uyaosuih-password-user"))
-	passcodeHash := hex.EncodeToString(rawHash[:])
-	couponContract, err := client.AddCoupon(
-		address,
-		tokenAddress,
-		programType,
-		percentageBPS,
-		fixedAmount,
-		minOrder,
+	expireAt := time.Now().Add(10 * time.Minute)
+	requestLimit := 2
+	requestsByUser := map[string]int{
+		token.Owner: 1,
+	}
+	amountState := "10"
+	claimIntervalDuration := time.Duration(1 * time.Second)
+
+	getTokenBalances, err = client.GetTokenBalance(tokenAddr, wallet2.PublicKey)
+	if err != nil {
+		log.Fatalf("Error getting token balance: %v", err)
+	}
+	log.Printf("Get Token Balance Wallet2 Before Mint: %+v\n", getTokenBalances)
+
+	mintContract, err = client.MintToken(tokenAddr, wallet2.PublicKey, "35", decimals)
+	if err != nil {
+		log.Fatalf("Error minting token with expiration: %v", err)
+	}
+
+	getTokenBalances, err = client.GetTokenBalance(tokenAddr, wallet2.PublicKey)
+	if err != nil {
+		log.Fatalf("Error getting token balance: %v", err)
+	}
+	log.Printf("Get Token Balance Wallet2 After Mint: %+v\n", getTokenBalances)
+
+	// ✅ ADD FAUCET
+	faucetAdd, err := client.AddFaucet(
+		owner,
+		tokenAddr,
 		startAt,
 		expiredAt,
 		paused,
@@ -938,26 +944,15 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Coupon PerUserLimit: %d\n", coupon.PerUserLimit)
 	log.Printf("Coupon PasscodeHash: %s\n", coupon.PasscodeHash)
 
-	token2.Address = coupon.TokenAddress
-	programType = "fixed-amount" // "percentage" | "fixed-amount"
-	fixedAmount = "100" // required if programType is "fixed-amount"
-	percentageBPS = "" // required if programType is "percentage"
-	minOrder = "10" // optional, "" means none
-	startAt = time.Now().Add(1 * time.Second)
-	expiredAt = time.Now().Add(10 * time.Minute)
-	stackable = false
-	maxRedemptions = 10
-	perUserLimit = 3
-	rawHash = sha256.Sum256([]byte("new-password-user"))
-	passcodeHash = hex.EncodeToString(rawHash[:])
+	// ✅ UPDATE FAUCET
+	lastClaimByUser := map[string]time.Time{
+		faucet.Address: time.Now().Add(8 * time.Second).UTC().Truncate(time.Second),
+	}
+	requestLimit = 10
 
-	couponUpdate, err := client.UpdateCoupon(
-		coupon.Address,
-		token2.Address,
-		programType,
-		percentageBPS,
-		fixedAmount,
-		minOrder,
+	amountState = "7"
+	faucetUpdate, err := client.UpdateFaucet(
+		faucet.Address,
 		startAt,
 		expiredAt,
 		stackable,
@@ -1062,8 +1057,10 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	if err != nil {
 		log.Fatalf("Error marshaling redeem coupon object: %v", err)
 	}
-	var redeemCouponDomain couponV1Domain.RedeemCoupon
-	err = json.Unmarshal(redeemCouponBytes, &redeemCouponDomain)
+	log.Printf("Faucet Updating Request Limit Successfully:\n%+v\n", updateRequestLimit)
+
+	// ✅ GET FAUCET
+	getFaucet, err := client.GetFaucet(faucet.Address)
 	if err != nil {
 		log.Fatalf("Error unmarshalling into domain.RedeemCoupon: %v", err)
 	}
@@ -1297,209 +1294,148 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	// log.Printf("Cashback Address: %s\n", cashback.Address)
 
 
-	// allowUsers[cashback.Address] = true
-	// _, err = client.AllowUsers(token2.Address, allowUsers)
-	// if err != nil {
-	// 	log.Fatalf("Error adding allow list: %v", err)
-	// }
-	// log.Printf("Token AllowUsers After Added: %+v\n", token2.AllowUsersMap)
-
-	// // ✅ GET FAUCET
-	// amount := "200"
-	// depositFunds, err := client.DepositFunds(faucet.Address, tokenAddr, amount)
-	// if err != nil {
-	// 	log.Fatalf("Error depositing funds in faucet: %v", err)
-	// }
-	// log.Printf("Faucet Deposit Funds Successfully:\n%+v\n", depositFunds)
-
-	// getTokenBalances, err = client.GetTokenBalance(tokenAddr, faucet.Address)
-	// if err != nil {
-	// 	log.Fatalf("Error getting token balance: %v", err)
-	// }
-	// log.Printf("Get Token Balance Faucet Address After Deposit: %+v\n", getTokenBalances)
-
-	// // ✅ WITHDRAW FUNDS FAUCET
-	// amount = "119"
-	// withdrawFunds, err := client.WithdrawFunds(faucet.Address, tokenAddr, amount)
-
-	// depositAmount := "100"
-	// cashbackDeposit, err := client.DepositCashbackFunds(cashback.Address, cashback.TokenAddress, depositAmount)
-	// if err != nil {
-	// 	log.Fatalf("Error depositing cashback: %v", err)
-	// }
-	// log.Printf("Cashback Deposit Successfully:\n%+v\n", cashbackDeposit)
-
-	// rawCashbackDeposit := cashbackDeposit.States[0].Object
-	// cashbackDepositBytes, err := json.Marshal(rawCashbackDeposit)
-	// if err != nil {
-	// 	log.Fatalf("Error marshaling cashback deposit object: %v", err)
-	// }
-	// var cashbackDepositOutput cashbackV1Domain.Cashback
-	// err = json.Unmarshal(cashbackDepositBytes, &cashbackDepositOutput)
-	// if err != nil {
-	// 	log.Fatalf("Error unmarshalling into domain.CashbackDeposit: %v", err)
-	// }
-	// log.Printf("Cashback Deposit Token Address: %s\n", cashbackDepositOutput.TokenAddress)
-	// log.Printf("Cashback Deposit Amount: %s\n", cashbackDepositOutput.Amount)
-
-	// getTokenBalancesCashback, err := client.GetTokenBalance(cashback.TokenAddress, cashback.Address)
-	// if err != nil {
-	// 	log.Fatalf("Error getting token balance: %v", err)
-	// }
-	// log.Printf("Get Token Balance for Cashback: %+v\n", getTokenBalancesCashback)
-	// withdrawAmount := "7"
-	// cashbackWithdraw, err := client.WithdrawCashbackFunds(cashback.Address, cashback.TokenAddress, withdrawAmount)
-	// if err != nil {
-	// 	log.Fatalf("Error withdrawing cashback: %v", err)
-	// }
-	// log.Printf("Cashback Withdraw Successfully:\n%+v\n", cashbackWithdraw)
-
-	// getTokenBalancesCashbackAfter, err := client.GetTokenBalance(cashback.TokenAddress, cashback.Address)
-	// if err != nil {
-	// 	log.Fatalf("Error getting token balance after withdrawal: %v", err)
-	// }
-	// log.Printf("Get Token Balance for Cashback After Withdrawal: %+v\n", getTokenBalancesCashbackAfter)
-
-	// getTokenBalancesWallet, err := client.GetTokenBalance(token2.Address, wallet2.PublicKey)
-	// if err != nil {
-	// 	log.Fatalf("Error getting token balance for wallet: %v", err)
-	// }
-	// log.Printf("Get Token Balance for Wallet: %+v\n", getTokenBalancesWallet)
-
-	// getTokenBalances, err = client.GetTokenBalance(tokenAddr, faucet.Address)
-	// if err != nil {
-	// 	log.Fatalf("Error getting token balance: %v", err)
-	// }
-	// log.Printf("Get Token Balance Faucet Address After Deposit: %+v\n", getTokenBalances)
-
-	// getTokenBalances, err = client.GetTokenBalance(tokenAddr, wallet2.PublicKey)
-	// if err != nil {
-	// 	log.Fatalf("Error getting token balance: %v", err)
-	// }
-	// log.Printf("Get Token Balance Wallet2 After Withdraw: %+v\n", getTokenBalances)
+	// ✅ LIST FAUCETS
+	listFaucets, err := client.ListFaucets(owner, 1, 10, true)
+	if err != nil {
+		log.Fatalf("Error listing faucets: %v", err)
+	}
+	log.Printf("Faucet Listed Successfully:\n%+v\n", listFaucets)
 
 
-	// // ✅ PAUSE FAUCET
-	// paused = true
-	// faucetPause, err := client.PauseFaucet(faucet.Address, paused)
-	// paused = true
-	// cashbackPause, err := client.PauseCashback(cashback.Address, paused)
-	// if err != nil {
-	// 	log.Fatalf("Error pausing cashback: %v", err)
-	// }
-	// log.Printf("Cashback Paused Successfully:\n%+v\n", cashbackPause)
+	// MEMBER GET MEMBER
+	//ADD MEMBER GET MEMBER
+	amount = "1000"
+	mgmAdd, err := client.AddMgM(
+		owner,
+		token2.Address,
+		amount,
+		startAt,
+		expireAt,
+		paused,
+	)
+	if err != nil {
+		log.Fatalf("Error adding member get member: %v", err)
+	}
+	log.Printf("Member Get Member Added Successfully:\n%+v\n", mgmAdd)
 
-	// getFaucetPaused, err := client.GetCashback(cashback.Address)
-	// if err != nil {
-	// 	log.Fatalf("Error getting cashback: %v", err)
-	// }
+	rawMgM := mgmAdd.States[0].Object
+	mgmBytes, err := json.Marshal(rawMgM)
+	if err != nil {
+		log.Fatalf("Error marshaling member get member object: %v", err)
+	}
 
-	// log.Printf("Cashback Geted Successfully:\n%+v\n", getFaucetPaused)
+	var mgm mgmV1Domain.MgM
+	err = json.Unmarshal(mgmBytes, &mgm)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.MgM: %v", err)
+	}
 
-	// paused = false
-	// faucetUnpause, err := client.UnpauseFaucet(
-	// 	faucet.Address,
-	// 	paused,
-	// )
-	// cashbackUnpause, err := client.UnpauseCashback(cashback.Address, paused)
-	// if err != nil {
-	// 	log.Fatalf("Error unpausing cashback: %v", err)
-	// }
-	// log.Printf("Cashback Unpaused Successfully:\n%+v\n", cashbackUnpause)
+	//UPDATE MEMBER GET MEMBER
+	amount = "500"
+	startAt = time.Now().Add(6 * time.Second)
+	expireAt = time.Now().Add(11 * time.Minute)
+	mgmUpdate, err := client.UpdateMgM(
+		mgm.Address,
+		amount,
+		startAt,
+		expireAt,
+	)
+	if err != nil {
+		log.Fatalf("Error updating member get member: %v", err)
+	}
+	log.Printf("Member Get Member Updated Successfully:\n%v\n", mgmUpdate)
 
-	// //✅ REQUEST LIMIT FAUCETS
-	// updateRequestLimit, err := client.UpdateRequestLimitPerUser(faucet.Address, 2)
-	// if err != nil {
-	// 	log.Fatalf("Error udating request limit: %v", err)
-	// }
-	// log.Printf("Faucet Updating Request Limit Successfully:\n%+v\n", updateRequestLimit)
+	rawMgM = mgmUpdate.States[0].Object
+	mgmBytes, err = json.Marshal(rawMgM)
+	if err != nil {
+		log.Fatalf("Error marshaling member get member object: %v", err)
+	}
 
-	// // ✅ GET FAUCET
-	// getFaucet, err = client.GetFaucet(faucet.Address)
-	// getCashback, err := client.GetCashback(cashback.Address)
-	// if err != nil {
-	// 	log.Fatalf("Error getting cashback: %v", err)
-	// }
-	// log.Printf("Cashback Geted Successfully:\n%+v\n", getCashback)
+	err = json.Unmarshal(mgmBytes, &mgm)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.MgM: %v", err)
+	}
 
+	//PAUSE MEMBER GET MEMBER
+	paused = true
+	mgmPause, err := client.PauseMgM(mgm.Address, paused)
+	if err != nil {
+		log.Fatalf("Error pausing member get member: %v", err)
+	}
+	log.Printf("Member Get Member Paused Successfully:\n%v\n", mgmPause)
 
-	// claimFunds, err := client.ClaimFunds(faucet.Address)
-	// if err != nil {
-	// 	log.Fatalf("Error claim funds: %v", err)
-	// }
-	// log.Printf("Faucet Claim Funds Successfully:\n%+v\n", claimFunds)
-	
-	// //Comment the line below to wait for the periodicity to take effect
-	// time.Sleep(2 * time.Second)
+	rawMgM = mgmPause.States[0].Object
+	mgmBytes, err = json.Marshal(rawMgM)
+	if err != nil {
+		log.Fatalf("Error marshaling member get member object: %v", err)
+	}
 
-	// //✅ CLAIM FUNDS FAUCETS - Periodicity
-	// claimFunds2, err := client.ClaimFunds(faucet.Address)
-	// if err != nil {
-	// 	log.Fatalf("Error claim funds with periodicity: %v", err)
-	// }
-	// log.Printf("Faucet Claim Funds Successfully with periodicity:\n%+v\n", claimFunds2)
-	
+	err = json.Unmarshal(mgmBytes, &mgm)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.MgM: %v", err)
+	}
 
-	// //✅ CLAIM FUNDS FAUCETS - Periodicity
-	// claimFunds3, err := client.ClaimFunds(faucet.Address)
-	// if err != nil {
-	// 	log.Fatalf("Error claim funds with periodicity: %v", err)
-	// }
-	// log.Printf("Faucet Claim Funds Successfully with periodicity:\n%+v\n", claimFunds3)
+	//UNPAUSE MEMBER GET MEMBER
+	paused = false
+	mgmUnpause, err := client.UnpauseMgM(mgm.Address, paused)
+	if err != nil {
+		log.Fatalf("Error unpausing member get member: %v", err)
+	}
+	log.Printf("Member Get Member Unpaused Successfully:\n%v\n", mgmUnpause)
 
+	rawMgM = mgmUnpause.States[0].Object
+	mgmBytes, err = json.Marshal(rawMgM)
+	if err != nil {
+		log.Fatalf("Error marshaling member get member object: %v", err)
+	}
 
-	// // ✅ LIST FAUCETS
-	// listFaucets, err := client.ListFaucets(owner, 1, 10, true)
-	// programType = "fixed-amount"
-	// cashback.ExpiredAt = time.Now().Add(1 * time.Hour)
-	// cashback.Percentage = "2"
-	// cashback.StartAt = time.Now().Add(5 * time.Second)
+	err = json.Unmarshal(mgmBytes, &mgm)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.MgM: %v", err)
+	}
 
-	// cashbackUpdate, err := client.UpdateCashback(cashback.Address, cashback.TokenAddress, cashback.ProgramType, cashback.Percentage, cashback.StartAt, cashback.ExpiredAt)
-	// if err != nil {
-	// 	log.Fatalf("Error updating cashback: %v", err)
-	// }
-	// log.Printf("Cashback Updated Successfully:\n%+v\n", cashbackUpdate)
+	//DEPOSIT MEMBER GET MEMBER
+	allowUsers[mgm.Address] = true
+	_, err = client.AllowUsers(token2.Address, allowUsers)
+	if err != nil {
+		log.Fatalf("Error adding allow list: %v", err)
+	}
+	log.Printf("Token AllowUsers After Added: %+v\n", token2.AllowUsersMap)
+	mgmDeposit, err := client.DepositMgM(mgm.Address, amount)
+	if err != nil {
+		log.Fatalf("Error depositing member get member: %v", err)
+	}
+	log.Printf("Member Get Member Deposited Successfully:\n%v\n", mgmDeposit)
 
-	// rawCashbackUpdate := cashbackUpdate.States[0].Object
-	// cashbackUpdateBytes, err := json.Marshal(rawCashbackUpdate)
-	// if err != nil {
-	// 	log.Fatalf("Error marshaling cashback update object: %v", err)
-	// }
-	// var cashbackUpdateOutput cashbackV1Domain.Cashback
-	// err = json.Unmarshal(cashbackUpdateBytes, &cashbackUpdateOutput)
-	// if err != nil {
-	// 	log.Fatalf("Error unmarshalling into domain.Cashback: %v", err)
-	// }	
-	// log.Printf("Cashback Update Owner: %s\n", cashbackUpdateOutput.Owner)
-	// log.Printf("Cashback Update Token Address: %s\n", cashbackUpdateOutput.TokenAddress)
-	// log.Printf("Cashback Update Program Type: %s\n", cashbackUpdateOutput.ProgramType)
-	// log.Printf("Cashback Update Percentage: %s\n", cashbackUpdateOutput.Percentage)
-	// log.Printf("Cashback Update Start At: %s\n", cashbackUpdateOutput.StartAt)
-	// log.Printf("Cashback Update Expired At: %s\n", cashbackUpdateOutput.ExpiredAt)
-	// log.Printf("Cashback Update Paused: %t\n", cashbackUpdateOutput.Paused)
-	// log.Printf("Cashback Update Address: %s\n", cashbackUpdateOutput.Address)
+	rawMgM = mgmDeposit.States[0].Object
+	mgmBytes, err = json.Marshal(rawMgM)
+	if err != nil {
+		log.Fatalf("Error marshaling member get member object: %v", err)
+	}
 
-	
-	// listCashback, err := client.ListCashback(cashback.TokenAddress, "", "", false, 1, 10, true)
-	// if err != nil {
-	// 	log.Fatalf("Error listing cashbacks: %v", err)
-	// }
-	// log.Printf("List Cashbacks: %+v\n", listCashback)
-	// time.Sleep(5 * time.Second) // Wait for the transaction to be processed
-	// amountOfPayment := "5000"
-	// cashbackClaim, err := client.ClaimCashback(cashback.Address, amountOfPayment)
-	// if err != nil {
-	// 	log.Fatalf("Error claiming cashback: %v", err)
-	// }
-	// log.Printf("Cashback Claimed Successfully:\n%+v\n", cashbackClaim)
+	err = json.Unmarshal(mgmBytes, &mgm)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.MgM: %v", err)
+	}
 
-	// getTokenBalancesCashbackAfter, err = client.GetTokenBalance(cashback.TokenAddress, cashback.Address)
-	// if err != nil {
-	// 	log.Fatalf("Error getting token balance after withdrawal: %v", err)
-	// }
-	// log.Printf("Get Token Balance for Cashback After Claim: %+v\n", getTokenBalancesCashbackAfter)
+	//WITHDRAW MEMBER GET MEMBER
+	amount = "200"
+	mgmWithdraw, err := client.DepositMgM(mgm.Address, amount)
+	if err != nil {
+		log.Fatalf("Error withdrawing member get member: %v", err)
+	}
+	log.Printf("Member Get Member Withdrawn Successfully:\n%v\n", mgmWithdraw)
 
+	rawMgM = mgmWithdraw.States[0].Object
+	mgmBytes, err = json.Marshal(rawMgM)
+	if err != nil {
+		log.Fatalf("Error marshaling member get member object: %v", err)
+	}
+
+	err = json.Unmarshal(mgmBytes, &mgm)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.MgM: %v", err)
+	}
 }
 
 func main() {
