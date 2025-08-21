@@ -176,7 +176,55 @@ type Client2FinanceNetwork interface {
 	ClaimCashback(address, amount string) (types.ContractOutput, error)
 	// getters
 	GetCashback(address string) (types.ContractOutput, error)
-	ListCashback(owner string, tokenAddress string, programType string, paused bool, page int, limit int, ascending bool) (types.ContractOutput, error)
+	//TODO fix to ListCashbacks
+	ListCashbacks(owner string, tokenAddress string, programType string, paused bool, page int, limit int, ascending bool) (types.ContractOutput, error)
+
+
+	AddCoupon(
+		address string, // optional, depends on your infra
+		tokenAddress string,
+		programType string,   // "percentage" | "fixed-amount"
+		percentageBPS string, // required if percentage
+		fixedAmount string,   // required if fixed-amount
+		minOrder string,      // optional, "" means none
+		startAt time.Time,
+		expiredAt time.Time,
+		paused bool,
+		stackable bool,
+		maxRedemptions int,
+		perUserLimit int,
+		passcodeHash string, // sha256(preimage)
+	) (types.ContractOutput, error)
+
+	UpdateCoupon(
+		address string,
+		tokenAddress string,
+		programType string,
+		percentageBPS string,
+		fixedAmount string,
+		minOrder string,
+		startAt time.Time,
+		expiredAt time.Time,
+		stackable bool,
+		maxRedemptions int,
+		perUserLimit int,
+		passcodeHash string, // optional; pass "" to keep
+	) (types.ContractOutput, error)
+
+	PauseCoupon(address string, paused bool) (types.ContractOutput, error)
+	UnpauseCoupon(address string, paused bool) (types.ContractOutput, error)
+	
+	// Redeem coupon, 
+	//TODO change this to Redeem Manual, because is possible to add orderAmount
+	RedeemCoupon(
+		address string,     // coupon address
+		orderAmount string, // integer string
+		passcode string,
+	) (types.ContractOutput, error)
+
+	// getters
+	GetCoupon(address string) (types.ContractOutput, error)
+	ListCoupons(owner, tokenAddress, programType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
 }
 
 type networkClient struct {
