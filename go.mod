@@ -1,14 +1,16 @@
 module github.com/2Finance-Labs/go-client-2finance
+
 // module go-client-2finance
 
 go 1.23.0
 
 toolchain go1.23.11
 
+//replace gitlab.com/2finance/2finance-network => /home/lmenniti/myrepo/2finance-network
+
 require (
-	github.com/2Finance-Labs/go-client-2finance v0.0.0-20250811153417-02a312c1efdc
 	github.com/google/uuid v1.6.0
-	gitlab.com/2finance/2finance-network v0.0.0-20250819114523-0fe3e5cfbfe3
+	gitlab.com/2finance/2finance-network v0.0.0-20250821132045-9fc8615e1da0
 )
 
 require (

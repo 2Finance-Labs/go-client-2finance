@@ -295,7 +295,7 @@ func (c *networkClient) GetCashback(address string) (types.ContractOutput, error
 }
 
 // ListCashBack queries cashback programs with filters + pagination.
-func (c *networkClient) ListCashback(
+func (c *networkClient) ListCashbacks(
 	owner string,
 	tokenAddress string,
 	programType string,

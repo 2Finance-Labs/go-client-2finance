@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
 	"gitlab.com/2finance/2finance-network/config"
 )
@@ -850,6 +852,267 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	if err != nil {
 		log.Fatalf("Error unmarshalling into domain.Token: %v", err)
 	}
+
+// 	func (c *networkClient) AddCoupon(
+// 	address string,
+// 	tokenAddress string,
+// 	programType string,   // "percentage" | "fixed-amount"
+// 	percentageBPS string, // required if percentage
+// 	fixedAmount string,   // required if fixed-amount
+// 	minOrder string,      // optional, "" means none
+// 	startAt time.Time,
+// 	expiredAt time.Time,
+// 	paused bool,
+// 	stackable bool,
+// 	maxRedemptions int,
+// 	perUserLimit int,
+// 	passcodeHash string, // sha256(preimage)
+// )
+	//address string,
+// 	tokenAddress string,
+// 	programType string,   // "percentage" | "fixed-amount"
+// 	percentageBPS string, // required if percentage
+// 	fixedAmount string,   // required if fixed-amount
+// 	minOrder string,      // optional, "" means none
+// 	startAt time.Time,
+// 	expiredAt time.Time,
+// 	paused bool,
+// 	stackable bool,
+// 	maxRedemptions int,
+// 	perUserLimit int,
+// 	passcodeHash string,
+	address := ""
+	tokenAddress := token2.Address
+	programType := "percentage" // "percentage" | "fixed-amount"
+	percentageBPS := "1000" // 10% in basis points
+	fixedAmount := "" // required if programType is "fixed-amount"
+	minOrder := "" // optional, "" means none
+	startAt := time.Now().Add(5 * time.Second)
+	expiredAt := time.Now().Add(30 * time.Minute)
+	paused = false
+	stackable := true
+	maxRedemptions := 100
+	perUserLimit := 5
+	rawHash := sha256.Sum256([]byte("uyaosuih-password-user"))
+	passcodeHash := hex.EncodeToString(rawHash[:])
+	couponContract, err := client.AddCoupon(
+		address,
+		tokenAddress,
+		programType,
+		percentageBPS,
+		fixedAmount,
+		minOrder,
+		startAt,
+		expiredAt,
+		paused,
+		stackable,
+		maxRedemptions,
+		perUserLimit,
+		passcodeHash,
+	)
+	if err != nil {
+		log.Fatalf("Error adding coupon: %v", err)
+	}
+	log.Printf("Coupon Contract: %+v\n", couponContract)
+	rawCoupon := couponContract.States[0].Object
+	couponBytes, err := json.Marshal(rawCoupon)
+	if err != nil {
+		log.Fatalf("Error marshaling coupon object: %v", err)
+	}
+	var coupon couponV1Domain.Coupon
+	err = json.Unmarshal(couponBytes, &coupon)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.Coupon: %v", err)
+	}
+	log.Printf("Coupon Address: %s\n", coupon.Address)
+	log.Printf("Coupon TokenAddress: %s\n", coupon.TokenAddress)
+	log.Printf("Coupon ProgramType: %s\n", coupon.ProgramType)
+	log.Printf("Coupon PercentageBPS: %s\n", coupon.PercentageBPS)
+	log.Printf("Coupon FixedAmount: %s\n", coupon.FixedAmount)
+	log.Printf("Coupon MinOrder: %s\n", coupon.MinOrder)
+	log.Printf("Coupon StartAt: %s\n", coupon.StartAt)
+	log.Printf("Coupon ExpiredAt: %s\n", coupon.ExpiredAt)
+	log.Printf("Coupon Paused: %t\n", coupon.Paused)
+	log.Printf("Coupon Stackable: %t\n", coupon.Stackable)
+	log.Printf("Coupon MaxRedemptions: %d\n", coupon.MaxRedemptions)
+	log.Printf("Coupon PerUserLimit: %d\n", coupon.PerUserLimit)
+	log.Printf("Coupon PasscodeHash: %s\n", coupon.PasscodeHash)
+
+	token2.Address = coupon.TokenAddress
+	programType = "fixed-amount" // "percentage" | "fixed-amount"
+	fixedAmount = "100" // required if programType is "fixed-amount"
+	percentageBPS = "" // required if programType is "percentage"
+	minOrder = "10" // optional, "" means none
+	startAt = time.Now().Add(1 * time.Second)
+	expiredAt = time.Now().Add(10 * time.Minute)
+	stackable = false
+	maxRedemptions = 10
+	perUserLimit = 3
+	rawHash = sha256.Sum256([]byte("new-password-user"))
+	passcodeHash = hex.EncodeToString(rawHash[:])
+
+	couponUpdate, err := client.UpdateCoupon(
+		coupon.Address,
+		token2.Address,
+		programType,
+		percentageBPS,
+		fixedAmount,
+		minOrder,
+		startAt,
+		expiredAt,
+		stackable,
+		maxRedemptions,
+		perUserLimit,
+		passcodeHash,
+	)
+	if err != nil {
+		log.Fatalf("Error updating coupon: %v", err)
+	}
+	log.Printf("Coupon Update Contract: %+v\n", couponUpdate)
+	rawCouponUpdate := couponUpdate.States[0].Object
+	couponUpdateBytes, err := json.Marshal(rawCouponUpdate)
+	if err != nil {
+		log.Fatalf("Error marshaling coupon update object: %v", err)
+	}
+	var couponUpdateDomain couponV1Domain.Coupon
+	err = json.Unmarshal(couponUpdateBytes, &couponUpdateDomain)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.CouponUpdate: %v", err)
+	}
+	log.Printf("Coupon Update Address: %s\n", couponUpdateDomain.Address)
+	log.Printf("Coupon Update TokenAddress: %s\n", couponUpdateDomain.TokenAddress)
+	log.Printf("Coupon Update ProgramType: %s\n", couponUpdateDomain.ProgramType)
+	log.Printf("Coupon Update PercentageBPS: %s\n", couponUpdateDomain.PercentageBPS)
+	log.Printf("Coupon Update FixedAmount: %s\n", couponUpdateDomain.FixedAmount)
+	log.Printf("Coupon Update MinOrder: %s\n", couponUpdateDomain.MinOrder)
+	log.Printf("Coupon Update StartAt: %s\n", couponUpdateDomain.StartAt)
+	log.Printf("Coupon Update ExpiredAt: %s\n", couponUpdateDomain.ExpiredAt)
+	log.Printf("Coupon Update Paused: %t\n", couponUpdateDomain.Paused)
+	log.Printf("Coupon Update Stackable: %t\n", couponUpdateDomain.Stackable)
+	log.Printf("Coupon Update MaxRedemptions: %d\n", couponUpdateDomain.MaxRedemptions)
+	log.Printf("Coupon Update PerUserLimit: %d\n", couponUpdateDomain.PerUserLimit)
+	log.Printf("Coupon Update PasscodeHash: %s\n", couponUpdateDomain.PasscodeHash)
+
+	couponPaused, err := client.PauseCoupon(couponUpdateDomain.Address, true)
+	if err != nil {
+		log.Fatalf("Error pausing coupon: %v", err)
+	}
+	log.Printf("Coupon Paused Contract: %+v\n", couponPaused)
+	rawCouponPaused := couponPaused.States[0].Object
+	couponPausedBytes, err := json.Marshal(rawCouponPaused)
+	if err != nil {
+		log.Fatalf("Error marshaling coupon paused object: %v", err)
+	}
+	var couponPausedDomain couponV1Domain.Coupon
+	err = json.Unmarshal(couponPausedBytes, &couponPausedDomain)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.CouponPaused: %v", err)
+	}
+	log.Printf("Coupon Paused Address: %s\n", couponPausedDomain.Address)
+	log.Printf("Coupon Paused Paused: %t\n", couponPausedDomain.Paused)
+
+	couponUnpaused, err := client.UnpauseCoupon(couponPausedDomain.Address, false)
+	if err != nil {
+		log.Fatalf("Error unpausing coupon: %v", err)
+	}
+	log.Printf("Coupon Unpaused Contract: %+v\n", couponUnpaused)
+	rawCouponUnpaused := couponUnpaused.States[0].Object
+	couponUnpausedBytes, err := json.Marshal(rawCouponUnpaused)
+	if err != nil {
+		log.Fatalf("Error marshaling coupon unpaused object: %v", err)
+	}
+	var couponUnpausedDomain couponV1Domain.Coupon
+	err = json.Unmarshal(couponUnpausedBytes, &couponUnpausedDomain)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.CouponUnpaused: %v", err)
+	}
+	log.Printf("Coupon Unpaused Address: %s\n", couponUnpausedDomain.Address)
+	log.Printf("Coupon Unpaused Paused: %t\n", couponUnpausedDomain.Paused)
+
+
+	allowList := map[string]bool{
+		couponUnpausedDomain.Address: true,
+	}
+	log.Printf("Redeem Coupon AllowList: %+v\n", allowList)
+	token2.AllowUsersMap = allowList
+	_, err = client.AllowUsers(token2.Address, token2.AllowUsersMap)
+	if err != nil {
+		log.Fatalf("Error adding allow list: %v", err)
+	}
+
+	address = couponUnpausedDomain.Address
+	amount := "100" // Amount to redeem
+	passcode := "new-password-user"
+
+
+	time.Sleep(5 * time.Second) // Wait for the transaction to be processed
+
+	redeemCoupon, err := client.RedeemCoupon(
+		address,
+		amount,
+		passcode, // Use the first 8 characters of the hash
+	)
+	if err != nil {
+		log.Fatalf("Error redeeming coupon: %v", err)
+	}
+
+	log.Printf("Redeem Coupon Contract: %+v\n", redeemCoupon)
+	rawRedeemCoupon := redeemCoupon.States[0].Object
+	redeemCouponBytes, err := json.Marshal(rawRedeemCoupon)
+	if err != nil {
+		log.Fatalf("Error marshaling redeem coupon object: %v", err)
+	}
+	var redeemCouponDomain couponV1Domain.RedeemCoupon
+	err = json.Unmarshal(redeemCouponBytes, &redeemCouponDomain)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.RedeemCoupon: %v", err)
+	}
+	log.Printf("Redeem Coupon Address: %s\n", redeemCouponDomain.CouponAddress)
+	log.Printf("Redeem Coupon TokenAddress: %s\n", redeemCouponDomain.TokenAddress)
+	log.Printf("Redeem Coupon UserAddress: %s\n", redeemCouponDomain.UserAddress)
+	log.Printf("Redeem Coupon Amount: %s\n", redeemCouponDomain.OrderAmount)
+	log.Printf("Redeem Coupon DiscountAmount: %s\n", redeemCouponDomain.DiscountAmount)
+
+	getTokenBalance, err := client.GetTokenBalance(redeemCouponDomain.TokenAddress, redeemCouponDomain.UserAddress)
+	if err != nil {
+		log.Fatalf("Error getting token balance: %v", err)
+	}
+	log.Printf("Token Balance: %s\n", getTokenBalance)
+
+	getCoupon, err := client.GetCoupon(couponUnpausedDomain.Address)
+	if err != nil {
+		log.Fatalf("Error getting coupon: %v", err)
+	}
+	log.Printf("Get Coupon Contract: %+v\n", getCoupon)
+	rawGetCoupon := getCoupon.States[0].Object
+	getCouponBytes, err := json.Marshal(rawGetCoupon)
+	if err != nil {
+		log.Fatalf("Error marshaling get coupon object: %v", err)
+	}
+	var getCouponDomain couponV1Domain.Coupon
+	err = json.Unmarshal(getCouponBytes, &getCouponDomain)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.GetCoupon: %v", err)
+	}
+	log.Printf("Get Coupon Address: %s\n", getCouponDomain.Address)
+	log.Printf("Get Coupon TokenAddress: %s\n", getCouponDomain.TokenAddress)
+	log.Printf("Get Coupon ProgramType: %s\n", getCouponDomain.ProgramType)
+	log.Printf("Get Coupon PercentageBPS: %s\n", getCouponDomain.PercentageBPS)
+	log.Printf("Get Coupon FixedAmount: %s\n", getCouponDomain.FixedAmount)
+	log.Printf("Get Coupon MinOrder: %s\n", getCouponDomain.MinOrder)
+	log.Printf("Get Coupon StartAt: %s\n", getCouponDomain.StartAt)
+	log.Printf("Get Coupon ExpiredAt: %s\n", getCouponDomain.ExpiredAt)
+	log.Printf("Get Coupon Paused: %t\n", getCouponDomain.Paused)
+	log.Printf("Get Coupon Stackable: %t\n", getCouponDomain.Stackable)
+	log.Printf("Get Coupon MaxRedemptions: %d\n", getCouponDomain.MaxRedemptions)
+	log.Printf("Get Coupon PerUserLimit: %d\n", getCouponDomain.PerUserLimit)
+	log.Printf("Get Coupon PasscodeHash: %s\n", getCouponDomain.PasscodeHash)
+
+	listCoupons, err := client.ListCoupons("", token2.Address, "", nil, 1, 10, true)
+	if err != nil {
+		log.Fatalf("Error listing coupons: %v", err)
+	}
+	log.Printf("List Coupons: %+v\n", listCoupons)
 
 	// tokenAddr := token2.Address
 	// startAt := time.Now().Add(1 * time.Minute)
