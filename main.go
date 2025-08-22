@@ -1308,6 +1308,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	mgmAdd, err := client.AddMgM(
 		owner,
 		token2.Address,
+		faucet.Address,
 		amount,
 		startAt,
 		expireAt,
