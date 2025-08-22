@@ -893,6 +893,20 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Faucet Claim Amount: %s\n", faucet.ClaimAmount)
 	log.Printf("Faucet Claim Interval Duration: %s\n", faucet.ClaimIntervalDuration)
 
+
+
+	allowUsers[faucet.Address] = true
+	_, err = client.AllowUsers(token2.Address, allowUsers)
+	if err != nil {
+		log.Fatalf("Error adding allow list: %v", err)
+	}
+	log.Printf("Token AllowUsers After Added: %+v\n", token2.AllowUsersMap)
+	depositFaucet, err := client.DepositFunds(faucet.Address, token2.Address, "100")
+	if err != nil {
+		log.Fatalf("Error depositing to faucet: %v", err)
+	}
+	log.Printf("Faucet Deposit Successful:\n%v\n", depositFaucet)
+
 	// MEMBER GET MEMBER
 	//ADD MEMBER GET MEMBER
 	amount := "1000"
