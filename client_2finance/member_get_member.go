@@ -12,6 +12,7 @@ import (
 func (c *networkClient) AddMgM(
 	owner string,
 	tokenAddress string,
+	faucetAddress string,
 	amount string,
 	startAt time.Time,
 	expireAt time.Time,
@@ -30,11 +31,17 @@ func (c *networkClient) AddMgM(
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
+	if faucetAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("faucet address not set")
+	}
 	if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
 	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+	if err := keys.ValidateEDDSAPublicKey(faucetAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid faucet address: %w", err)
 	}
 
 	to := types.DEPLOY_CONTRACT_ADDRESS
@@ -42,12 +49,13 @@ func (c *networkClient) AddMgM(
 	method := memberGetMemberV1.METHOD_ADD_MGM
 
 	data := map[string]interface{}{
-		"owner":         owner,
-		"token_address": tokenAddress,
-		"amount":        amount,
-		"start_at":      startAt,
-		"expire_at":     expireAt,
-		"paused":        paused,
+		"owner":          owner,
+		"token_address":  tokenAddress,
+		"faucet_address": faucetAddress,
+		"amount":         amount,
+		"start_at":       startAt,
+		"expire_at":      expireAt,
+		"paused":         paused,
 	}
 
 	contractOutput, err := c.SendTransaction(

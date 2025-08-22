@@ -267,6 +267,7 @@ type Client2FinanceNetwork interface {
 	AddMgM(
 		owner string,
 		tokenAddress string,
+		faucetAddress string,
 		amount string,
 		startAt time.Time,
 		expireAt time.Time,
