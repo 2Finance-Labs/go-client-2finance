@@ -853,34 +853,6 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		log.Fatalf("Error unmarshalling into domain.Token: %v", err)
 	}
 
-// 	func (c *networkClient) AddCoupon(
-// 	address string,
-// 	tokenAddress string,
-// 	programType string,   // "percentage" | "fixed-amount"
-// 	percentageBPS string, // required if percentage
-// 	fixedAmount string,   // required if fixed-amount
-// 	minOrder string,      // optional, "" means none
-// 	startAt time.Time,
-// 	expiredAt time.Time,
-// 	paused bool,
-// 	stackable bool,
-// 	maxRedemptions int,
-// 	perUserLimit int,
-// 	passcodeHash string, // sha256(preimage)
-// )
-	//address string,
-// 	tokenAddress string,
-// 	programType string,   // "percentage" | "fixed-amount"
-// 	percentageBPS string, // required if percentage
-// 	fixedAmount string,   // required if fixed-amount
-// 	minOrder string,      // optional, "" means none
-// 	startAt time.Time,
-// 	expiredAt time.Time,
-// 	paused bool,
-// 	stackable bool,
-// 	maxRedemptions int,
-// 	perUserLimit int,
-// 	passcodeHash string,
 	address := ""
 	tokenAddress := token2.Address
 	programType := "percentage" // "percentage" | "fixed-amount"
@@ -1113,6 +1085,8 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 		log.Fatalf("Error listing coupons: %v", err)
 	}
 	log.Printf("List Coupons: %+v\n", listCoupons)
+
+	
 
 	// tokenAddr := token2.Address
 	// startAt := time.Now().Add(1 * time.Minute)
