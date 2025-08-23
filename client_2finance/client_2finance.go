@@ -227,7 +227,6 @@ type Client2FinanceNetwork interface {
 	ListCoupons(owner, tokenAddress, programType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	CreatePayment(
-		address string,      // payment address (deterministic or provided by caller)
 		tokenAddress string, // ERC-20-like token on your chain
 		orderId string,
 		payer string,
@@ -236,7 +235,6 @@ type Client2FinanceNetwork interface {
 	) (types.ContractOutput, error)
 
 	DirectPay(
-		address string,
 		tokenAddress string,
 		orderId string,
 		payer string,

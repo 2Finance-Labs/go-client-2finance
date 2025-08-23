@@ -12,7 +12,6 @@ import (
 // CreatePayment creates a new payment intent (to = DEPLOY address).
 // Server/contract treats the tx sender (c.publicKey) as the owner.
 func (c *networkClient) CreatePayment(
-	address string,      // payment address (deterministic or provided by caller)
 	tokenAddress string, // ERC-20-like token on your chain
 	orderId string,
 	payer string,
@@ -28,12 +27,12 @@ func (c *networkClient) CreatePayment(
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("address not set")
+	publicKey, _, err := keys.GenerateKeyEd25519()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate payment address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
-	}
+	address := publicKey
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -77,7 +76,6 @@ func (c *networkClient) CreatePayment(
 
 // DirectPay is a one-step convenience: create + immediate capture.
 func (c *networkClient) DirectPay(
-	address string,
 	tokenAddress string,
 	orderId string,
 	payer string,
@@ -93,12 +91,12 @@ func (c *networkClient) DirectPay(
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("address not set")
+	publicKey, _, err := keys.GenerateKeyEd25519()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate payment address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
-	}
+	address := publicKey
+	
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
