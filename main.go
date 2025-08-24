@@ -1171,6 +1171,25 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Authorized Payment Address: %s\n", authorizedPaymentDomain.Address)
 	log.Printf("Authorized Payment Status: %s\n", authorizedPaymentDomain.Status)
 
+
+	voidedPayment, err := client.VoidPayment(paymentDomain.Address)
+	if err != nil {
+		log.Fatalf("Error voiding payment: %v", err)
+	}
+	log.Printf("Voided Payment: %+v\n", voidedPayment)
+	rawVoidedPayment := voidedPayment.States[0].Object
+	voidedPaymentBytes, err := json.Marshal(rawVoidedPayment)
+	if err != nil {
+		log.Fatalf("Error marshaling voided payment object: %v", err)
+	}
+	var voidedPaymentDomain paymentV1Domain.Payment
+	err = json.Unmarshal(voidedPaymentBytes, &voidedPaymentDomain)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.VoidedPayment: %v", err)
+	}
+	log.Printf("Voided Payment Address: %s\n", voidedPaymentDomain.Address)
+	log.Printf("Voided Payment Status: %s\n", voidedPaymentDomain.Status)
+
 	amount = "10"
 	capturedPayment, err := client.CapturePayment(paymentDomain.Address, amount)
 	if err != nil {
@@ -1210,23 +1229,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Refunded Payment Status: %s\n", refundedPaymentDomain.Status)
 	log.Printf("Refunded Payment RefundedAmount: %s\n", refundedPaymentDomain.RefundedAmount)
 
-	voidedPayment, err := client.VoidPayment(paymentDomain.Address)
-	if err != nil {
-		log.Fatalf("Error voiding payment: %v", err)
-	}
-	log.Printf("Voided Payment: %+v\n", voidedPayment)
-	rawVoidedPayment := voidedPayment.States[0].Object
-	voidedPaymentBytes, err := json.Marshal(rawVoidedPayment)
-	if err != nil {
-		log.Fatalf("Error marshaling voided payment object: %v", err)
-	}
-	var voidedPaymentDomain paymentV1Domain.Payment
-	err = json.Unmarshal(voidedPaymentBytes, &voidedPaymentDomain)
-	if err != nil {
-		log.Fatalf("Error unmarshalling into domain.VoidedPayment: %v", err)
-	}
-	log.Printf("Voided Payment Address: %s\n", voidedPaymentDomain.Address)
-	log.Printf("Voided Payment Status: %s\n", voidedPaymentDomain.Status)
+	
 
 	directPay, err := client.DirectPay(tokenAddress, orderId, payer, payee, amount)
 	if err != nil {
@@ -1291,9 +1294,6 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Pause Payment TokenAddress: %s\n", pausePaymentDomain.TokenAddress)
 	log.Printf("Pause Payment Paused: %t\n", pausePaymentDomain.Paused)
 
-
-	
-
 	paused = false
 	unpausePaymentContract, err := client.UnpausePayment(paymentDomain.Address, paused)
 	if err != nil {
@@ -1310,8 +1310,10 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	if err != nil {
 		log.Fatalf("Error unmarshalling into domain.UnpausePayment: %v", err)
 	}
-	log.Printf("Unpause Payment TokenAddress: %s\n", unpausePaymentDomain.TokenAddress)
+	log.Printf("Unpause Payment Address: %s\n", unpausePaymentDomain.Address)
 	log.Printf("Unpause Payment Paused: %t\n", unpausePaymentDomain.Paused)
+
+
 
 }
 

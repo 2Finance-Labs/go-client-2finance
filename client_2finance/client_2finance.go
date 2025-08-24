@@ -95,6 +95,9 @@ type Client2FinanceNetwork interface {
 		tagsSocialMedia, tagsCategory, tags map[string]string,
 		creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error)
 	PauseToken(tokenAddress string, pause bool) (types.ContractOutput, error)
+	ApproveSpender(tokenAddress, ownerAddress, spenderAddress, amount string, expiredAt time.Time) (types.ContractOutput, error)
+	TransferFromApproved(tokenAddress, spenderAddress, fromAddress, toAddress, amount string) (types.ContractOutput, error)
+	
 	UnpauseToken(tokenAddress string, unpause bool) (types.ContractOutput, error)
 	UpdateFeeTiers(tokenAddress string, feeTierList []map[string]interface{}) (types.ContractOutput, error)
 	UpdateFeeAddress(tokenAddress, feeAddress string) (types.ContractOutput, error)
