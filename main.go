@@ -1065,32 +1065,32 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Member Get Member Expire At: %s\n", mgm.ExpireAt)
 	log.Printf("Member Get Member Paused: %v\n", mgm.Paused)
 
-	// //WITHDRAW MEMBER GET MEMBER
-	// amount = "200"
-	// mgmWithdraw, err := client.DepositMgM(mgm.Address, amount)
-	// if err != nil {
-	// 	log.Fatalf("Error withdrawing member get member: %v", err)
-	// }
-	// log.Printf("Member Get Member Withdrawn Successfully:\n%v\n", mgmWithdraw)
+	//WITHDRAW MEMBER GET MEMBER
+	amount = "200"
+	mgmWithdraw, err := client.DepositMgM(mgm.Address, amount)
+	if err != nil {
+		log.Fatalf("Error withdrawing member get member: %v", err)
+	}
+	log.Printf("Member Get Member Withdrawn Successfully:\n%v\n", mgmWithdraw)
 
-	// rawMgM = mgmWithdraw.States[0].Object
-	// mgmBytes, err = json.Marshal(rawMgM)
-	// if err != nil {
-	// 	log.Fatalf("Error marshaling member get member object: %v", err)
-	// }
+	rawMgM = mgmWithdraw.States[0].Object
+	mgmBytes, err = json.Marshal(rawMgM)
+	if err != nil {
+		log.Fatalf("Error marshaling member get member object: %v", err)
+	}
 
-	// err = json.Unmarshal(mgmBytes, &mgm)
-	// if err != nil {
-	// 	log.Fatalf("Error unmarshalling into domain.MgM: %v", err)
-	// }
+	err = json.Unmarshal(mgmBytes, &mgm)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.MgM: %v", err)
+	}
 
-	// log.Printf("Member Get Member Address: %s\n", mgm.Address)
-	// log.Printf("Member Get Member Faucet Address: %s\n", mgm.FaucetAddress)
-	// log.Printf("Member Get Member Token Address: %s\n", mgm.TokenAddress)
-	// log.Printf("Member Get Member Owner: %s\n", mgm.Owner)
-	// log.Printf("Member Get Member Start At: %s\n", mgm.StartAt)
-	// log.Printf("Member Get Member Expire At: %s\n", mgm.ExpireAt)
-	// log.Printf("Member Get Member Paused: %v\n", mgm.Paused)
+	log.Printf("Member Get Member Address: %s\n", mgm.Address)
+	log.Printf("Member Get Member Faucet Address: %s\n", mgm.FaucetAddress)
+	log.Printf("Member Get Member Token Address: %s\n", mgm.TokenAddress)
+	log.Printf("Member Get Member Owner: %s\n", mgm.Owner)
+	log.Printf("Member Get Member Start At: %s\n", mgm.StartAt)
+	log.Printf("Member Get Member Expire At: %s\n", mgm.ExpireAt)
+	log.Printf("Member Get Member Paused: %v\n", mgm.Paused)
 }
 
 func main() {
