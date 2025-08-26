@@ -289,6 +289,10 @@ type Client2FinanceNetwork interface {
 		mgmAddress string,
 		amount string,
 	) (types.ContractOutput, error)
+
+	AddInviterMember(mgmAddress, password string) (types.ContractOutput, error)
+	DeleteInviterMember(mgmAddress, password string) (types.ContractOutput, error)
+	ClaimRewards(mgmAddress, memberAddress, password string) (types.ContractOutput, error)
 }
 
 type networkClient struct {
