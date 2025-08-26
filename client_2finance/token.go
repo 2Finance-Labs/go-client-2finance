@@ -312,6 +312,122 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	return contractOutput, nil
 }
 
+func (c *networkClient) ApproveSpender(tokenAddress, ownerAddress, spenderAddress, amount string, expiredAt time.Time) (types.ContractOutput, error) {
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if ownerAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("owner address not set")
+	}
+	if spenderAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("spender address not set")
+	}
+	if amount == "" {
+		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKey(ownerAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKey(spenderAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid spender address: %w", err)
+	}
+
+	contractVersion := tokenV1.TOKEN_CONTRACT_V1
+	method := tokenV1.METHOD_APPROVE_SPENDER
+	data := map[string]interface{}{
+		"token_address":  tokenAddress,
+		"owner_address":  ownerAddress,
+		"spender_address": spenderAddress,
+		"amount":         amount,
+		"expired_at":     expiredAt,
+	}
+
+	contractOutput, err := c.SendTransaction(
+		from,
+		tokenAddress,
+		contractVersion,
+		method,
+		data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
+func (c *networkClient) TransferFromApproved(tokenAddress, spenderAddress, fromAddress, toAddress, amount string) (types.ContractOutput, error) {
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if spenderAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("spender address not set")
+	}
+	if fromAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if toAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("to address not set")
+	}
+
+	if amount == "" {
+		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+	if err := keys.ValidateEDDSAPublicKey(spenderAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid spender address: %w", err)
+	}
+	if err := keys.ValidateEDDSAPublicKey(fromAddress); err != nil {
+
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+	if err := keys.ValidateEDDSAPublicKey(toAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid to address: %w", err)
+	}
+	contractVersion := tokenV1.TOKEN_CONTRACT_V1
+	method := tokenV1.METHOD_TRANSFER_FROM_APPROVED
+	data := map[string]interface{}{
+		"token_address":  tokenAddress,
+		"spender_address": spenderAddress,
+		"from_address":   fromAddress,
+		"to_address":     toAddress,
+		"amount":         amount,
+	}
+	contractOutput, err := c.SendTransaction(
+		from,
+		tokenAddress,
+		contractVersion,
+		method,
+		data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+	return contractOutput, nil
+}
+
+
 func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
 	if from == "" {

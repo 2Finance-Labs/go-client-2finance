@@ -95,6 +95,9 @@ type Client2FinanceNetwork interface {
 		tagsSocialMedia, tagsCategory, tags map[string]string,
 		creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error)
 	PauseToken(tokenAddress string, pause bool) (types.ContractOutput, error)
+	ApproveSpender(tokenAddress, ownerAddress, spenderAddress, amount string, expiredAt time.Time) (types.ContractOutput, error)
+	TransferFromApproved(tokenAddress, spenderAddress, fromAddress, toAddress, amount string) (types.ContractOutput, error)
+	
 	UnpauseToken(tokenAddress string, unpause bool) (types.ContractOutput, error)
 	UpdateFeeTiers(tokenAddress string, feeTierList []map[string]interface{}) (types.ContractOutput, error)
 	UpdateFeeAddress(tokenAddress, feeAddress string) (types.ContractOutput, error)
@@ -225,6 +228,42 @@ type Client2FinanceNetwork interface {
 	// getters
 	GetCoupon(address string) (types.ContractOutput, error)
 	ListCoupons(owner, tokenAddress, programType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
+
+	CreatePayment(
+		tokenAddress string, // ERC-20-like token on your chain
+		orderId string,
+		payer string,
+		payee string,
+		amount string, // integer string
+		expiredAt time.Time,
+	) (types.ContractOutput, error)
+
+	DirectPay(
+		tokenAddress string,
+		orderId string,
+		payer string,
+		payee string,
+		amount string,
+	) (types.ContractOutput, error)
+
+	AuthorizePayment(address string)(types.ContractOutput, error)
+
+	CapturePayment(
+		address string,
+		amount string) (types.ContractOutput, error)
+
+	VoidPayment(
+		address string) (types.ContractOutput, error)
+
+	RefundPayment(
+		address string,
+		amount string) (types.ContractOutput, error)
+
+	UnpausePayment(address string, paused bool) (types.ContractOutput, error)
+	PausePayment(address string, paused bool) (types.ContractOutput, error)
+
+	GetPayment(address string) (types.ContractOutput, error)
+	ListPayments(payer, payee, orderId, tokenAddress string, status []string, page, limit int, ascending bool) (types.ContractOutput, error)
 }
 
 type networkClient struct {
