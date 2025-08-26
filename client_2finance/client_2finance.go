@@ -235,6 +235,7 @@ type Client2FinanceNetwork interface {
 		payer string,
 		payee string,
 		amount string, // integer string
+		expiredAt time.Time,
 	) (types.ContractOutput, error)
 
 	DirectPay(

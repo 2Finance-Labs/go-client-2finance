@@ -1100,8 +1100,9 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	payer := wallet2.PublicKey
 	payee := wallet2.PublicKey
 	amount = "10"
+	expiredAt = time.Now().Add(time.Minute * 5) // 5 hours expiration
 
-	createdPayment, err := client.CreatePayment(tokenAddress, orderId, payer, payee, amount)
+	createdPayment, err := client.CreatePayment(tokenAddress, orderId, payer, payee, amount, expiredAt)
 	if err != nil {
 		log.Fatalf("Error creating payment: %v", err)
 	}
@@ -1124,6 +1125,9 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Payment Payee: %s\n", paymentDomain.Payee)
 	log.Printf("Payment Amount: %s\n", paymentDomain.Amount)
 	log.Printf("Payment Status: %s\n", paymentDomain.Status)
+	log.Printf("Payment ExpiredAt: %s\n", paymentDomain.ExpiredAt)
+	log.Printf("Payment CreatedAt: %s\n", paymentDomain.CreatedAt)
+	log.Printf("Payment ExpiredAt: %s\n", paymentDomain.ExpiredAt)
 
 
 	getPayment, err := client.GetPayment(paymentDomain.Address)
@@ -1171,25 +1175,6 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Authorized Payment Address: %s\n", authorizedPaymentDomain.Address)
 	log.Printf("Authorized Payment Status: %s\n", authorizedPaymentDomain.Status)
 
-
-	voidedPayment, err := client.VoidPayment(paymentDomain.Address)
-	if err != nil {
-		log.Fatalf("Error voiding payment: %v", err)
-	}
-	log.Printf("Voided Payment: %+v\n", voidedPayment)
-	rawVoidedPayment := voidedPayment.States[0].Object
-	voidedPaymentBytes, err := json.Marshal(rawVoidedPayment)
-	if err != nil {
-		log.Fatalf("Error marshaling voided payment object: %v", err)
-	}
-	var voidedPaymentDomain paymentV1Domain.Payment
-	err = json.Unmarshal(voidedPaymentBytes, &voidedPaymentDomain)
-	if err != nil {
-		log.Fatalf("Error unmarshalling into domain.VoidedPayment: %v", err)
-	}
-	log.Printf("Voided Payment Address: %s\n", voidedPaymentDomain.Address)
-	log.Printf("Voided Payment Status: %s\n", voidedPaymentDomain.Status)
-
 	amount = "10"
 	capturedPayment, err := client.CapturePayment(paymentDomain.Address, amount)
 	if err != nil {
@@ -1228,8 +1213,24 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Refunded Payment Address: %s\n", refundedPaymentDomain.Address)
 	log.Printf("Refunded Payment Status: %s\n", refundedPaymentDomain.Status)
 	log.Printf("Refunded Payment RefundedAmount: %s\n", refundedPaymentDomain.RefundedAmount)
-
 	
+	voidedPayment, err := client.VoidPayment(paymentDomain.Address)
+	if err != nil {
+		log.Fatalf("Error voiding payment: %v", err)
+	}
+	log.Printf("Voided Payment: %+v\n", voidedPayment)
+	rawVoidedPayment := voidedPayment.States[0].Object
+	voidedPaymentBytes, err := json.Marshal(rawVoidedPayment)
+	if err != nil {
+		log.Fatalf("Error marshaling voided payment object: %v", err)
+	}
+	var voidedPaymentDomain paymentV1Domain.Payment
+	err = json.Unmarshal(voidedPaymentBytes, &voidedPaymentDomain)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.VoidedPayment: %v", err)
+	}
+	log.Printf("Voided Payment Address: %s\n", voidedPaymentDomain.Address)
+	log.Printf("Voided Payment Status: %s\n", voidedPaymentDomain.Status)
 
 	directPay, err := client.DirectPay(tokenAddress, orderId, payer, payee, amount)
 	if err != nil {
@@ -1256,7 +1257,7 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 
 
 
-	createdPayment, err = client.CreatePayment(tokenAddress, orderId, payer, payee, amount)
+	createdPayment, err = client.CreatePayment(tokenAddress, orderId, payer, payee, amount, expiredAt)
 	if err != nil {
 		log.Fatalf("Error creating payment: %v", err)
 	}

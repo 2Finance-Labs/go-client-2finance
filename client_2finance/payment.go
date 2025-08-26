@@ -7,6 +7,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1"
 	"gitlab.com/2finance/2finance-network/blockchain/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"time"
 )
 
 // CreatePayment creates a new payment intent (to = DEPLOY address).
@@ -17,6 +18,7 @@ func (c *networkClient) CreatePayment(
 	payer string,
 	payee string,
 	amount string, // integer string
+	expiredAt time.Time,
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
@@ -57,6 +59,9 @@ func (c *networkClient) CreatePayment(
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
+	if expiredAt.IsZero() {
+		return types.ContractOutput{}, fmt.Errorf("expired_at not set")
+	}
 
 	to := types.DEPLOY_CONTRACT_ADDRESS
 	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
@@ -69,6 +74,7 @@ func (c *networkClient) CreatePayment(
 		"payer":         payer,
 		"payee":         payee,
 		"amount":        amount,
+		"expired_at":   expiredAt,
 	}
 
 	return c.SendTransaction(from, to, contractVersion, method, data)
