@@ -15,6 +15,8 @@ import (
 	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
 	paymentV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/domain"
 	faucetV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1/domain"
+	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/keys"
 
 	mgmV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/memberGetMemberV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
@@ -1091,6 +1093,61 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Member Get Member Start At: %s\n", mgm.StartAt)
 	log.Printf("Member Get Member Expire At: %s\n", mgm.ExpireAt)
 	log.Printf("Member Get Member Paused: %v\n", mgm.Paused)
+
+
+	//INVITER
+	addInviter, err := client.AddInviterMember(mgm.Address, "1234")
+	if err != nil {
+		log.Fatalf("Error adding inviter: %v", err)
+	}
+	log.Printf("Member Get Member Inviter Added Successfully:\n%v\n", addInviter)
+
+	rawInviter := addInviter.States[0].Object
+	inviterBytes, err := json.Marshal(rawInviter)
+	if err != nil {
+		log.Fatalf("Error marshaling inviter object: %v", err)
+	}
+
+	var inviter mgmV1Domain.InviterMember
+	err = json.Unmarshal(inviterBytes, &inviter)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.Inviter: %v", err)
+	}
+
+	log.Printf("Member Get Member Inviter Address: %s\n", inviter.MgmAddress)
+	log.Printf("Member Get Member Inviter Faucet Address: %s\n", inviter.InviterAddress)
+	log.Printf("Member Get Member Inviter Token Address: %s\n", inviter.Password)
+
+	invitedAddress, _, _ := keys.GenerateKeyEd25519()
+	claimReward, err := client.ClaimReward(mgm.Address, "1234", invitedAddress)
+	if err != nil {
+		log.Fatalf("Error claiming rewards: %v", err)
+	}
+	log.Printf("Member Get Member Rewards Claimed Successfully:\n%v\n", claimReward)
+
+	rawClaim := claimReward.States[0].Object
+	claimBytes, err := json.Marshal(rawClaim)
+	if err != nil {
+		log.Fatalf("Error marshaling claim object: %v", err)
+	}
+
+	var claim mgmV1Domain.ClaimReward
+	err = json.Unmarshal(claimBytes, &claim)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.ClaimReward: %v", err)
+	}
+
+	log.Printf("Member Get Member Claim Address: %s\n", claim.MgmAddress)
+	log.Printf("Member Get Member Claim Password: %s\n", claim.Password)
+	log.Printf("Member Get Member Claim Inviter Address: %s\n", claim.InviterAddress)
+	log.Printf("Member Get Member Claim Invited Address: %s\n", claim.InvitedAddress)
+
+	deleteInviter, err := client.DeleteInviterMember(mgm.Address, "1234")
+	if err != nil {
+		log.Fatalf("Error deleting inviter: %v", err)
+	}
+	log.Printf("Member Get Member Inviter Deleted Successfully:\n%v\n", deleteInviter)
+
 }
 
 func main() {

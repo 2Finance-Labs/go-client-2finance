@@ -378,7 +378,7 @@ func (c *networkClient) DeleteInviterMember(mgmAddress string, password string) 
 	return contractOutput, nil
 }
 
-func (c *networkClient) ClaimRewards(mgmAddress string, invitedAddress string, password string) (types.ContractOutput, error) {
+func (c *networkClient) ClaimReward(mgmAddress, password, invitedAddress string) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}

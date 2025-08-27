@@ -292,7 +292,7 @@ type Client2FinanceNetwork interface {
 
 	AddInviterMember(mgmAddress, password string) (types.ContractOutput, error)
 	DeleteInviterMember(mgmAddress, password string) (types.ContractOutput, error)
-	ClaimRewards(mgmAddress, memberAddress, password string) (types.ContractOutput, error)
+	ClaimReward(mgmAddress, password, invitedAddress string) (types.ContractOutput, error)
 }
 
 type networkClient struct {
