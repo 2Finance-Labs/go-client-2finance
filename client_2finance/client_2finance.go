@@ -299,6 +299,24 @@ type Client2FinanceNetwork interface {
 	GetInviterMember(mgmAddress string, inviterAddress string) (types.ContractOutput, error)
 	GetClaimInviter(mgmAddress string, inviterAddress string) (types.ContractOutput, error)
 	GetClaimInvited(mgmAddress string, invitedAddress string) (types.ContractOutput, error)
+
+
+	AddReview(address, reviewer, reviewee, subjectType, subjectID string, rating int, comment string,
+		tags map[string]string, mediaHashes []string, startAt, expiredAt time.Time, paused, hidden bool,
+	) (types.ContractOutput, error)
+
+	UpdateReview(address, subjectType, subjectID string, rating int, comment string,
+		tags map[string]string, mediaHashes []string, startAt, expiredAt *time.Time,
+	) (types.ContractOutput, error)
+
+	HideReview(address string, hidden bool) (types.ContractOutput, error)
+	
+	VoteHelpful(address, voter string, isHelpful bool) (types.ContractOutput, error)
+	ReportReview(address, reporter, reason string) (types.ContractOutput, error)
+	ModerateReview(address, action, note string) (types.ContractOutput, error)
+
+	GetReview(address string) (types.ContractOutput, error)
+	ListReviews(owner, reviewer, reviewee, subjectType, subjectID string, includeHidden *bool, minRating, maxRating, page, limit int, asc bool) (types.ContractOutput, error)
 }
 
 type networkClient struct {

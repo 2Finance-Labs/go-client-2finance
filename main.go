@@ -13,6 +13,7 @@ import (
 	"github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
+
 	paymentV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/domain"
 	faucetV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1/domain"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
@@ -902,8 +903,106 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	if err != nil {
 		log.Fatalf("Error adding allow list: %v", err)
 	}
-	log.Printf("Token AllowUsers After Added: %+v\n", token2.AllowUsersMap)
-	depositFaucet, err := client.DepositFunds(faucet.Address, token2.Address, "100")
+
+	// address = couponUnpausedDomain.Address
+	// amount := "100" // Amount to redeem
+	//passcode := "new-password-user"
+	// address, reviewer, reviewee, subjectType, subjectID string, rating int, comment string,
+	// 	tags map[string]string, mediaHashes []string, startAt, expiredAt time.Time, paused, hidden bool,
+
+	// address := ""
+	// reviewer := wallet
+
+
+
+
+		
+	// time.Sleep(5 * time.Second) // Wait for the transaction to be processed
+
+	// redeemCoupon, err := client.RedeemCoupon(
+	// 	address,
+	// 	amount,
+	// 	passcode, // Use the first 8 characters of the hash
+	// )
+	// if err != nil {
+	// 	log.Fatalf("Error redeeming coupon: %v", err)
+	// }
+
+	// log.Printf("Redeem Coupon Contract: %+v\n", redeemCoupon)
+	// rawRedeemCoupon := redeemCoupon.States[0].Object
+	// redeemCouponBytes, err := json.Marshal(rawRedeemCoupon)
+	// if err != nil {
+	// 	log.Fatalf("Error marshaling redeem coupon object: %v", err)
+	// }
+	// var redeemCouponDomain couponV1Domain.RedeemCoupon
+	// err = json.Unmarshal(redeemCouponBytes, &redeemCouponDomain)
+	// if err != nil {
+	// 	log.Fatalf("Error unmarshalling into domain.RedeemCoupon: %v", err)
+	// }
+	// log.Printf("Redeem Coupon Address: %s\n", redeemCouponDomain.CouponAddress)
+	// log.Printf("Redeem Coupon TokenAddress: %s\n", redeemCouponDomain.TokenAddress)
+	// log.Printf("Redeem Coupon UserAddress: %s\n", redeemCouponDomain.UserAddress)
+	// log.Printf("Redeem Coupon Amount: %s\n", redeemCouponDomain.OrderAmount)
+	// log.Printf("Redeem Coupon DiscountAmount: %s\n", redeemCouponDomain.DiscountAmount)
+
+	// getTokenBalance, err := client.GetTokenBalance(redeemCouponDomain.TokenAddress, redeemCouponDomain.UserAddress)
+	// if err != nil {
+	// 	log.Fatalf("Error getting token balance: %v", err)
+	// }
+	// log.Printf("Token Balance: %s\n", getTokenBalance)
+
+	// getCoupon, err := client.GetCoupon(couponUnpausedDomain.Address)
+	// if err != nil {
+	// 	log.Fatalf("Error getting coupon: %v", err)
+	// }
+	// log.Printf("Get Coupon Contract: %+v\n", getCoupon)
+	// rawGetCoupon := getCoupon.States[0].Object
+	// getCouponBytes, err := json.Marshal(rawGetCoupon)
+	// if err != nil {
+	// 	log.Fatalf("Error marshaling get coupon object: %v", err)
+	// }
+	// var getCouponDomain couponV1Domain.Coupon
+	// err = json.Unmarshal(getCouponBytes, &getCouponDomain)
+	// if err != nil {
+	// 	log.Fatalf("Error unmarshalling into domain.GetCoupon: %v", err)
+	// }
+	// log.Printf("Get Coupon Address: %s\n", getCouponDomain.Address)
+	// log.Printf("Get Coupon TokenAddress: %s\n", getCouponDomain.TokenAddress)
+	// log.Printf("Get Coupon ProgramType: %s\n", getCouponDomain.ProgramType)
+	// log.Printf("Get Coupon PercentageBPS: %s\n", getCouponDomain.PercentageBPS)
+	// log.Printf("Get Coupon FixedAmount: %s\n", getCouponDomain.FixedAmount)
+	// log.Printf("Get Coupon MinOrder: %s\n", getCouponDomain.MinOrder)
+	// log.Printf("Get Coupon StartAt: %s\n", getCouponDomain.StartAt)
+	// log.Printf("Get Coupon ExpiredAt: %s\n", getCouponDomain.ExpiredAt)
+	// log.Printf("Get Coupon Paused: %t\n", getCouponDomain.Paused)
+	// log.Printf("Get Coupon Stackable: %t\n", getCouponDomain.Stackable)
+	// log.Printf("Get Coupon MaxRedemptions: %d\n", getCouponDomain.MaxRedemptions)
+	// log.Printf("Get Coupon PerUserLimit: %d\n", getCouponDomain.PerUserLimit)
+	// log.Printf("Get Coupon PasscodeHash: %s\n", getCouponDomain.PasscodeHash)
+
+	// listCoupons, err := client.ListCoupons("", token2.Address, "", nil, 1, 10, true)
+	// if err != nil {
+	// 	log.Fatalf("Error listing coupons: %v", err)
+	// }
+	// log.Printf("List Coupons: %+v\n", listCoupons)
+
+	// address string,      // payment address (deterministic or provided by caller)
+	// tokenAddress string, // ERC-20-like token on your chain
+	// orderId string,
+	// payer string,
+	// payee string,
+	// amount string, 
+
+	tokenAddress = token2.Address
+	fmt.Printf("Token Address for Payment: %s\n", tokenAddress)	
+	orderId := fmt.Sprintf("order-%d", time.Now().Unix())
+	payer := wallet2.PublicKey
+	payeeKey, payeeKeyPvt, _ := client.GenerateKeyEd25519()
+	payee := payeeKey
+	amount := "10"
+	expiredAt = time.Now().Add(time.Minute * 5) // 5 hours expiration
+
+	createdPayment, err := client.CreatePayment(tokenAddress, orderId, payer, payee, amount, expiredAt)
 	if err != nil {
 		log.Fatalf("Error depositing to faucet: %v", err)
 	}
@@ -962,16 +1061,118 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 	log.Printf("Member Get Member Updated Successfully:\n%v\n", mgmUpdate)
 
-	rawMgM = mgmUpdate.States[0].Object
-	mgmBytes, err = json.Marshal(rawMgM)
+	allowList = map[string]bool{
+		payeeKey: true,
+	}
+	log.Printf("Redeem Coupon AllowList: %+v\n", allowList)
+	token2.AllowUsersMap = allowList
+	_, err = client.AllowUsers(token2.Address, token2.AllowUsersMap)
 	if err != nil {
-		log.Fatalf("Error marshaling member get member object: %v", err)
+		log.Fatalf("Error adding allow list: %v", err)
 	}
 
-	err = json.Unmarshal(mgmBytes, &mgm)
+	client.SetPrivateKey(payeeKeyPvt)
+	// amount = "10"
+	// capturedPayment, err := client.CapturePayment(paymentDomain.Address, amount)
+	// if err != nil {
+	// 	log.Fatalf("Error capturing payment: %v", err)
+	// }	
+
+	// log.Printf("Captured Payment: %+v\n", capturedPayment)
+	// rawCapturedPayment := capturedPayment.States[0].Object
+	// capturedPaymentBytes, err := json.Marshal(rawCapturedPayment)
+	// if err != nil {
+	// 	log.Fatalf("Error marshaling captured payment object: %v", err)
+	// }
+	// var capturedPaymentDomain paymentV1Domain.Payment
+	// err = json.Unmarshal(capturedPaymentBytes, &capturedPaymentDomain)
+	// if err != nil {
+	// 	log.Fatalf("Error unmarshalling into domain.CapturedPayment: %v", err)
+	// }
+	// log.Printf("Captured Payment Address: %s\n", capturedPaymentDomain.Address)
+	// log.Printf("Captured Payment Status: %s\n", capturedPaymentDomain.Status)
+	
+	// amountRefunded := "3"
+	// refundedPayment, err := client.RefundPayment(paymentDomain.Address, amountRefunded)
+	// if err != nil {
+	// 	log.Fatalf("Error refunding payment: %v", err)
+	// }
+	// log.Printf("Refunded Payment: %+v\n", refundedPayment)
+	// rawRefundedPayment := refundedPayment.States[0].Object
+	// refundedPaymentBytes, err := json.Marshal(rawRefundedPayment)
+	// if err != nil {
+	// 	log.Fatalf("Error marshaling refunded payment object: %v", err)
+	// }
+	// var refundedPaymentDomain paymentV1Domain.Payment
+	// err = json.Unmarshal(refundedPaymentBytes, &refundedPaymentDomain)
+	// if err != nil {
+	// 	log.Fatalf("Error unmarshalling into domain.RefundedPayment: %v", err)
+	// }
+	// log.Printf("Refunded Payment Address: %s\n", refundedPaymentDomain.Address)
+	// log.Printf("Refunded Payment Status: %s\n", refundedPaymentDomain.Status)
+	// log.Printf("Refunded Payment RefundedAmount: %s\n", refundedPaymentDomain.RefundedAmount)
+	
+	client.SetPrivateKey(privKey)
+	voidedPayment, err := client.VoidPayment(paymentDomain.Address)
 	if err != nil {
-		log.Fatalf("Error unmarshalling into domain.MgM: %v", err)
+		log.Fatalf("Error voiding payment: %v", err)
 	}
+	log.Printf("Voided Payment: %+v\n", voidedPayment)
+	rawVoidedPayment := voidedPayment.States[0].Object
+	voidedPaymentBytes, err := json.Marshal(rawVoidedPayment)
+	if err != nil {
+		log.Fatalf("Error marshaling voided payment object: %v", err)
+	}
+	var voidedPaymentDomain paymentV1Domain.Payment
+	err = json.Unmarshal(voidedPaymentBytes, &voidedPaymentDomain)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.VoidedPayment: %v", err)
+	}
+	log.Printf("Voided Payment Address: %s\n", voidedPaymentDomain.Address)
+	log.Printf("Voided Payment Status: %s\n", voidedPaymentDomain.Status)
+
+	directPay, err := client.DirectPay(tokenAddress, orderId, payer, payee, amount)
+	if err != nil {
+		log.Fatalf("Error making direct pay: %v", err)
+	}
+	log.Printf("Direct Pay Contract: %+v\n", directPay)
+	rawDirectPay := directPay.States[0].Object
+	directPayBytes, err := json.Marshal(rawDirectPay)
+	if err != nil {
+		log.Fatalf("Error marshaling direct pay object: %v", err)
+	}
+	var directPayDomain paymentV1Domain.Payment
+	err = json.Unmarshal(directPayBytes, &directPayDomain)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.DirectPay: %v", err)
+	}
+	log.Printf("Direct Pay Address: %s\n", directPayDomain.Address)
+	log.Printf("Direct Pay TokenAddress: %s\n", directPayDomain.TokenAddress)
+	log.Printf("Direct Pay OrderId: %s\n", directPayDomain.OrderId)
+	log.Printf("Direct Pay Payer: %s\n", directPayDomain.Payer)
+	log.Printf("Direct Pay Payee: %s\n", directPayDomain.Payee)
+	log.Printf("Direct Pay Amount: %s\n", directPayDomain.Amount)
+	log.Printf("Direct Pay Status: %s\n", directPayDomain.Status)
+
+
+
+	createdPayment, err = client.CreatePayment(tokenAddress, orderId, payer, payee, amount, expiredAt)
+	if err != nil {
+		log.Fatalf("Error creating payment: %v", err)
+	}
+	log.Printf("Created Payment: %+v\n", createdPayment)
+
+	rawCreatedPayment = createdPayment.States[0].Object
+	createdPaymentBytes, err = json.Marshal(rawCreatedPayment)
+	if err != nil {
+		log.Fatalf("Error marshaling created payment object: %v", err)
+	}
+	var paymentDomain2 paymentV1Domain.Payment
+	err = json.Unmarshal(createdPaymentBytes, &paymentDomain2)
+	if err != nil {
+		log.Fatalf("Error unmarshalling into domain.Payment: %v", err)
+	}
+	log.Printf("Payment Address: %s\n", paymentDomain.Address)
 
 	log.Printf("Member Get Member Address: %s\n", mgm.Address)
 	log.Printf("Member Get Member Faucet Address: %s\n", mgm.FaucetAddress)

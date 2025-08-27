@@ -53,6 +53,11 @@ func (c *networkClient) CreatePayment(
 	if err := keys.ValidateEDDSAPublicKey(payee); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid payee address: %w", err)
 	}
+
+	if payer == payee {
+		return types.ContractOutput{}, fmt.Errorf("payee and payer cannot be the same: %s - %s", payee, payer)
+	}
+	
 	if orderId == "" {
 		return types.ContractOutput{}, fmt.Errorf("order_id not set")
 	}
