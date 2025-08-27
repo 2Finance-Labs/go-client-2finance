@@ -400,7 +400,7 @@ func (c *networkClient) ClaimRewards(mgmAddress string, invitedAddress string, p
 
 	to := mgmAddress
 	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
-	method := memberGetMemberV1.METHOD_CLAIM_REWARDS
+	method := memberGetMemberV1.METHOD_CLAIM_REWARD
 
 	data := map[string]interface{}{
 		"mgm_address":   mgmAddress,
