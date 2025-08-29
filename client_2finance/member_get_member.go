@@ -403,8 +403,184 @@ func (c *networkClient) ClaimReward(mgmAddress, password, invitedAddress string)
 	method := memberGetMemberV1.METHOD_CLAIM_REWARD
 
 	data := map[string]interface{}{
-		"mgm_address":   mgmAddress,
-		"password":      password,
+		"mgm_address":     mgmAddress,
+		"password":        password,
+		"invited_address": invitedAddress,
+	}
+
+	contractOutput, err := c.SendTransaction(
+		from,
+		to,
+		contractVersion,
+		method,
+		data,
+	)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
+func (c *networkClient) GetMgM(mgmAddress string) (types.ContractOutput, error) {
+	if mgmAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := mgmAddress
+	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
+	method := memberGetMemberV1.METHOD_GET_MGM
+
+	data := map[string]interface{}{
+		"mgm_address": mgmAddress,
+	}
+
+	contractOutput, err := c.SendTransaction(
+		from,
+		to,
+		contractVersion,
+		method,
+		data,
+	)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
+func (c *networkClient) GetInviterMember(mgmAddress string, inviterAddress string) (types.ContractOutput, error) {
+	if mgmAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+
+	if inviterAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("inviter address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(inviterAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid inviter address: %w", err)
+	}
+
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := mgmAddress
+	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
+	method := memberGetMemberV1.METHOD_GET_INVITER_MEMBER
+
+	data := map[string]interface{}{
+		"mgm_address":     mgmAddress,
+		"inviter_address": inviterAddress,
+	}
+
+	contractOutput, err := c.SendTransaction(
+		from,
+		to,
+		contractVersion,
+		method,
+		data,
+	)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
+func (c *networkClient) GetClaimInviter(mgmAddress string, inviterAddress string) (types.ContractOutput, error) {
+	if mgmAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+
+	if inviterAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("inviter address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(inviterAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid inviter address: %w", err)
+	}
+
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := mgmAddress
+	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
+	method := memberGetMemberV1.METHOD_GET_CLAIM_INVITER
+
+	data := map[string]interface{}{
+		"mgm_address":     mgmAddress,
+		"inviter_address": inviterAddress,
+	}
+
+	contractOutput, err := c.SendTransaction(
+		from,
+		to,
+		contractVersion,
+		method,
+		data,
+	)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
+func (c *networkClient) GetClaimInvited(mgmAddress string, invitedAddress string) (types.ContractOutput, error) {
+	if mgmAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+
+	if invitedAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("invited address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(invitedAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid invited address: %w", err)
+	}
+
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := mgmAddress
+	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
+	method := memberGetMemberV1.METHOD_GET_CLAIM_INVITED
+
+	data := map[string]interface{}{
+		"mgm_address":     mgmAddress,
 		"invited_address": invitedAddress,
 	}
 
