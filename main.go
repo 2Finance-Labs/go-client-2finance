@@ -1094,11 +1094,11 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Member Get Member Expire At: %s\n", mgm.ExpireAt)
 	log.Printf("Member Get Member Paused: %v\n", mgm.Paused)
 
-	// getMgM, err := client.GetMgM(mgm.Address)
-	// if err != nil {
-	// 	log.Fatalf("Error geting member get member: %v", err)
-	// }
-	// log.Printf("Member Get Member Get Successfully:\n%v\n", getMgM)
+	getMgM, err := client.GetMgM(mgm.Address)
+	if err != nil {
+		log.Fatalf("Error geting member get member: %v", err)
+	}
+	log.Printf("Member Get Member Get Successfully:\n%v\n", getMgM)
 
 
 	//INVITER
@@ -1124,11 +1124,11 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Member Get Member Inviter Faucet Address: %s\n", inviter.InviterAddress)
 	log.Printf("Member Get Member Inviter Token Address: %s\n", inviter.Password)
 
-	// getInviterMember, err := client.GetInviterMember(inviter.MgmAddress, inviter.InviterAddress)
-	// if err != nil {
-	// 	log.Fatalf("Error geting inviter member: %v", err)
-	// }
-	// log.Printf("Member Get Member Get Inviter Member Successfully:\n%v\n", getInviterMember)
+	getInviterMember, err := client.GetInviterMember(inviter.MgmAddress, inviter.InviterAddress)
+	if err != nil {
+		log.Fatalf("Error geting inviter member: %v", err)
+	}
+	log.Printf("Member Get Member Get Inviter Member Successfully:\n%v\n", getInviterMember)
 
 	invitedAddress, _, _ := keys.GenerateKeyEd25519()
 	claimReward, err := client.ClaimReward(mgm.Address, "1234", invitedAddress)
@@ -1154,26 +1154,23 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	log.Printf("Member Get Member Claim Inviter Address: %s\n", claim.InviterAddress)
 	log.Printf("Member Get Member Claim Invited Address: %s\n", claim.InvitedAddress)
 
-	// getClaimInviter, err := client.GetClaimInviter(claim.MgmAddress, claim.InviterAddress)
-	// if err != nil {
-	// 	log.Fatalf("Error geting claim inviter: %v", err)
-	// }
-	// log.Printf("Member Get Member Get Claim Inviter Successfully:\n%v\n", getClaimInviter)
+	getClaimInviter, err := client.GetClaimInviter(claim.MgmAddress, claim.InviterAddress)
+	if err != nil {
+		log.Fatalf("Error geting claim inviter: %v", err)
+	}
+	log.Printf("Member Get Member Get Claim Inviter Successfully:\n%v\n", getClaimInviter)
 
-	// getClaimInvited, err := client.GetClaimInvited(claim.MgmAddress, claim.InvitedAddress)
-	// if err != nil {
-	// 	log.Fatalf("Error geting claim invited: %v", err)
-	// }
-	// log.Printf("Member Get Member Get Claim Invited Successfully:\n%v\n", getClaimInvited)
+	getClaimInvited, err := client.GetClaimInvited(claim.MgmAddress, claim.InvitedAddress)
+	if err != nil {
+		log.Fatalf("Error geting claim invited: %v", err)
+	}
+	log.Printf("Member Get Member Get Claim Invited Successfully:\n%v\n", getClaimInvited)
 
 	deleteInviter, err := client.DeleteInviterMember(mgm.Address, "1234")
 	if err != nil {
 		log.Fatalf("Error deleting inviter: %v", err)
 	}
 	log.Printf("Member Get Member Inviter Deleted Successfully:\n%v\n", deleteInviter)
-
-	
-
 }
 
 func main() {

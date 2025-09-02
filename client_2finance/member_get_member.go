@@ -438,7 +438,6 @@ func (c *networkClient) GetMgM(mgmAddress string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	to := mgmAddress
 	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_GET_MGM
 
@@ -446,15 +445,9 @@ func (c *networkClient) GetMgM(mgmAddress string) (types.ContractOutput, error) 
 		"mgm_address": mgmAddress,
 	}
 
-	contractOutput, err := c.SendTransaction(
-		from,
-		to,
-		contractVersion,
-		method,
-		data,
-	)
+	contractOutput, err := c.GetState(contractVersion, method, data)
 	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
 
 	return contractOutput, nil
@@ -483,7 +476,6 @@ func (c *networkClient) GetInviterMember(mgmAddress string, inviterAddress strin
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	to := mgmAddress
 	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_GET_INVITER_MEMBER
 
@@ -492,15 +484,9 @@ func (c *networkClient) GetInviterMember(mgmAddress string, inviterAddress strin
 		"inviter_address": inviterAddress,
 	}
 
-	contractOutput, err := c.SendTransaction(
-		from,
-		to,
-		contractVersion,
-		method,
-		data,
-	)
+	contractOutput, err := c.GetState(contractVersion, method, data)
 	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
 
 	return contractOutput, nil
@@ -529,7 +515,6 @@ func (c *networkClient) GetClaimInviter(mgmAddress string, inviterAddress string
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	to := mgmAddress
 	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_GET_CLAIM_INVITER
 
@@ -538,15 +523,9 @@ func (c *networkClient) GetClaimInviter(mgmAddress string, inviterAddress string
 		"inviter_address": inviterAddress,
 	}
 
-	contractOutput, err := c.SendTransaction(
-		from,
-		to,
-		contractVersion,
-		method,
-		data,
-	)
+	contractOutput, err := c.GetState(contractVersion, method, data)
 	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
 
 	return contractOutput, nil
@@ -575,7 +554,6 @@ func (c *networkClient) GetClaimInvited(mgmAddress string, invitedAddress string
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	to := mgmAddress
 	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_GET_CLAIM_INVITED
 
@@ -584,15 +562,9 @@ func (c *networkClient) GetClaimInvited(mgmAddress string, invitedAddress string
 		"invited_address": invitedAddress,
 	}
 
-	contractOutput, err := c.SendTransaction(
-		from,
-		to,
-		contractVersion,
-		method,
-		data,
-	)
+	contractOutput, err := c.GetState(contractVersion, method, data)
 	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
 
 	return contractOutput, nil
