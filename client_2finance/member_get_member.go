@@ -335,6 +335,48 @@ func (c *networkClient) AddInviterMember(mgmAddress string, password string) (ty
 	return contractOutput, nil
 }
 
+func (c *networkClient) UpdateInviterPassword(mgmAddress string, newPassword string) (types.ContractOutput, error) {
+	if mgmAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if newPassword == "" {
+		return types.ContractOutput{}, fmt.Errorf("new password not set")
+	}
+
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
+	method := memberGetMemberV1.METHOD_UPDATE_INVITER_PASSWORD
+
+	data := map[string]interface{}{
+		"mgm_address": mgmAddress,
+		"new_password": newPassword,
+	}
+
+	to := mgmAddress
+	contractOutput, err := c.SendTransaction(
+		from,
+		to,
+		contractVersion,
+		method,
+		data,
+	)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
 func (c *networkClient) DeleteInviterMember(mgmAddress string, password string) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")

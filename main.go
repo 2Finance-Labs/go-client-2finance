@@ -1102,7 +1102,8 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 
 
 	//INVITER
-	addInviter, err := client.AddInviterMember(mgm.Address, "1234")
+	password := "1234"
+	addInviter, err := client.AddInviterMember(mgm.Address, password)
 	if err != nil {
 		log.Fatalf("Error adding inviter: %v", err)
 	}
@@ -1121,8 +1122,15 @@ func execute(client client_2finance.Client2FinanceNetwork) {
 	}
 
 	log.Printf("Member Get Member Inviter Address: %s\n", inviter.MgmAddress)
-	log.Printf("Member Get Member Inviter Faucet Address: %s\n", inviter.InviterAddress)
-	log.Printf("Member Get Member Inviter Token Address: %s\n", inviter.Password)
+	log.Printf("Member Get Member Inviter Inviter Address: %s\n", inviter.InviterAddress)
+	log.Printf("Member Get Member Inviter Password: %s\n", inviter.Password)
+
+	newPassword := "4321"
+	updatePassword, err := client.UpdateInviterPassword(inviter.MgmAddress, newPassword)
+	if err != nil {
+		log.Fatalf("Error updating password: %v", err)
+	}
+	log.Printf("Member Get Member Password Updated Successfully:\n%v\n", updatePassword)
 
 	getInviterMember, err := client.GetInviterMember(inviter.MgmAddress, inviter.InviterAddress)
 	if err != nil {
