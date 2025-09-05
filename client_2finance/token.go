@@ -270,6 +270,9 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
+	if from == transferTo {
+		return types.ContractOutput{}, fmt.Errorf("from and to addresses are the same")
+	}
 
 	if decimals != 0 {
 		amountConverted, err := utils.RescaleDecimalString(amount, 0, decimals)
@@ -369,55 +372,37 @@ func (c *networkClient) ApproveSpender(tokenAddress, ownerAddress, spenderAddres
 	return contractOutput, nil
 }
 
-func (c *networkClient) TransferFromApproved(tokenAddress, spenderAddress, fromAddress, toAddress, amount string) (types.ContractOutput, error) {
+func (c *networkClient) TransferFromApproved(allowanceAddress, toAddress string) (types.ContractOutput, error) {
 	from := c.publicKey
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if tokenAddress == "" {
-		return types.ContractOutput{}, fmt.Errorf("token address not set")
-	}
-	if spenderAddress == "" {
-		return types.ContractOutput{}, fmt.Errorf("spender address not set")
-	}
-	if fromAddress == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	if allowanceAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("allowance address not set")
 	}
 	if toAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("to address not set")
 	}
 
-	if amount == "" {
-		return types.ContractOutput{}, fmt.Errorf("amount not set")
-	}
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
-	}
-	if err := keys.ValidateEDDSAPublicKey(spenderAddress); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid spender address: %w", err)
-	}
-	if err := keys.ValidateEDDSAPublicKey(fromAddress); err != nil {
-
-		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	if err := keys.ValidateEDDSAPublicKey(allowanceAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid allowance address: %w", err)
 	}
 	if err := keys.ValidateEDDSAPublicKey(toAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid to address: %w", err)
 	}
+
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_TRANSFER_FROM_APPROVED
 	data := map[string]interface{}{
-		"token_address":  tokenAddress,
-		"spender_address": spenderAddress,
-		"from_address":   fromAddress,
-		"to_address":     toAddress,
-		"amount":         amount,
+		"allowance_address": allowanceAddress,
+		"to_address":        toAddress,
 	}
 	contractOutput, err := c.SendTransaction(
 		from,
-		tokenAddress,
+		allowanceAddress,
 		contractVersion,
 		method,
 		data)

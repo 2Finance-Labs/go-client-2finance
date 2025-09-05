@@ -177,15 +177,12 @@ func (c *networkClient) AuthorizePayment(address string) (types.ContractOutput, 
 }
 
 // CapturePayment settles funds (full/partial).
-func (c *networkClient) CapturePayment(address, amount string) (types.ContractOutput, error) {
+func (c *networkClient) CapturePayment(address string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
 	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
-	}
-	if amount == "" {
-		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
 
 	from := c.publicKey
@@ -201,7 +198,6 @@ func (c *networkClient) CapturePayment(address, amount string) (types.ContractOu
 	method := paymentV1.METHOD_CAPTURE_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
-		"amount":  amount,
 	}
 
 	return c.SendTransaction(from, to, contractVersion, method, data)

@@ -2,10 +2,10 @@ package client_2finance
 
 
 import (
-	"fmt"
 	"time"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
 	"gitlab.com/2finance/2finance-network/blockchain/keys"
+	"fmt"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
 
@@ -202,7 +202,6 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount strin
 	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
-	fmt.Println("DepositCashBackFunds: from:", c.publicKey, "to:", address, "tokenAddress:", tokenAddress, "amount:", amount)
 	from := c.publicKey
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
@@ -210,7 +209,6 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount strin
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	fmt.Println("DepositCashBackFunds: from:", from, "to:", address, "tokenAddress:", tokenAddress, "amount:", amount)
 
 	to := address
 	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1

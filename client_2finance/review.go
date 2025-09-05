@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	reviewV1 "gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1"
 	"gitlab.com/2finance/2finance-network/blockchain/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
@@ -19,7 +19,7 @@ func (c *networkClient) AddReview(
 	tags map[string]string,
 	mediaHashes []string,
 	startAt, expiredAt time.Time,
-	paused, hidden bool,
+	hidden bool,
 ) (types.ContractOutput, error) {
 	from := c.publicKey
 	if from == "" {
@@ -85,7 +85,6 @@ func (c *networkClient) AddReview(
 		"media_hashes":  mediaHashes,
 		"start_at":      startAt,
 		"expired_at":    expiredAt,
-		"paused":        paused,
 		"hidden":        hidden,
 	}
 
@@ -308,7 +307,8 @@ func (c *networkClient) GetReview(address string) (types.ContractOutput, error) 
 
 // ListReviews queries reviews with filters + pagination.
 func (c *networkClient) ListReviews(
-	owner, reviewer, reviewee, subjectType, subjectID string,
+	owner,
+	reviewer, reviewee, subjectType, subjectID string,
 	includeHidden *bool,
 	minRating, maxRating, page, limit int,
 	asc bool,
@@ -357,7 +357,6 @@ func (c *networkClient) ListReviews(
 	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_LIST_REVIEWS
 	data := map[string]interface{}{
-		"owner":         owner,
 		"reviewer":      reviewer,
 		"reviewee":      reviewee,
 		"subject_type":  subjectType,
