@@ -98,6 +98,7 @@ type Client2FinanceNetwork interface {
 		creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error)
 	PauseToken(tokenAddress string, pause bool) (types.ContractOutput, error)
 	ApproveSpender(tokenAddress, ownerAddress, spenderAddress, amount string, expiredAt time.Time) (types.ContractOutput, error)
+	CancelSpenderApproval(allowanceAddress string) (types.ContractOutput, error)
 	TransferFromApproved(allowanceAddress, toAddress string) (types.ContractOutput, error)
 	
 	UnpauseToken(tokenAddress string, unpause bool) (types.ContractOutput, error)

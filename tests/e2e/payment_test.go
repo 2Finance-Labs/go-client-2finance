@@ -34,13 +34,17 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil { t.Fatalf("CreatePayment: %v", err) }
 	var pay paymentV1Domain.Payment
 	unmarshalState(t, created.States[0].Object, &pay)
+	
 	if pay.Address == "" { t.Fatalf("payment addr empty") }
-
+	c.SetPrivateKey(ownerPriv)
+	_, _ = c.AllowUsers(tok.Address, map[string]bool{pay.Address: true})
+	
+	c.SetPrivateKey(payerPriv)
 	if _, err := c.AuthorizePayment(pay.Address); err != nil { t.Fatalf("AuthorizePayment: %v", err) }
 
 	// capture and refund by payee
 	c.SetPrivateKey(payeePriv)
-	if _, err := c.CapturePayment(pay.Address); err != nil { t.Logf("CapturePayment warning: %v", err) }
+	if _, err := c.CapturePayment(pay.Address); err != nil { t.Fatalf("CapturePayment warning: %v", err) }
 	_, _ = c.RefundPayment(pay.Address, "10")
 
 	// direct pay (no auth/capture)
@@ -66,8 +70,10 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	payer, payerPriv := createWallet(t, c)
 	payee, _ := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
-	_, _ = c.AllowUsers(tok.Address, map[string]bool{payer.PublicKey: true})
-	_, _ = c.AllowUsers(tok.Address, map[string]bool{payee.PublicKey: true})
+	_, err := c.AllowUsers(tok.Address, map[string]bool{payer.PublicKey: true})
+	if err != nil { t.Fatalf("AllowUsers(payer): %v", err) }
+	_, err = c.AllowUsers(tok.Address, map[string]bool{payee.PublicKey: true})
+	if err != nil { t.Fatalf("AllowUsers(payee): %v", err) }
 	_ = createTransfer(t, c, tok, payer.PublicKey, "50", tok.Decimals)
 
 
@@ -76,10 +82,17 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	amount := "10"
 	created, err := c.CreatePayment(tok.Address, orderID, payer.PublicKey, payee.PublicKey, amount, time.Now().Add(10*time.Minute))
 	if err != nil { t.Fatalf("CreatePayment: %v", err) }
-	var p paymentV1Domain.Payment
-	unmarshalState(t, created.States[0].Object, &p)
-	if _, err := c.AuthorizePayment(p.Address); err != nil { t.Fatalf("AuthorizePayment: %v", err) }
-	if _, err := c.VoidPayment(p.Address); err != nil { t.Logf("VoidPayment warning: %v", err) }
+	var pay paymentV1Domain.Payment
+	unmarshalState(t, created.States[0].Object, &pay)
+
+	c.SetPrivateKey(ownerPriv)
+	_, err = c.AllowUsers(tok.Address, map[string]bool{pay.Address: true})
+	if err != nil { t.Fatalf("AllowUsers(payment): %v", err) }
+
+
+	c.SetPrivateKey(payerPriv)
+	if _, err := c.AuthorizePayment(pay.Address); err != nil { t.Fatalf("AuthorizePayment: %v", err) }
+	if _, err := c.VoidPayment(pay.Address); err != nil { t.Logf("VoidPayment warning: %v", err) }
 }
 
 // func TestPaymentStatusQueries(t *testing.T) {

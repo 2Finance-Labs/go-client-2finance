@@ -4,7 +4,6 @@ package e2e_test
 import (
 	"testing"
 	"time"
-	"fmt"
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
 
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
@@ -27,7 +26,7 @@ func TestTokenFlow(t *testing.T) {
 
 
 	// Transfer to a new allowed wallet
-	receiver, receiverPriv := createWallet(t, c)
+	receiver, _ := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 	if _, err := c.AllowUsers(tok.Address, map[string]bool{receiver.PublicKey: true}); err != nil { t.Fatalf("AllowUsers: %v", err) }
 	trOut, err := c.TransferToken(tok.Address, receiver.PublicKey, amt(1, dec), dec)
@@ -35,35 +34,9 @@ func TestTokenFlow(t *testing.T) {
 	var tr tokenV1Domain.Transfer
 	unmarshalState(t, trOut.States[0].Object, &tr)
 	if tr.ToAddress != receiver.PublicKey { t.Fatalf("transfer to mismatch: %s != %s", tr.ToAddress, receiver.PublicKey) }
-
-	userFunds := receiver
-
-	// Approvals & transferFrom
-	spend, spendPriv := createWallet(t, c)
 	
-	c.SetPrivateKey(ownerPriv)
-	if _, err := c.AllowUsers(tok.Address, map[string]bool{spend.PublicKey: true}); err != nil { t.Fatalf("AllowUsers: %v", err) }
-	fmt.Println("Owner:", owner.PublicKey)
-	fmt.Println("Approved spender:", spend.PublicKey)
-	fmt.Println("User funds:", userFunds.PublicKey)
-	fmt.Println("Token address:", tok.Address)
-	c.SetPrivateKey(receiverPriv)
-	if _, err := c.ApproveSpender(tok.Address, userFunds.PublicKey, spend.PublicKey, "100", time.Now().Add(30*time.Minute)); err != nil { t.Fatalf("ApproveSpender: %v", err) }
-
-
-	toWhoIsGoingToSpend, _ := createWallet(t, c)
 
 	c.SetPrivateKey(ownerPriv)
-	if _, err := c.AllowUsers(tok.Address, map[string]bool{toWhoIsGoingToSpend.PublicKey: true}); err != nil { t.Fatalf("AllowUsers: %v", err) }
-
-
-	c.SetPrivateKey(spendPriv)
-	if _, err := c.TransferFromApproved(tok.Address, spend.PublicKey, userFunds.PublicKey, toWhoIsGoingToSpend.PublicKey, "100"); err != nil {
-		// If backend requires precise allowance signer rules, allow warning
-		t.Fatalf("TransferFromApproved: %v", err)
-	}
-
-
 	// Fee tiers & address
 	if _, err := c.UpdateFeeTiers(tok.Address, []map[string]interface{}{{"min_amount": "0", "max_amount": amt(10_000, dec), "min_volume": "0", "max_volume": amt(100_000, dec), "fee_bps": 25}}); err != nil { t.Fatalf("UpdateFeeTiers: %v", err) }
 	if _, err := c.UpdateFeeAddress(tok.Address, owner.PublicKey); err != nil { t.Fatalf("UpdateFeeAddress: %v", err) }

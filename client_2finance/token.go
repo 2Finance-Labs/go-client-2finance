@@ -933,7 +933,7 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_UPDATE_FEE_ADDRESS
 	data := map[string]interface{}{
-		"token_address": tokenAddress,
+		"address": tokenAddress,
 		"fee_address":   feeAddress,
 	}
 
@@ -949,6 +949,42 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 
 	return contractOutput, nil
 }
+
+func (c * networkClient) CancelSpenderApproval(allowanceAddress string) (types.ContractOutput, error) {
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if allowanceAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("allowance address not set")
+	}
+
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKey(allowanceAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid allowance address: %w", err)
+	}
+
+	contractVersion := tokenV1.TOKEN_CONTRACT_V1
+	method := tokenV1.METHOD_CANCEL_SPENDER_APPROVAL
+	data := map[string]interface{}{
+		"allowance_address": allowanceAddress,
+	}
+
+	contractOutput, err := c.SendTransaction(
+		from,
+		allowanceAddress,
+		contractVersion,
+		method,
+		data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}	
 
 func (c *networkClient) GetToken(tokenAddress string, symbol string, name string) (types.ContractOutput, error) {
 	from := c.publicKey
