@@ -1,16 +1,17 @@
-module github.com/2Finance-Labs/go-client-2finance
-
-// module go-client-2finance
+module go-client-2finance
+// Bypass
+// module github.com/2Finance-Labs/go-client-2finance
 
 go 1.23.0
 
 toolchain go1.23.11
 
-replace gitlab.com/2finance/2finance-network => /home/lmenniti/myrepo/2finance-network
+// Bypass the replace
+// replace gitlab.com/2finance/2finance-network => path/to/2finance-network
 
 require (
 	github.com/google/uuid v1.6.0
-	gitlab.com/2finance/2finance-network v0.0.0-20250821132045-9fc8615e1da0
+	gitlab.com/2finance/2finance-network v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -38,14 +39,14 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	go.uber.org/atomic v1.5.1 // indirect
-	golang.org/x/crypto v0.35.0 // indirect
+	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/lint v0.0.0-20190930215403-16217165b5de // indirect
-	golang.org/x/net v0.36.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/term v0.29.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
-	golang.org/x/tools v0.29.0 // indirect
+	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/term v0.34.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/tools v0.35.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
 	gorm.io/gorm v1.30.0 // indirect
