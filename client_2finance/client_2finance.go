@@ -13,7 +13,6 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
-	"gitlab.com/2finance/2finance-network/blockchain/block"
 	"gitlab.com/2finance/2finance-network/infra/mqtt"
 
 	"strings"

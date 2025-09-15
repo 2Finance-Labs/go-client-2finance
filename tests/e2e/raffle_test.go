@@ -120,37 +120,37 @@ func TestRaffleFlow(t *testing.T) {
 	c.SetPrivateKey(ownerPrizePriv)
 	output, err := c.AddRafflePrize(rf.Address, tok1.Address, amt(2, dec))
 	if err != nil { t.Fatalf("AddRafflePrize: %v", err) }
-	fmt.Printf("AddRafflePrize output: %+v\n", output)
+	// fmt.Printf("AddRafflePrize output: %+v\n", output)
 
 	output, err = c.AddRafflePrize(rf.Address, tok2.Address, amt(3, dec))
 	if err != nil { t.Fatalf("AddRafflePrize: %v", err) }
-	fmt.Printf("AddRafflePrize output: %+v\n", output)
+	// fmt.Printf("AddRafflePrize output: %+v\n", output)
 
 	output, err = c.AddRafflePrize(rf.Address, tok3.Address, amt(4, dec))
 	if err != nil { t.Fatalf("AddRafflePrize: %v", err) }
-	fmt.Printf("AddRafflePrize output: %+v\n", output)
+	// fmt.Printf("AddRafflePrize output: %+v\n", output)
 
 	output, err = c.AddRafflePrize(rf.Address, tok4.Address, amt(5, dec))
 	if err != nil { t.Fatalf("AddRafflePrize: %v", err) }
-	fmt.Printf("AddRafflePrize output: %+v\n", output)
+	// fmt.Printf("AddRafflePrize output: %+v\n", output)
 	var r raffleV1Domain.RafflePrize
 	unmarshalState(t, output.States[0].Object, &r)
 
 	fmt.Println("r.UUID:", r.UUID)
-	outputRemove, err := c.RemoveRafflePrize(rf.Address, r.UUID)
+	_, err = c.RemoveRafflePrize(rf.Address, r.UUID)
 	if err != nil { t.Fatalf("RemoveRafflePrize: %v", err) }
-	fmt.Printf("RemoveRafflePrize output: %+v\n", outputRemove)
+	// fmt.Printf("RemoveRafflePrize output: %+v\n", outputRemove)
 
 	c.SetPrivateKey(merchPriv)
 	// // draw & claim best-effort
 	//TODO NEEDS TO MAKE THIS DETERMINISTIC
 	draw, err := c.DrawRaffle(rf.Address, seedPass+"2")
 	if err != nil { t.Logf("DrawRaffle warning: %v", err) }
-	fmt.Printf("DrawRaffle output: %+v\n", draw)
+	// fmt.Printf("DrawRaffle output: %+v\n", draw)
 	var d []raffleV1Models.RafflePrizeModel
 	unmarshalState(t, draw.States[0].Object, &d)
-	fmt.Printf("DrawRaffle prizes: %+v\n", d)
-	fmt.Printf("DrawRaffle prizes len: %d\n", len(d))
+	// fmt.Printf("DrawRaffle prizes: %+v\n", d)
+	// fmt.Printf("DrawRaffle prizes len: %d\n", len(d))
 
 	//TODO TEST CLAIM
 	// claimRaffle, err := c.ClaimRaffle(rf.Address, bob.PublicKey)
