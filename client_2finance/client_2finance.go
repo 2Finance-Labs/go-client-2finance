@@ -13,7 +13,6 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
-
 	"gitlab.com/2finance/2finance-network/infra/mqtt"
 
 	"strings"
@@ -26,6 +25,8 @@ import (
 type Client2FinanceNetwork interface {
 	// Client
 	SetPrivateKey(privateKey string)
+	GetPrivateKey() string
+	GetPublicKey() string
 	GenerateKeyEd25519() (string, string, error)
 	HandlerRequest(method string, tx interface{}, replyTo string) (outputBytes []byte, err error)
 
@@ -82,7 +83,7 @@ type Client2FinanceNetwork interface {
 		expired_at time.Time) (types.ContractOutput, error)
 	MintToken(to, mintTo, amount string, decimals int) (types.ContractOutput, error)
 	BurnToken(to, amount string, decimals int) (types.ContractOutput, error)
-	TransferToken(to, transferTo, amount string, decimals int) (types.ContractOutput, error)
+	TransferToken(tokenAddress, transferTo, amount string, decimals int) (types.ContractOutput, error)
 	AllowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
 	DisallowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
 	BlockUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
@@ -94,8 +95,6 @@ type Client2FinanceNetwork interface {
 		tagsSocialMedia, tagsCategory, tags map[string]string,
 		creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error)
 	PauseToken(tokenAddress string, pause bool) (types.ContractOutput, error)
-	ApproveSpender(tokenAddress, ownerAddress, spenderAddress, amount string, expiredAt time.Time) (types.ContractOutput, error)
-	TransferFromApproved(tokenAddress, spenderAddress, fromAddress, toAddress, amount string) (types.ContractOutput, error)
 	
 	UnpauseToken(tokenAddress string, unpause bool) (types.ContractOutput, error)
 	UpdateFeeTiers(tokenAddress string, feeTierList []map[string]interface{}) (types.ContractOutput, error)
@@ -248,8 +247,7 @@ type Client2FinanceNetwork interface {
 	AuthorizePayment(address string)(types.ContractOutput, error)
 
 	CapturePayment(
-		address string,
-		amount string) (types.ContractOutput, error)
+		address string) (types.ContractOutput, error)
 
 	VoidPayment(
 		address string) (types.ContractOutput, error)
@@ -299,6 +297,40 @@ type Client2FinanceNetwork interface {
 	GetInviterMember(mgmAddress string, inviterAddress string) (types.ContractOutput, error)
 	GetClaimInviter(mgmAddress string, inviterAddress string) (types.ContractOutput, error)
 	GetClaimInvited(mgmAddress string, invitedAddress string) (types.ContractOutput, error)
+
+
+	AddReview(address, reviewer, reviewee, subjectType, subjectID string, rating int, comment string,
+		tags map[string]string, mediaHashes []string, startAt, expiredAt time.Time, hidden bool,
+	) (types.ContractOutput, error)
+
+	UpdateReview(address, subjectType, subjectID string, rating int, comment string,
+		tags map[string]string, mediaHashes []string, startAt, expiredAt *time.Time,
+	) (types.ContractOutput, error)
+
+	HideReview(address string, hidden bool) (types.ContractOutput, error)
+	
+	VoteHelpful(address, voter string, isHelpful bool) (types.ContractOutput, error)
+	ReportReview(address, reporter, reason string) (types.ContractOutput, error)
+	ModerateReview(address, action, note string) (types.ContractOutput, error)
+
+	GetReview(address string) (types.ContractOutput, error)
+	ListReviews(owner, reviewer, reviewee, subjectType, subjectID string, includeHidden *bool, minRating, maxRating, page, limit int, asc bool) (types.ContractOutput, error)
+
+	AddRaffle(address, owner, tokenAddress, ticketPrice string, maxEntries, maxEntriesPerUser int, startAt, expiredAt time.Time, paused bool, seedCommitHex string, metadata map[string]string) (types.ContractOutput, error)
+	UpdateRaffle(address, tokenAddress, ticketPrice string, maxEntries, maxEntriesPerUser int, startAt, expiredAt *time.Time, seedCommitHex string, metadata map[string]string) (types.ContractOutput, error)
+	PauseRaffle(address string, paused bool) (types.ContractOutput, error)
+	UnpauseRaffle(address string, paused bool) (types.ContractOutput, error)
+	EnterRaffle(address string, tickets int, payTokenAddress string) (types.ContractOutput, error)
+	DrawRaffle(address, revealSeed string) (types.ContractOutput, error)
+	ClaimRaffle(address, winner string) (types.ContractOutput, error)
+	WithdrawRaffle(address, tokenAddress, amount string) (types.ContractOutput, error)
+	AddRafflePrize(raffleAddress string, tokenAddress string, amount string) (types.ContractOutput, error)
+	RemoveRafflePrize(raffleAddress string, uuid string) (types.ContractOutput, error)
+
+	// GetRaffle(address string) (types.ContractOutput, error)
+	// ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
+
+
 }
 
 type networkClient struct {
@@ -337,6 +369,10 @@ func (c *networkClient) GetPrivateKey() string {
 	return c.privateKey
 }
 
+func (c *networkClient) GetPublicKey() string {
+	return c.publicKey
+}
+
 // SendRequest publishes the payload to the MQTT broker
 func (c *networkClient) sendRequest(topic string, payload interface{}) error {
 	data, err := json.Marshal(payload)
@@ -348,7 +384,6 @@ func (c *networkClient) sendRequest(topic string, payload interface{}) error {
 		return fmt.Errorf("publish error: %w", err)
 	}
 
-	log.Printf("✅ Published to topic %s\n", topic)
 	return nil
 }
 
