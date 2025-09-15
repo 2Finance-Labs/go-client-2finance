@@ -14,7 +14,7 @@ func TestPaymentFlow(t *testing.T) {
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
 
-	tok := createBasicToken(t, c, owner.PublicKey, dec)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", dec)
 
 	payer, payerPriv := createWallet(t, c)
@@ -66,7 +66,7 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	owner, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
-	tok := createBasicToken(t, c, owner.PublicKey, dec)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
 	payer, payerPriv := createWallet(t, c)
 	payee, _ := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)

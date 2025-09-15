@@ -13,7 +13,7 @@ func TestCashbackFlow(t *testing.T) {
 	owner, ownerPriv := createWallet(t, c)
 
 	dec := 1
-	tok := createBasicToken(t, c, owner.PublicKey, dec)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, false)
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", dec)
 
 	merchant, _ := createWallet(t, c)

@@ -17,7 +17,7 @@ func TestCouponFlow(t *testing.T) {
 	owner, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
-	tok := createBasicToken(t, c, owner.PublicKey, dec)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
 
 
 	start := time.Now().Add(2 * time.Second)

@@ -17,7 +17,7 @@ func TestTokenFlow(t *testing.T) {
 
 
 	dec := 6
-	tok := createBasicToken(t, c, owner.PublicKey, dec)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
 
 
 	// Mint & Burn
@@ -59,7 +59,7 @@ func TestTokenFlow(t *testing.T) {
 
 
 // createBasicToken creates a minimal token owned by ownerPub.
-func createBasicToken(t *testing.T, c client2f.Client2FinanceNetwork, ownerPub string, decimals int) tokenV1Domain.Token {
+func createBasicToken(t *testing.T, c client2f.Client2FinanceNetwork, ownerPub string, decimals int, requireFee bool) tokenV1Domain.Token {
 	t.Helper()
 	symbol := "2F" + randSuffix(4)
 	name := "2Finance"
@@ -74,9 +74,13 @@ func createBasicToken(t *testing.T, c client2f.Client2FinanceNetwork, ownerPub s
 	creatorWebsite := "https://creator.example"
 	allowUsers := map[string]bool{}
 	blockUsers := map[string]bool{}
-	feeTiers := []map[string]interface{}{
+	feeTiers := []map[string]interface{}{}
+	if requireFee {
+		feeTiers = []map[string]interface{}{
 		{"min_amount": "0", "max_amount": amt(10_000, decimals), "min_volume": "0", "max_volume": amt(100_000, decimals), "fee_bps": 50},
 	}
+	}
+
 	feeAddress := ownerPub
 	freezeAuthorityRevoked := false
 	mintAuthorityRevoked := false
@@ -125,10 +129,3 @@ func createTransfer(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV
 	return tr
 }
 
-
-func approveSpender(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, owner, spender, amount string) {
-	t.Helper()
-	if _, err := c.ApproveSpender(token.Address, owner, spender, amount, time.Now().Add(30*time.Minute)); err != nil {
-		t.Fatalf("ApproveSpender: %v", err)
-	}
-}

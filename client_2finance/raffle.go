@@ -7,8 +7,6 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1/inputs"
-	"sort"
 
 )
 
@@ -227,11 +225,10 @@ func (c *networkClient) EnterRaffle(address string, tickets int, payTokenAddress
 
 
 // DrawRaffle reveals the seed and draws winners (commit-reveal). OnlyOwner/Moderator.
-func (c *networkClient) DrawRaffle(address, revealSeed string, winnerCount int) (types.ContractOutput, error) {
+func (c *networkClient) DrawRaffle(address, revealSeed string) (types.ContractOutput, error) {
 	if address == "" { return types.ContractOutput{}, fmt.Errorf("address not set") }
 	if err := keys.ValidateEDDSAPublicKey(address); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err) }
 	if revealSeed == "" { return types.ContractOutput{}, fmt.Errorf("reveal_seed not set") }
-	if winnerCount <= 0 { return types.ContractOutput{}, fmt.Errorf("winner_count must be > 0") }
 
 	from := c.publicKey
 	if from == "" { return types.ContractOutput{}, fmt.Errorf("from address not set") }
@@ -243,7 +240,6 @@ func (c *networkClient) DrawRaffle(address, revealSeed string, winnerCount int) 
 	data := map[string]interface{}{
 		"address":      address,
 		"reveal_seed":  revealSeed,
-		"winner_count": winnerCount,
 	}
 	return c.SendTransaction(from, to, contractVersion, method, data)
 }
@@ -266,24 +262,6 @@ func (c *networkClient) ClaimRaffle(address, winner string) (types.ContractOutpu
 	return c.SendTransaction(from, to, contractVersion, method, data)
 }
 
-// DepositRaffle moves prize/token funds into the raffle pool.
-func (c *networkClient) DepositRaffle(address, tokenAddress, amount string) (types.ContractOutput, error) {
-	if address == "" { return types.ContractOutput{}, fmt.Errorf("address not set") }
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err) }
-	if tokenAddress == "" { return types.ContractOutput{}, fmt.Errorf("token address not set") }
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err) }
-	if amount == "" { return types.ContractOutput{}, fmt.Errorf("amount not set") }
-
-	from := c.publicKey
-	if from == "" { return types.ContractOutput{}, fmt.Errorf("from address not set") }
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
-
-	to := address
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
-	method := raffleV1.METHOD_DEPOSIT_RAFFLE
-	data := map[string]interface{}{"address": address, "token_address": tokenAddress, "amount": amount}
-	return c.SendTransaction(from, to, contractVersion, method, data)
-}
 
 // WithdrawRaffle withdraws unused/prize funds from the raffle pool.
 func (c *networkClient) WithdrawRaffle(address, tokenAddress, amount string) (types.ContractOutput, error) {
@@ -304,6 +282,40 @@ func (c *networkClient) WithdrawRaffle(address, tokenAddress, amount string) (ty
 	return c.SendTransaction(from, to, contractVersion, method, data)
 }
 
+func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string, amount string) (types.ContractOutput, error) {
+	if raffleAddress == "" { return types.ContractOutput{}, fmt.Errorf("raffle address not set") }
+	if err := keys.ValidateEDDSAPublicKey(raffleAddress); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid raffle address: %w", err) }
+	if tokenAddress == "" { return types.ContractOutput{}, fmt.Errorf("token address not set") }
+	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err) }
+	if amount == "" { return types.ContractOutput{}, fmt.Errorf("amount not set") }
+
+	from := c.publicKey
+	if from == "" { return types.ContractOutput{}, fmt.Errorf("from address not set") }
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
+
+	to := raffleAddress
+	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
+	method := raffleV1.METHOD_ADD_RAFFLE_PRIZE
+	data := map[string]interface{}{"amount": amount, "raffle_address": raffleAddress, "token_address": tokenAddress}
+	return c.SendTransaction(from, to, contractVersion, method, data)
+}
+
+
+func (c *networkClient) RemoveRafflePrize(raffleAddress string, uuid string) (types.ContractOutput, error) {
+	if raffleAddress == "" { return types.ContractOutput{}, fmt.Errorf("raffle address not set") }
+	if err := keys.ValidateEDDSAPublicKey(raffleAddress); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid raffle address: %w", err) }
+	if uuid == "" { return types.ContractOutput{}, fmt.Errorf("uuid not set") }
+
+	from := c.publicKey
+	if from == "" { return types.ContractOutput{}, fmt.Errorf("from address not set") }
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
+
+	to := raffleAddress
+	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
+	method := raffleV1.METHOD_REMOVE_RAFFLE_PRIZE
+	data := map[string]interface{}{"raffle_address": raffleAddress, "uuid": uuid}
+	return c.SendTransaction(from, to, contractVersion, method, data)
+}
 // GetRaffle reads a single raffle state.
 func (c *networkClient) GetRaffle(address string) (types.ContractOutput, error) {
 	from := c.publicKey
@@ -348,95 +360,3 @@ func (c *networkClient) ListRaffles(owner, tokenAddress string, paused *bool, ac
 	return c.GetState(contractVersion, method, data)
 }
 
-
-// UpsertRafflePrize creates or updates a single prize.
-// Contract will transfer delta tokens sponsor<->raffle as needed.
-func (c *networkClient) UpsertRafflePrize(address, tokenAddress, amount string) (types.ContractOutput, error) {
-	if address == "" { return types.ContractOutput{}, fmt.Errorf("address not set") }
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err) }
-	if tokenAddress == "" { return types.ContractOutput{}, fmt.Errorf("token address not set") }
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err) }
-	if amount == "" { return types.ContractOutput{}, fmt.Errorf("amount not set") }
-
-	from := c.publicKey
-	if from == "" { return types.ContractOutput{}, fmt.Errorf("from address not set") }
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
-
-	to := address
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
-	// NOTE: use the constant your dispatcher exposes; adjust name if different.
-	method := raffleV1.METHOD_UPSERT_RAFFLE_PRIZE
-	data := map[string]interface{}{
-		"address":       address,
-		"token_address": tokenAddress,
-		"amount":        amount,
-	}
-	return c.SendTransaction(from, to, contractVersion, method, data)
-}
-
-// RemoveRafflePrize removes a prize and contract refunds tokens from raffle->sponsor.
-func (c *networkClient) RemoveRafflePrize(address, tokenAddress string) (types.ContractOutput, error) {
-	if address == "" { return types.ContractOutput{}, fmt.Errorf("address not set") }
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err) }
-	if tokenAddress == "" { return types.ContractOutput{}, fmt.Errorf("token address not set") }
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err) }
-
-	from := c.publicKey
-	if from == "" { return types.ContractOutput{}, fmt.Errorf("from address not set") }
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
-
-	to := address
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
-	// NOTE: adjust constant name if your dispatcher differs.
-	method := raffleV1.METHOD_REMOVE_RAFFLE_PRIZE
-	data := map[string]interface{}{
-		"address":       address,
-		"token_address": tokenAddress,
-	}
-	return c.SendTransaction(from, to, contractVersion, method, data)
-}
-
-// SetRafflePrizes reconciles the full prize list in bulk.
-// Contract transfers per-token deltas sponsor<->raffle to match the new set.
-func (c *networkClient) SetRafflePrizes(address string, prizes []inputs.PrizeInput) (types.ContractOutput, error) {
-	if address == "" { return types.ContractOutput{}, fmt.Errorf("address not set") }
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err) }
-	if len(prizes) == 0 { return types.ContractOutput{}, fmt.Errorf("prizes list cannot be empty") }
-	for i := range prizes {
-		if prizes[i].TokenAddress == "" {
-			return types.ContractOutput{}, fmt.Errorf("prizes[%d].token_address not set", i)
-		}
-		if err := keys.ValidateEDDSAPublicKey(prizes[i].TokenAddress); err != nil {
-			return types.ContractOutput{}, fmt.Errorf("invalid token address at prizes[%d]: %w", i, err)
-		}
-		if prizes[i].Amount == "" {
-			return types.ContractOutput{}, fmt.Errorf("prizes[%d].amount not set", i)
-		}
-	}
-
-	from := c.publicKey
-	if from == "" { return types.ContractOutput{}, fmt.Errorf("from address not set") }
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
-
-	to := address
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
-	// NOTE: adjust constant name if your dispatcher differs.
-	method := raffleV1.METHOD_SET_RAFFLE_PRIZES
-
-	// optional: sort for deterministic payload order (not strictly required)
-	sort.Slice(prizes, func(i, j int) bool { return prizes[i].TokenAddress < prizes[j].TokenAddress })
-
-	// build payload
-	prz := make([]map[string]interface{}, 0, len(prizes))
-	for _, p := range prizes {
-		prz = append(prz, map[string]interface{}{
-			"token_address": p.TokenAddress,
-			"amount":        p.Amount,
-		})
-	}
-	data := map[string]interface{}{
-		"address": address,
-		"prizes":  prz,
-	}
-	return c.SendTransaction(from, to, contractVersion, method, data)
-}

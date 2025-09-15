@@ -14,7 +14,6 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 	"gitlab.com/2finance/2finance-network/blockchain/block"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1/inputs"
 	"gitlab.com/2finance/2finance-network/infra/mqtt"
 
 	"strings"
@@ -97,9 +96,6 @@ type Client2FinanceNetwork interface {
 		tagsSocialMedia, tagsCategory, tags map[string]string,
 		creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error)
 	PauseToken(tokenAddress string, pause bool) (types.ContractOutput, error)
-	ApproveSpender(tokenAddress, ownerAddress, spenderAddress, amount string, expiredAt time.Time) (types.ContractOutput, error)
-	CancelSpenderApproval(allowanceAddress string) (types.ContractOutput, error)
-	TransferFromApproved(allowanceAddress, toAddress string) (types.ContractOutput, error)
 	
 	UnpauseToken(tokenAddress string, unpause bool) (types.ContractOutput, error)
 	UpdateFeeTiers(tokenAddress string, feeTierList []map[string]interface{}) (types.ContractOutput, error)
@@ -326,16 +322,14 @@ type Client2FinanceNetwork interface {
 	PauseRaffle(address string, paused bool) (types.ContractOutput, error)
 	UnpauseRaffle(address string, paused bool) (types.ContractOutput, error)
 	EnterRaffle(address string, tickets int, payTokenAddress string) (types.ContractOutput, error)
-	DrawRaffle(address, revealSeed string, winnerCount int) (types.ContractOutput, error)
+	DrawRaffle(address, revealSeed string) (types.ContractOutput, error)
 	ClaimRaffle(address, winner string) (types.ContractOutput, error)
-	DepositRaffle(address, tokenAddress, amount string) (types.ContractOutput, error)
 	WithdrawRaffle(address, tokenAddress, amount string) (types.ContractOutput, error)
-	SetRafflePrizes(address string, prizes []inputs.PrizeInput) (types.ContractOutput, error)
-	RemoveRafflePrize(address, tokenAddress string) (types.ContractOutput, error)
-	UpsertRafflePrize(address, tokenAddress, amount string) (types.ContractOutput, error)
+	AddRafflePrize(raffleAddress string, tokenAddress string, amount string) (types.ContractOutput, error)
+	RemoveRafflePrize(raffleAddress string, uuid string) (types.ContractOutput, error)
 
-	GetRaffle(address string) (types.ContractOutput, error)
-	ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
+	// GetRaffle(address string) (types.ContractOutput, error)
+	// ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
 
 
 }

@@ -15,7 +15,7 @@ func TestFaucetFlow(t *testing.T) {
 	owner, ownerPriv := createWallet(t, c)
 
 	dec := 5
-	tok := createBasicToken(t, c, owner.PublicKey, dec)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", tok.Decimals)
 
 	merchant, merchPriv := createWallet(t, c)
