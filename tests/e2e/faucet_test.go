@@ -2,11 +2,13 @@ package e2e_test
 
 
 import (
-"testing"
-"time"
+	"testing"
+	"time"
 
 
-faucetV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1/domain"
+	faucetV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 )
 
 func TestFaucetFlow(t *testing.T) {
@@ -14,6 +16,7 @@ func TestFaucetFlow(t *testing.T) {
 	c := setupClient(t)
 	owner, ownerPriv := createWallet(t, c)
 
+	c.SetPrivateKey(ownerPriv)
 	dec := 5
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", tok.Decimals)
@@ -28,7 +31,14 @@ func TestFaucetFlow(t *testing.T) {
 	exp := time.Now().Add(20 * time.Minute)
 
 	amount := "4"
-	out, err := c.AddFaucet(merchant.PublicKey, tok.Address, start, exp, false, 3, amount, 2*time.Second)
+
+	contractState := models.ContractStateModel{}
+	deployedContract, err := c.DeployContract(faucetV1.FAUCET_CONTRACT_V1, "")
+	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	unmarshalState(t, deployedContract.States[0].Object, &contractState)
+	address := contractState.Address
+
+	out, err := c.AddFaucet(address, merchant.PublicKey, tok.Address, start, exp, false, 3, amount, 2*time.Second)
 	if err != nil { t.Fatalf("AddFaucet: %v", err) }
 	var f faucetV1Domain.Faucet
 	unmarshalState(t, out.States[0].Object, &f)

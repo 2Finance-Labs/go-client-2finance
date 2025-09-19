@@ -5,12 +5,17 @@ import (
 	"testing"
 	"time"
 	cashbackV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
 )
 
 
 func TestCashbackFlow(t *testing.T) {
 	c := setupClient(t)
+	
 	owner, ownerPriv := createWallet(t, c)
+	c.SetPrivateKey(ownerPriv)
+
 
 	dec := 1
 	tok := createBasicToken(t, c, owner.PublicKey, dec, false)
@@ -23,7 +28,14 @@ func TestCashbackFlow(t *testing.T) {
 
 	start := time.Now().Add(2 * time.Second)
 	exp := time.Now().Add(30 * time.Minute)
-	out, err := c.AddCashback(merchant.PublicKey, tok.Address, cashbackV1Domain.PROGRAM_TYPE_FIXED, "250", start, exp, false)
+
+	contractState := models.ContractStateModel{}
+	deployedContract, err := c.DeployContract(cashbackV1.CASHBACK_CONTRACT_V1, "")
+	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	unmarshalState(t, deployedContract.States[0].Object, &contractState)
+	address := contractState.Address
+
+	out, err := c.AddCashback(address, merchant.PublicKey, tok.Address, cashbackV1Domain.PROGRAM_TYPE_FIXED, "250", start, exp, false)
 	if err != nil { t.Fatalf("AddCashback: %v", err) }
 	var cb cashbackV1Domain.Cashback
 	unmarshalState(t, out.States[0].Object, &cb)

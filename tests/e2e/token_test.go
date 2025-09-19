@@ -7,12 +7,15 @@ import (
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
 
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
+    "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
 )
 
 
 func TestTokenFlow(t *testing.T) {
 	c := setupClient(t)
 	owner, ownerPriv := createWallet(t, c)
+
 	c.SetPrivateKey(ownerPriv)
 
 
@@ -77,8 +80,8 @@ func createBasicToken(t *testing.T, c client2f.Client2FinanceNetwork, ownerPub s
 	feeTiers := []map[string]interface{}{}
 	if requireFee {
 		feeTiers = []map[string]interface{}{
-		{"min_amount": "0", "max_amount": amt(10_000, decimals), "min_volume": "0", "max_volume": amt(100_000, decimals), "fee_bps": 50},
-	}
+			{"min_amount": "0", "max_amount": amt(10_000, decimals), "min_volume": "0", "max_volume": amt(100_000, decimals), "fee_bps": 50},
+		}
 	}
 
 	feeAddress := ownerPub
@@ -88,7 +91,13 @@ func createBasicToken(t *testing.T, c client2f.Client2FinanceNetwork, ownerPub s
 	paused := false
 	expiredAt := time.Time{}
 
-	out, err := c.AddToken(symbol, name, decimals, totalSupply, description, ownerPub, image, website, tagsSocial, tagsCat, tags, creator, creatorWebsite, allowUsers, blockUsers, feeTiers, feeAddress, freezeAuthorityRevoked, mintAuthorityRevoked, updateAuthorityRevoked, paused, expiredAt)
+	contractState := models.ContractStateModel{}
+	deployedContract, err := c.DeployContract(tokenV1.TOKEN_CONTRACT_V1, "")
+	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	unmarshalState(t, deployedContract.States[0].Object, &contractState)
+	address := contractState.Address
+
+	out, err := c.AddToken(address, symbol, name, decimals, totalSupply, description, ownerPub, image, website, tagsSocial, tagsCat, tags, creator, creatorWebsite, allowUsers, blockUsers, feeTiers, feeAddress, freezeAuthorityRevoked, mintAuthorityRevoked, updateAuthorityRevoked, paused, expiredAt)
 	if err != nil { t.Fatalf("AddToken: %v", err) }
 	var tok tokenV1Domain.Token
 	unmarshalState(t, out.States[0].Object, &tok)

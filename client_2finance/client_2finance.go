@@ -8,7 +8,7 @@ import (
 
 	"gitlab.com/2finance/2finance-network/blockchain/block"
 	"gitlab.com/2finance/2finance-network/blockchain/contract"
-	"gitlab.com/2finance/2finance-network/blockchain/keys"
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
@@ -28,7 +28,8 @@ type Client2FinanceNetwork interface {
 	GetPrivateKey() string
 	GetPublicKey() string
 	GenerateKeyEd25519() (string, string, error)
-	HandlerRequest(method string, tx interface{}, replyTo string) (outputBytes []byte, err error)
+
+	SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error)
 
 	// CHAIN
 	GetNonce(publicKey string) (uint64, error)
@@ -38,7 +39,12 @@ type Client2FinanceNetwork interface {
 	ListLogs(logType []string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
 		page, limit int,
 		ascending bool) ([]blockchainLog.Log, error)
-	SendTransaction(
+	DeployContract(
+		contractVersion string,
+		contractAddress string,
+	) (types.ContractOutput, error)
+	SignTransaction(from, to, contractVersion, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error)
+	SignAndSendTransaction(
 		from string,
 		to string,
 		contractVersion string,
@@ -54,12 +60,14 @@ type Client2FinanceNetwork interface {
 		ascending bool) ([]block.Block, error)
 
 	// WALLET
-	AddWallet(pubKey string) (types.ContractOutput, error)
+	AddWallet(address, pubKey string) (types.ContractOutput, error)
 	GetWallet(pubKey string) (types.ContractOutput, error)
 	TransferWallet(to, amount string, decimals int) (types.ContractOutput, error)
 
 	// TOKEN
-	AddToken(symbol string,
+	AddToken(
+		address string,
+		symbol string,
 		name string,
 		decimals int,
 		totalSupply string,
@@ -107,6 +115,7 @@ type Client2FinanceNetwork interface {
 
 	// FAUCET
 	AddFaucet(
+		address string,
 		owner string,
 		tokenAddress string,
 		startTime time.Time,
@@ -142,6 +151,7 @@ type Client2FinanceNetwork interface {
 
 	// CASHBACK
 	AddCashback(
+		address string,
         owner string,
         tokenAddress string,
         programType string,
@@ -228,6 +238,7 @@ type Client2FinanceNetwork interface {
 	ListCoupons(owner, tokenAddress, programType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	CreatePayment(
+		address string,
 		tokenAddress string, // ERC-20-like token on your chain
 		orderId string,
 		payer string,
@@ -237,6 +248,7 @@ type Client2FinanceNetwork interface {
 	) (types.ContractOutput, error)
 
 	DirectPay(
+		address string,
 		tokenAddress string,
 		orderId string,
 		payer string,
@@ -263,6 +275,7 @@ type Client2FinanceNetwork interface {
 	ListPayments(payer, payee, orderId, tokenAddress string, status []string, page, limit int, ascending bool) (types.ContractOutput, error)
 	//MEMBER GET MEMBER
 	AddMgM(
+		address string,
 		owner string,
 		tokenAddress string,
 		faucetAddress string,
@@ -329,6 +342,8 @@ type Client2FinanceNetwork interface {
 
 	// GetRaffle(address string) (types.ContractOutput, error)
 	// ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
+
+	ListPrizes(raffleAddress string, page, limit int, asc bool) (types.ContractOutput, error)
 
 
 }
@@ -407,7 +422,7 @@ func (c *networkClient) GetNonce(publicKey string) (uint64, error) {
 	transactionInput := transaction.TransactionInput{
 		From: publicKey,
 	}
-	nonceBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_GET_NONCE, transactionInput, c.replyTo)
+	nonceBytes, err := c.SendTransaction(contract.REQUEST_METHOD_GET_NONCE, transactionInput, c.replyTo)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get nonce: %w", err)
 	}
@@ -450,7 +465,7 @@ func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[s
 		Limit:     limit,
 		Ascending: ascending,
 	}
-	transactionBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_GET_TRANSACTIONS, transactionInput, c.replyTo)
+	transactionBytes, err := c.SendTransaction(contract.REQUEST_METHOD_GET_TRANSACTIONS, transactionInput, c.replyTo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send transaction - List Transactions: %w", err)
 	}
@@ -481,7 +496,7 @@ func (c *networkClient) ListLogs(logType []string, logIndex uint, transactionHas
 		Ascending:       ascending,
 	}
 
-	logsBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_GET_LOGS, logInput, c.replyTo)
+	logsBytes, err := c.SendTransaction(contract.REQUEST_METHOD_GET_LOGS, logInput, c.replyTo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send transaction: - List Logs %w", err)
 	}
@@ -530,7 +545,7 @@ func (c *networkClient) receiveResponse(topic string, handler func([]byte)) erro
 	})
 }
 
-func (c *networkClient) HandlerRequest(method string, tx interface{}, replyTo string) (outputBytes []byte, err error) {
+func (c *networkClient) SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error) {
 
 	// Send the transaction to the network
 	bytes, err := c.sendAndWaitResponse(method, tx, replyTo)
@@ -558,7 +573,7 @@ func (c *networkClient) HandlerRequest(method string, tx interface{}, replyTo st
 }
 
 // SendTransaction builds, signs, and sends a transaction to the blockchain.
-func (c *networkClient) SendTransaction(
+func (c *networkClient) SignAndSendTransaction(
 	from string,
 	to string,
 	contractVersion string,
@@ -584,20 +599,12 @@ func (c *networkClient) SendTransaction(
 
 	nonce++
 
-	// Create new transaction object
-	timestamp := time.Now().UTC()
-	newTx := transaction.NewTransaction(from, to, timestamp, contractVersion, method, data, nonce)
-
-	// Get tx proto or serialized form
-	tx := newTx.Get()
-
-	// Sign the transaction
-	txSigned, err := transaction.SignTransactionHexKey(c.privateKey, tx)
+	txSigned, err := c.SignTransaction(from, to, contractVersion, method, data, nonce)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}
 
-	contractOutputBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_SEND, txSigned, c.replyTo)
+	contractOutputBytes, err := c.SendTransaction(contract.REQUEST_METHOD_SEND, txSigned, c.replyTo)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -629,7 +636,7 @@ func (c *networkClient) GetState(
 	}
 
 	// Use a unique reply topic
-	contractOutputBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_GET_STATE, txInput, c.replyTo)
+	contractOutputBytes, err := c.SendTransaction(contract.REQUEST_METHOD_GET_STATE, txInput, c.replyTo)
 	if err != nil {
 		return types.ContractOutput{}, err
 	}
@@ -657,7 +664,7 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 		Ascending:      ascending,
 	}
 
-	blockBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_GET_BLOCKS, blockParams, c.replyTo)
+	blockBytes, err := c.SendTransaction(contract.REQUEST_METHOD_GET_BLOCKS, blockParams, c.replyTo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send transaction - List Blocks %w", err)
 	}
@@ -668,4 +675,51 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 	}
 
 	return blocks, nil
+}
+
+
+func (c *networkClient) SignTransaction(from, to, contractVersion, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error) {
+	//TODO REMOVE TIMESTAMP
+	timestamp := time.Now().UTC()
+
+	// 1. create new tx
+	newTx := transaction.NewTransaction(from, to, timestamp, contractVersion, method, data, nonce)
+
+	// 2. get serialized form (here it's just the object)
+	tx := newTx.Get()
+
+	// 3. sign
+	signedTx, err := transaction.SignTransactionHexKey(c.privateKey, tx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign transaction: %w", err)
+	}
+	return signedTx, nil
+}
+
+func (c *networkClient) DeployContract(contractVersion, contractAddress string) (types.ContractOutput, error) {
+	if c.publicKey == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address is required")
+	}
+	from := c.publicKey
+	
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if contractVersion == "" {
+		return types.ContractOutput{}, fmt.Errorf("contract version is required")
+	}
+	to := types.DEPLOY_CONTRACT_ADDRESS
+	if contractAddress != "" {
+		to = contractAddress
+	}
+	method := contract.METHOD_DEPLOY_CONTRACT
+	data := map[string]interface{}{
+		"contract_version": contractVersion,
+	}
+	contractOutput, err := c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to deploy contract: %w", err)
+	}
+	return contractOutput, nil
 }

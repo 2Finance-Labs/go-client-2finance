@@ -6,7 +6,7 @@ import (
 	"time"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/contract"
-	"gitlab.com/2finance/2finance-network/blockchain/keys"
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
 
@@ -20,9 +20,18 @@ import (
 // Amount must be sent considering decimals
 // For example, if the amount is 100000, and decimals is 18, the amount in database will be 100000000000000000000000
 // if the amonut is 0,0000000001, and decimals is 18, the amount in database will be 100000000
-func (c *networkClient) AddWallet(pubKey string) (types.ContractOutput, error) {
+func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput, error) {
 	if pubKey == "" {
 		return types.ContractOutput{}, fmt.Errorf("public key not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(pubKey); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid public key: %w", err)
+	}
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("contract address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid contract address: %w", err)
 	}
 
 	from := c.publicKey
@@ -30,16 +39,17 @@ func (c *networkClient) AddWallet(pubKey string) (types.ContractOutput, error) {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
 
-	to := types.DEPLOY_CONTRACT_ADDRESS
+	to := address
 	contractVersion := walletV1.WALLET_CONTRACT_V1
 	method := walletV1.METHOD_ADD_WALLET
 	data := map[string]interface{}{
+		"address":    address,
 		"public_key": pubKey,
+		//TODO REMOVER
 		"amount":     "0",
 	}
 
-
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -125,7 +135,7 @@ func (c *networkClient) TransferWallet(to, amount string, decimals int) (types.C
 	}
 	// Use a unique reply topic
 
-	_, err = c.HandlerRequest(contract.REQUEST_METHOD_SEND, txSigned, c.replyTo)
+	_, err = c.SendTransaction(contract.REQUEST_METHOD_SEND, txSigned, c.replyTo)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}

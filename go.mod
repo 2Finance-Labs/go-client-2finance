@@ -7,11 +7,12 @@ go 1.23.0
 
 toolchain go1.23.11
 
-//replace gitlab.com/2finance/2finance-network => /home/lmenniti/myrepo/2finance-network
+replace gitlab.com/2finance/2finance-network => /home/lmenniti/myrepo/2finance-network
 
 require (
 	github.com/google/uuid v1.6.0
-	gitlab.com/2finance/2finance-network v0.0.0-20250915015647-c50e3520b4f1
+	gitlab.com/2finance/2finance-network v0.0.0-00010101000000-000000000000
+//gitlab.com/2finance/2finance-network v0.0.0-20250915015647-c50e3520b4f1
 )
 
 require (

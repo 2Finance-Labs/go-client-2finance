@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
-	"gitlab.com/2finance/2finance-network/blockchain/keys"
+
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
 
@@ -37,12 +38,11 @@ func (c *networkClient) AddCoupon(
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-
-	// Optional: address can be blank if your infra mints it at deploy time
-	if address != "" {
-		if err := keys.ValidateEDDSAPublicKey(address); err != nil {
-			return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
-		}
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
 	}
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -60,12 +60,10 @@ func (c *networkClient) AddCoupon(
 	if programType == "fixed-amount" && fixedAmount == "" {
 		return types.ContractOutput{}, fmt.Errorf("fixed_amount must be set for program_type=fixed-amount")
 	}
-
 	// Deploy new coupon program
-	to := types.DEPLOY_CONTRACT_ADDRESS
+	to := address
 	contractVersion := couponV1.COUPON_CONTRACT_V1
 	method := couponV1.METHOD_ADD_COUPON
-
 	data := map[string]interface{}{
 		"address":          address,       // optional, depends on your infra
 		"token_address":    tokenAddress,
@@ -82,7 +80,7 @@ func (c *networkClient) AddCoupon(
 		"passcode_hash":    passcodeHash, // sha256(preimage) hex
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 func (c *networkClient) UpdateCoupon(
@@ -142,7 +140,7 @@ func (c *networkClient) UpdateCoupon(
 		"passcode_hash":   passcodeHash,   // "" => keep prior hash
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractOutput, error) {
@@ -173,7 +171,7 @@ func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractO
 		"paused":  pause,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.ContractOutput, error) {
@@ -204,7 +202,7 @@ func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 		"paused":  pause,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // Redeem a coupon for an order amount using a passcode preimage.
@@ -247,7 +245,7 @@ func (c *networkClient) RedeemCoupon(
 		"passcode": passcode,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // ---------------------------------------------

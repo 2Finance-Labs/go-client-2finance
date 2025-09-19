@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1"
-	"gitlab.com/2finance/2finance-network/blockchain/keys"
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"time"
 )
@@ -13,6 +13,7 @@ import (
 // CreatePayment creates a new payment intent (to = DEPLOY address).
 // Server/contract treats the tx sender (c.publicKey) as the owner.
 func (c *networkClient) CreatePayment(
+	address string,
 	tokenAddress string, // ERC-20-like token on your chain
 	orderId string,
 	payer string,
@@ -29,11 +30,12 @@ func (c *networkClient) CreatePayment(
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	publicKey, _, err := keys.GenerateKeyEd25519()
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to generate payment address: %w", err)
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	address := publicKey
+	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -68,7 +70,7 @@ func (c *networkClient) CreatePayment(
 		return types.ContractOutput{}, fmt.Errorf("expired_at not set")
 	}
 
-	to := types.DEPLOY_CONTRACT_ADDRESS
+	to := address
 	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_CREATE_PAYMENT
 
@@ -82,11 +84,12 @@ func (c *networkClient) CreatePayment(
 		"expired_at":   expiredAt,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // DirectPay is a one-step convenience: create + immediate capture.
 func (c *networkClient) DirectPay(
+	address string,
 	tokenAddress string,
 	orderId string,
 	payer string,
@@ -102,12 +105,13 @@ func (c *networkClient) DirectPay(
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	publicKey, _, err := keys.GenerateKeyEd25519()
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to generate payment address: %w", err)
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	address := publicKey
-	
+	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -133,7 +137,7 @@ func (c *networkClient) DirectPay(
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
 
-	to := types.DEPLOY_CONTRACT_ADDRESS
+	to := address
 	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_DIRECT_PAY
 
@@ -146,7 +150,7 @@ func (c *networkClient) DirectPay(
 		"amount":        amount,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // AuthorizePayment places a hold on funds (payer -> payee) for a payment address.
@@ -173,7 +177,7 @@ func (c *networkClient) AuthorizePayment(address string) (types.ContractOutput, 
 		"address": address,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // CapturePayment settles funds (full/partial).
@@ -200,7 +204,7 @@ func (c *networkClient) CapturePayment(address string) (types.ContractOutput, er
 		"address": address,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // RefundPayment returns funds (full/partial) from payee back to payer.
@@ -231,7 +235,7 @@ func (c *networkClient) RefundPayment(address, amount string) (types.ContractOut
 		"amount":  amount,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // VoidPayment releases an authorization hold.
@@ -258,7 +262,7 @@ func (c *networkClient) VoidPayment(address string) (types.ContractOutput, error
 		"address": address,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // PausePayment toggles the paused state to true. OnlyOwner.
@@ -289,7 +293,7 @@ func (c *networkClient) PausePayment(address string, paused bool) (types.Contrac
 		"paused":  paused,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // UnpausePayment toggles the paused state to false. OnlyOwner.
@@ -320,7 +324,7 @@ func (c *networkClient) UnpausePayment(address string, paused bool) (types.Contr
 		"paused":  paused,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // GetPayment reads a single payment state.

@@ -5,6 +5,8 @@ import (
 	"time"
 
 	reviewV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1/domain"
+	reviewV1 "gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 )
 
 
@@ -18,7 +20,15 @@ func TestReviewFlow(t *testing.T) {
 
 	start := time.Now().Add(1 * time.Second)
 	exp := time.Now().Add(24 * time.Hour)
-	added, err := c.AddReview("", reviewer.PublicKey, reviewee.PublicKey, "order", "order-xyz", 5, "Great experience!", map[string]string{"quality":"5"}, []string{"bafy1"}, start, exp, false)
+
+	contractState := models.ContractStateModel{}
+	deployedContract, err := c.DeployContract(reviewV1.REVIEW_CONTRACT_V1, "")
+	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	unmarshalState(t, deployedContract.States[0].Object, &contractState)
+	address := contractState.Address
+
+
+	added, err := c.AddReview(address, reviewer.PublicKey, reviewee.PublicKey, "order", "order-xyz", 5, "Great experience!", map[string]string{"quality":"5"}, []string{"bafy1"}, start, exp, false)
 	if err != nil { t.Fatalf("AddReview: %v", err) }
 	var r reviewV1Domain.Review
 	unmarshalState(t, added.States[0].Object, &r)

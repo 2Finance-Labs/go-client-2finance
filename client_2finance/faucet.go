@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1"
-	"gitlab.com/2finance/2finance-network/blockchain/keys"
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
 
 func (c *networkClient) AddFaucet(
+	address string,
 	owner string,
 	tokenAddress string,
 	startTime time.Time,
@@ -27,6 +28,12 @@ func (c *networkClient) AddFaucet(
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
 	if owner == "" {
 		return types.ContractOutput{}, fmt.Errorf("owner not set")
 	}
@@ -43,11 +50,12 @@ func (c *networkClient) AddFaucet(
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
 
-	to := types.DEPLOY_CONTRACT_ADDRESS
+	to := address
 	contractVersion := faucetV1.FAUCET_CONTRACT_V1
 	method := faucetV1.METHOD_ADD_FAUCET
 
 	data := map[string]interface{}{
+		"address":                 address,
 		"owner":                   owner,
 		"token_address":           tokenAddress,
 		"start_time":              startTime,
@@ -58,7 +66,7 @@ func (c *networkClient) AddFaucet(
 		"claim_interval_duration": claimIntervalDuration,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -109,7 +117,7 @@ func (c *networkClient) UpdateFaucet(
 		"last_claim_by_user":      lastClaimByUser,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -156,7 +164,7 @@ func (c *networkClient) PauseFaucet(
 		"paused":  pause,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -203,7 +211,7 @@ func (c *networkClient) UnpauseFaucet(
 		"pause":   pause,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -250,7 +258,7 @@ func (c *networkClient) DepositFunds(address, tokenAddress, amount string) (type
 		"amount":        amount,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -297,7 +305,7 @@ func (c *networkClient) WithdrawFunds(address, tokenAddress, amount string) (typ
 		"amount":        amount,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -340,7 +348,7 @@ func (c *networkClient) UpdateRequestLimitPerUser(address string, requestLimit i
 		"request_limit": requestLimit,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -369,16 +377,14 @@ func (c *networkClient) ClaimFunds(address string) (types.ContractOutput, error)
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-
-	to := address
 	contractVersion := faucetV1.FAUCET_CONTRACT_V1
 	method := faucetV1.METHOD_CLAIM_FUNDS
-
+	to := address
 	data := map[string]interface{}{
 		"address": address,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,

@@ -6,6 +6,8 @@ import (
 	"time"
 
 	paymentV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
+    "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1"
 )
 
 func TestPaymentFlow(t *testing.T) {
@@ -16,6 +18,7 @@ func TestPaymentFlow(t *testing.T) {
 
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", dec)
+
 
 	payer, payerPriv := createWallet(t, c)
 	payee, payeePriv := createWallet(t, c)
@@ -30,7 +33,14 @@ func TestPaymentFlow(t *testing.T) {
 	amount := "10"
 	exp := time.Now().Add(30 * time.Minute)
 
-	created, err := c.CreatePayment(tok.Address, orderID, payer.PublicKey, payee.PublicKey, amount, exp)
+	
+	contractState := models.ContractStateModel{}
+	deployedContract, err := c.DeployContract(paymentV1.PAYMENT_CONTRACT_V1, "")
+	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	unmarshalState(t, deployedContract.States[0].Object, &contractState)
+	address := contractState.Address
+
+	created, err := c.CreatePayment(address, tok.Address, orderID, payer.PublicKey, payee.PublicKey, amount, exp)
 	if err != nil { t.Fatalf("CreatePayment: %v", err) }
 	var pay paymentV1Domain.Payment
 	unmarshalState(t, created.States[0].Object, &pay)
@@ -48,7 +58,13 @@ func TestPaymentFlow(t *testing.T) {
 	_, _ = c.RefundPayment(pay.Address, "10")
 
 	// direct pay (no auth/capture)
-	_, _ = c.DirectPay(tok.Address, orderID+"-direct", payer.PublicKey, payee.PublicKey, amt(2, dec))
+	contractState = models.ContractStateModel{}
+	deployedContract, err = c.DeployContract(paymentV1.PAYMENT_CONTRACT_V1, "")
+	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	unmarshalState(t, deployedContract.States[0].Object, &contractState)
+	address = contractState.Address
+
+	_, _ = c.DirectPay(address, tok.Address, orderID+"-direct", payer.PublicKey, payee.PublicKey, amt(2, dec))
 
 	// pause/unpause by owner/admin (if applicable)
 	c.SetPrivateKey(ownerPriv)
@@ -64,8 +80,10 @@ func TestPaymentFlow(t *testing.T) {
 func TestPaymentAuthVoidFlow(t *testing.T) {
 	c := setupClient(t)
 	owner, ownerPriv := createWallet(t, c)
+
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
+
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
 	payer, payerPriv := createWallet(t, c)
 	payee, _ := createWallet(t, c)
@@ -80,7 +98,15 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	orderID := fmt.Sprintf("order-%d-void", time.Now().Unix())
 	c.SetPrivateKey(payerPriv)
 	amount := "10"
-	created, err := c.CreatePayment(tok.Address, orderID, payer.PublicKey, payee.PublicKey, amount, time.Now().Add(10*time.Minute))
+
+
+	contractState := models.ContractStateModel{}
+	deployedContract, err := c.DeployContract(paymentV1.PAYMENT_CONTRACT_V1, "")
+	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	unmarshalState(t, deployedContract.States[0].Object, &contractState)
+	address := contractState.Address
+
+	created, err := c.CreatePayment(address, tok.Address, orderID, payer.PublicKey, payee.PublicKey, amount, time.Now().Add(10*time.Minute))
 	if err != nil { t.Fatalf("CreatePayment: %v", err) }
 	var pay paymentV1Domain.Payment
 	unmarshalState(t, created.States[0].Object, &pay)

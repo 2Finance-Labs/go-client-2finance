@@ -9,6 +9,8 @@ import (
 
 
 	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
+	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 )
 
 
@@ -25,8 +27,13 @@ func TestCouponFlow(t *testing.T) {
 	raw := sha256.Sum256([]byte("e2e-passcode"))
 	pcHash := hex.EncodeToString(raw[:])
 
+	contractState := models.ContractStateModel{}
+	deployedContract, err := c.DeployContract(couponV1.COUPON_CONTRACT_V1, "")
+	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	unmarshalState(t, deployedContract.States[0].Object, &contractState)
+	address := contractState.Address
 
-	out, err := c.AddCoupon("", tok.Address, couponV1Domain.DISCOUNT_TYPE_PERCENTAGE, "1000", "", "", start, exp, false, true, 100, 5, pcHash)
+	out, err := c.AddCoupon(address, tok.Address, couponV1Domain.DISCOUNT_TYPE_PERCENTAGE, "1000", "", "", start, exp, false, true, 100, 5, pcHash)
 	if err != nil { t.Fatalf("AddCoupon: %v", err) }
 	var cp couponV1Domain.Coupon
 	unmarshalState(t, out.States[0].Object, &cp)

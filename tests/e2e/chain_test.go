@@ -11,7 +11,6 @@ func TestChainBasics(t *testing.T) {
 	c := setupClient(t)
 	w, _ := createWallet(t, c)
 
-
 	if got, err := c.GetWallet(w.PublicKey); err != nil {
 	t.Fatalf("GetWallet: %v", err)
 	} else {
