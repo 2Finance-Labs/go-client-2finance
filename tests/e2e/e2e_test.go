@@ -65,7 +65,7 @@ func waitUntil(t *testing.T, d time.Duration, pred func() bool) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), d)
 	defer cancel()
-	tick := time.NewTicker(250 * time.Millisecond)
+	tick := time.NewTicker(20 * time.Millisecond)
 	defer tick.Stop()
 	for {
 		select {

@@ -1,19 +1,21 @@
 package client_2finance
 
 import (
-	"gitlab.com/2finance/2finance-network/blockchain/keys"
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
+	"gitlab.com/2finance/2finance-network/blockchain/handler"
 	"fmt"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"time"
 	"encoding/json"
 )
 
-func (c *networkClient) AddToken(symbol string, 
+func (c *networkClient) AddToken(
+		address string,
+		symbol string, 
 		name string, 
 		decimals int, 
 		totalSupply string, 
@@ -86,10 +88,11 @@ func (c *networkClient) AddToken(symbol string,
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	to := types.DEPLOY_CONTRACT_ADDRESS
+	to := address
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_ADD_TOKEN
 	data := map[string]interface{}{
+		"address":               address,
 		"symbol":                symbol,
 		"name":                  name,
 		"decimals":              decimals,
@@ -114,30 +117,14 @@ func (c *networkClient) AddToken(symbol string,
 		"expired_at":           expired_at,
 	}
 
-	timestamp := time.Now().UTC()
-	
-	nonce, err := c.GetNonce(from)
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to get nonce: %w", err)
-	}
-	nonce += 1
-	
-	newTx := transaction.NewTransaction(from, to, timestamp, contractVersion, method, data, nonce)
-	tx := newTx.Get()
-	// Sign the transaction
-	txSigned, err := transaction.SignTransactionHexKey(c.privateKey, tx)
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
-	}
-
-	contractOutputBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_SEND, txSigned, c.replyTo)
+	contractOutput, err := c.SignAndSendTransaction(
+		from,
+		to,
+		contractVersion,
+		method,
+		data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
-	}
-
-	var contractOutput types.ContractOutput
-	if err := json.Unmarshal(contractOutputBytes, &contractOutput); err != nil {
-		return types.ContractOutput{},fmt.Errorf("failed to unmarshal contract output: %w", err)
 	}
 
 	return contractOutput, nil
@@ -194,7 +181,7 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int) (type
 		"amount":        amount,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -243,7 +230,7 @@ func (c *networkClient) BurnToken(to, amount string, decimals int) (types.Contra
 		"amount":        amount,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -302,7 +289,7 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 		"amount":        amount,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,
@@ -348,7 +335,7 @@ func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (
 		"allow_users": users,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,
@@ -395,7 +382,7 @@ func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool
 		"allow_users": users,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,
@@ -441,7 +428,7 @@ func (c *networkClient) BlockUsers(tokenAddress string, users map[string]bool) (
 		"block_users": users,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,
@@ -487,7 +474,7 @@ func (c *networkClient) UnblockUsers(tokenAddress string, users map[string]bool)
 		"block_users": users,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,
@@ -525,7 +512,7 @@ func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 		"freeze_authority_revoked":  revoke,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,
@@ -562,7 +549,7 @@ func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 		"mint_authority_revoked":  revoke,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,
@@ -599,7 +586,7 @@ func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 		"update_authority_revoked":  revoke,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,
@@ -681,7 +668,7 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}
 
-	contractOutputBytes, err := c.HandlerRequest(contract.REQUEST_METHOD_SEND, txSigned, c.replyTo)
+	contractOutputBytes, err := c.SendTransaction(handler.REQUEST_METHOD_SEND, txSigned, c.replyTo)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -720,7 +707,7 @@ func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.Cont
 		"paused":  paused,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,
@@ -760,7 +747,7 @@ func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.Co
 		"paused":  paused,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,
@@ -800,7 +787,7 @@ func (c *networkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[s
 		"fee_tiers_list": feeTiersList,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,
@@ -840,7 +827,7 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 		"fee_address":   feeAddress,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
 		contractVersion,

@@ -4,7 +4,8 @@ package client_2finance
 import (
 	"time"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
-	"gitlab.com/2finance/2finance-network/blockchain/keys"
+
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"fmt"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
@@ -12,6 +13,7 @@ import (
 
 // AddCashBack deploys a new cashback program (to = DEPLOY address).
 func (c *networkClient) AddCashback(
+	address string,
 	owner string,
 	tokenAddress string,
 	programType string,  // "fixed-percentage" | "variable-percentage"
@@ -28,6 +30,14 @@ func (c *networkClient) AddCashback(
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
+
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+
 	if owner == "" {
 		return types.ContractOutput{}, fmt.Errorf("owner not set")
 	}
@@ -47,11 +57,11 @@ func (c *networkClient) AddCashback(
 		return types.ContractOutput{}, fmt.Errorf("percentage not set")
 	}
 
-	to := types.DEPLOY_CONTRACT_ADDRESS
+	to := address
 	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_ADD_CASHBACK
-
 	data := map[string]interface{}{
+		"address":       address,
 		"owner":         owner,
 		"token_address": tokenAddress,
 		"program_type":  programType,
@@ -61,7 +71,7 @@ func (c *networkClient) AddCashback(
 		"paused":        paused,
 	}
 
-	cashback, err := c.SendTransaction(from, to, contractVersion, method, data)
+	cashback, err := c.SignAndSendTransaction(from, to, contractVersion, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to add cashback: %w", err)
 	}
@@ -117,7 +127,7 @@ func (c *networkClient) UpdateCashback(
 		"expired_at":    expiredAt,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // PauseCashBack pauses a cashback program. OnlyOwner.
@@ -149,7 +159,7 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 		"paused":  pause,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // UnpauseCashback unpauses a cashback program. OnlyOwner.
@@ -181,7 +191,7 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 		"paused":  pause,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // DepositCashBack funds the cashback pool (token inferred from state).
@@ -220,7 +230,7 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount strin
 		"amount":  amount,
 	}
 
-	contractOutput, err := c.SendTransaction(from, to, contractVersion, method, data)
+	contractOutput, err := c.SignAndSendTransaction(from, to, contractVersion, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deposit cashback: %w", err)
 	}
@@ -264,7 +274,7 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount stri
 		"token_address": tokenAddress, // token address inferred from state
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // GetCashBack reads a single cashback state.
@@ -373,5 +383,5 @@ func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOut
 		"amount":  amount,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }

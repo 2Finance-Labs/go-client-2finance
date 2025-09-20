@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1"
-	"gitlab.com/2finance/2finance-network/blockchain/keys"
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
 
@@ -69,7 +69,7 @@ func (c *networkClient) AddReview(
 		return types.ContractOutput{}, fmt.Errorf("expired_at not set")
 	}
 
-	to := types.DEPLOY_CONTRACT_ADDRESS
+	to := address
 	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_ADD_REVIEW
 
@@ -88,7 +88,7 @@ func (c *networkClient) AddReview(
 		"hidden":        hidden,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // UpdateReview modifies fields of an existing review.
@@ -145,7 +145,7 @@ func (c *networkClient) UpdateReview(
 		data["expired_at"] = *expiredAt
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // HideReview toggles the hidden state. OnlyOwner.
@@ -173,7 +173,7 @@ func (c *networkClient) HideReview(address string, hidden bool) (types.ContractO
 		"hidden":  hidden,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // VoteHelpful registers an up/down helpful vote for a review.
@@ -208,7 +208,7 @@ func (c *networkClient) VoteHelpful(address, voter string, isHelpful bool) (type
 		"is_helpful": isHelpful,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // ReportReview flags a review with a reason string by a reporter.
@@ -246,7 +246,7 @@ func (c *networkClient) ReportReview(address, reporter, reason string) (types.Co
 		"reason":   reason,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // ModerateReview applies a moderation action (e.g., approve/reject/remove) with an optional note. OnlyModerator/Owner per contract rules.
@@ -278,7 +278,7 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 		"note":    note,
 	}
 
-	return c.SendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
 }
 
 // GetReview retrieves a single review state.

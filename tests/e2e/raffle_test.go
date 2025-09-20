@@ -8,11 +8,14 @@ import (
 
 	raffleV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1/domain"
 	raffleV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1/models"
+	raffleV1 "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 )
 
 func TestRaffleFlow(t *testing.T) {
 	c := setupClient(t)
 	owner, ownerPriv := createWallet(t, c)
+
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
 	tok := createBasicToken(t, c, owner.PublicKey, dec, false)
@@ -28,6 +31,20 @@ func TestRaffleFlow(t *testing.T) {
 	spiderman, spidermanPriv := createWallet(t, c)
 	batman, batmanPriv := createWallet(t, c)
 	wonderwoman, wonderwomanPriv := createWallet(t, c)
+
+	mapOfPubPriv := map[string]string{
+		bob.PublicKey: bobPriv,
+		alice.PublicKey: alicePriv,
+		robert.PublicKey: robertPriv,
+		alfred.PublicKey: alfredPriv,
+		luiz.PublicKey: luizPriv,
+		jorge.PublicKey: jorgePriv,
+		luigui.PublicKey: luiguiPriv,
+		superman.PublicKey: supermanPriv,
+		spiderman.PublicKey: spidermanPriv,
+		batman.PublicKey: batmanPriv,
+		wonderwoman.PublicKey: wonderwomanPriv,
+	}
 	
 	mintAmt := amt(100, dec)
 	c.SetPrivateKey(ownerPriv)
@@ -54,7 +71,13 @@ func TestRaffleFlow(t *testing.T) {
 	commit := seed.CommitSeed(seedPass) // store locally for later reveal
 	meta := map[string]string{"campaign":"e2e"}
 
-	added, err := c.AddRaffle("", merchant.PublicKey, tok.Address, amt(1, dec), 100, 5, start, exp, false, commit, meta)
+	contractState := models.ContractStateModel{}
+	deployedContract, err := c.DeployContract(raffleV1.RAFFLE_CONTRACT_V1, "")
+	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	unmarshalState(t, deployedContract.States[0].Object, &contractState)
+	address := contractState.Address
+
+	added, err := c.AddRaffle(address, merchant.PublicKey, tok.Address, amt(1, dec), 100, 5, start, exp, false, commit, meta)
 	if err != nil { t.Fatalf("AddRaffle: %v", err) }
 	var rf raffleV1Domain.Raffle
 	unmarshalState(t, added.States[0].Object, &rf)
@@ -77,7 +100,7 @@ func TestRaffleFlow(t *testing.T) {
 	if err != nil { t.Fatalf("UnpauseRaffle: %v", err) }
 
 	// wait until original start and enter
-	waitUntil(t, 15*time.Second, func() bool { return time.Now().After(start) })
+	waitUntil(t, 10*time.Second, func() bool { return time.Now().After(start) })
 	
 	c.SetPrivateKey(bobPriv)
 	if _, err := c.EnterRaffle(rf.Address, 2, tok.Address); err != nil { t.Fatalf("EnterRaffle: %v", err) }
@@ -120,53 +143,67 @@ func TestRaffleFlow(t *testing.T) {
 	c.SetPrivateKey(ownerPrizePriv)
 	output, err := c.AddRafflePrize(rf.Address, tok1.Address, amt(2, dec))
 	if err != nil { t.Fatalf("AddRafflePrize: %v", err) }
-	// fmt.Printf("AddRafflePrize output: %+v\n", output)
 
 	output, err = c.AddRafflePrize(rf.Address, tok2.Address, amt(3, dec))
 	if err != nil { t.Fatalf("AddRafflePrize: %v", err) }
-	// fmt.Printf("AddRafflePrize output: %+v\n", output)
 
 	output, err = c.AddRafflePrize(rf.Address, tok3.Address, amt(4, dec))
 	if err != nil { t.Fatalf("AddRafflePrize: %v", err) }
-	// fmt.Printf("AddRafflePrize output: %+v\n", output)
 
 	output, err = c.AddRafflePrize(rf.Address, tok4.Address, amt(5, dec))
 	if err != nil { t.Fatalf("AddRafflePrize: %v", err) }
-	// fmt.Printf("AddRafflePrize output: %+v\n", output)
+
 	var r raffleV1Domain.RafflePrize
 	unmarshalState(t, output.States[0].Object, &r)
 
 	fmt.Println("r.UUID:", r.UUID)
 	_, err = c.RemoveRafflePrize(rf.Address, r.UUID)
 	if err != nil { t.Fatalf("RemoveRafflePrize: %v", err) }
-	// fmt.Printf("RemoveRafflePrize output: %+v\n", outputRemove)
 
 	c.SetPrivateKey(merchPriv)
-	// // draw & claim best-effort
 	//TODO NEEDS TO MAKE THIS DETERMINISTIC
 	draw, err := c.DrawRaffle(rf.Address, seedPass+"2")
 	if err != nil { t.Logf("DrawRaffle warning: %v", err) }
 	// fmt.Printf("DrawRaffle output: %+v\n", draw)
 	var d []raffleV1Models.RafflePrizeModel
 	unmarshalState(t, draw.States[0].Object, &d)
-	// fmt.Printf("DrawRaffle prizes: %+v\n", d)
-	// fmt.Printf("DrawRaffle prizes len: %d\n", len(d))
 
-	//TODO TEST CLAIM
-	// claimRaffle, err := c.ClaimRaffle(rf.Address, bob.PublicKey)
-	// if err != nil { t.Logf("ClaimRaffle warning: %v", err) }
-	// fmt.Printf("ClaimRaffle output: %+v\n", claimRaffle)
+	listPrizes, err := c.ListPrizes(rf.Address, 1, 10, true)
+	if err != nil { t.Fatalf("ListPrizes: %v", err) }
+
+	unmarshalState(t, listPrizes.States[0].Object, &d)
+	for index, prize := range d {
+		fmt.Printf("Prize: %+v\n", prize)
+		if prize.Winner != "" {
+			c.SetPrivateKey(mapOfPubPriv[prize.Winner])
+			claim, err := c.ClaimRaffle(rf.Address, prize.Winner)
+			if err != nil { t.Logf("ClaimRaffle warning: %v", err) }
+			fmt.Printf("ClaimRaffle output: %+v\n", claim)
+		}
+		if len(d) == index + 1 {
+			c.SetPrivateKey(mapOfPubPriv[prize.Winner])
+			_, err := c.ClaimRaffle(rf.Address, prize.Winner)
+			if err == nil { t.Logf("A error must not be nil: %v", err) }
+		}
+	}
+
+	listPrizesClaimed, err := c.ListPrizes(rf.Address, 1, 10, true)
+	if err != nil { t.Fatalf("ListPrizes: %v", err) }
+	
+	unmarshalState(t, listPrizesClaimed.States[0].Object, &d)
+	for _, prize := range d {
+		fmt.Printf("Prize: %+v\n", prize)
+		if !prize.Claimed {
+			t.Fatalf("Prize must be already claimed: %+v\n", prize)
+		}
+	}
 
 	// // withdraw leftovers
-	// _, err = c.WithdrawRaffle(rf.Address, tok.Address, amt(1, dec))
-	// if err != nil { t.Fatalf("WithdrawRaffle: %v", err) }
+	c.SetPrivateKey(merchPriv)
+	_, err = c.WithdrawRaffle(rf.Address, tok.Address, amt(1, dec))
+	if err != nil { t.Fatalf("WithdrawRaffle: %v", err) }
 
 	// // getters
 	// if _, err := c.GetRaffle(rf.Address); err != nil { t.Fatalf("GetRaffle: %v", err) }
 	// if _, err := c.ListRaffles(merchant.PublicKey, tok.Address, nil, nil, 1, 10, true); err != nil { t.Fatalf("ListRaffles: %v", err) }
-
-	// // state decode example
-	// stOut, _ := c.GetRaffle(rf.Address)
-	// var st raffleV1Models.RaffleStateModel
-	// unmarshalState(t, stOut.States[0].Object, &st)
 }

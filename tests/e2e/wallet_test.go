@@ -4,6 +4,8 @@ package e2e_test
 import (
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	walletDomain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 	"testing"
 )
 
@@ -13,7 +15,12 @@ func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (walletDomain.
 	pub, priv := genKey(t, c)
 	c.SetPrivateKey(priv)
 
-	wOut, err := c.AddWallet(pub)
+	contractState := models.ContractStateModel{}
+	deployedContract, err := c.DeployContract(walletV1.WALLET_CONTRACT_V1, "")
+	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	unmarshalState(t, deployedContract.States[0].Object, &contractState)	
+
+	wOut, err := c.AddWallet(contractState.Address, pub)
 	if err != nil { t.Fatalf("AddWallet: %v", err) }
 	var w walletDomain.Wallet
 	unmarshalState(t, wOut.States[0].Object, &w)

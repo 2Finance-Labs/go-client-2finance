@@ -3,13 +3,13 @@ package client_2finance
 import (
 	"fmt"
 	"time"
-
-	"gitlab.com/2finance/2finance-network/blockchain/contract/memberGetMemberV1"
-	"gitlab.com/2finance/2finance-network/blockchain/keys"
+	memberGetMemberV1 "gitlab.com/2finance/2finance-network/blockchain/contract/memberGetMemberV1"
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
 
 func (c *networkClient) AddMgM(
+	address string,
 	owner string,
 	tokenAddress string,
 	faucetAddress string,
@@ -34,6 +34,12 @@ func (c *networkClient) AddMgM(
 	if faucetAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("faucet address not set")
 	}
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
 	if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
@@ -44,11 +50,11 @@ func (c *networkClient) AddMgM(
 		return types.ContractOutput{}, fmt.Errorf("invalid faucet address: %w", err)
 	}
 
-	to := types.DEPLOY_CONTRACT_ADDRESS
+	to := address
 	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_ADD_MGM
-
 	data := map[string]interface{}{
+		"address":       address,
 		"owner":          owner,
 		"token_address":  tokenAddress,
 		"faucet_address": faucetAddress,
@@ -58,7 +64,7 @@ func (c *networkClient) AddMgM(
 		"paused":         paused,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -100,7 +106,7 @@ func (c *networkClient) UpdateMgM(
 		"expire_at":   expireAt,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -143,7 +149,7 @@ func (c *networkClient) PauseMgM(mgmAddress string, pause bool) (types.ContractO
 		"paused":      pause,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -186,7 +192,7 @@ func (c *networkClient) UnpauseMgM(mgmAddress string, pause bool) (types.Contrac
 		"paused":      pause,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -232,7 +238,7 @@ func (c *networkClient) DepositMgM(
 		"amount":      amount,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -278,7 +284,7 @@ func (c *networkClient) WithdrawMgM(
 		"amount":      amount,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -321,7 +327,7 @@ func (c *networkClient) AddInviterMember(mgmAddress string, password string) (ty
 		"password":    password,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -363,7 +369,7 @@ func (c *networkClient) UpdateInviterPassword(mgmAddress string, newPassword str
 	}
 
 	to := mgmAddress
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -406,7 +412,7 @@ func (c *networkClient) DeleteInviterMember(mgmAddress string, password string) 
 		"password":    password,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
@@ -450,7 +456,7 @@ func (c *networkClient) ClaimReward(mgmAddress, password, invitedAddress string)
 		"invited_address": invitedAddress,
 	}
 
-	contractOutput, err := c.SendTransaction(
+	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
 		contractVersion,
