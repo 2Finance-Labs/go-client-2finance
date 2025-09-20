@@ -4,9 +4,9 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
+	"gitlab.com/2finance/2finance-network/blockchain/handler"
 	"fmt"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"time"
@@ -668,7 +668,7 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}
 
-	contractOutputBytes, err := c.SendTransaction(contract.REQUEST_METHOD_SEND, txSigned, c.replyTo)
+	contractOutputBytes, err := c.SendTransaction(handler.REQUEST_METHOD_SEND, txSigned, c.replyTo)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}

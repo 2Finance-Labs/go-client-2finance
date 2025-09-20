@@ -100,7 +100,7 @@ func TestRaffleFlow(t *testing.T) {
 	if err != nil { t.Fatalf("UnpauseRaffle: %v", err) }
 
 	// wait until original start and enter
-	waitUntil(t, 15*time.Second, func() bool { return time.Now().After(start) })
+	waitUntil(t, 10*time.Second, func() bool { return time.Now().After(start) })
 	
 	c.SetPrivateKey(bobPriv)
 	if _, err := c.EnterRaffle(rf.Address, 2, tok.Address); err != nil { t.Fatalf("EnterRaffle: %v", err) }

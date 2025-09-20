@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"gitlab.com/2finance/2finance-network/blockchain/block"
-	"gitlab.com/2finance/2finance-network/blockchain/contract"
+	"gitlab.com/2finance/2finance-network/blockchain/handler"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
@@ -422,7 +423,7 @@ func (c *networkClient) GetNonce(publicKey string) (uint64, error) {
 	transactionInput := transaction.TransactionInput{
 		From: publicKey,
 	}
-	nonceBytes, err := c.SendTransaction(contract.REQUEST_METHOD_GET_NONCE, transactionInput, c.replyTo)
+	nonceBytes, err := c.SendTransaction(handler.REQUEST_METHOD_GET_NONCE, transactionInput, c.replyTo)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get nonce: %w", err)
 	}
@@ -465,7 +466,7 @@ func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[s
 		Limit:     limit,
 		Ascending: ascending,
 	}
-	transactionBytes, err := c.SendTransaction(contract.REQUEST_METHOD_GET_TRANSACTIONS, transactionInput, c.replyTo)
+	transactionBytes, err := c.SendTransaction(handler.REQUEST_METHOD_GET_TRANSACTIONS, transactionInput, c.replyTo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send transaction - List Transactions: %w", err)
 	}
@@ -496,7 +497,7 @@ func (c *networkClient) ListLogs(logType []string, logIndex uint, transactionHas
 		Ascending:       ascending,
 	}
 
-	logsBytes, err := c.SendTransaction(contract.REQUEST_METHOD_GET_LOGS, logInput, c.replyTo)
+	logsBytes, err := c.SendTransaction(handler.REQUEST_METHOD_GET_LOGS, logInput, c.replyTo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send transaction: - List Logs %w", err)
 	}
@@ -604,7 +605,7 @@ func (c *networkClient) SignAndSendTransaction(
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}
 
-	contractOutputBytes, err := c.SendTransaction(contract.REQUEST_METHOD_SEND, txSigned, c.replyTo)
+	contractOutputBytes, err := c.SendTransaction(handler.REQUEST_METHOD_SEND, txSigned, c.replyTo)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -636,7 +637,7 @@ func (c *networkClient) GetState(
 	}
 
 	// Use a unique reply topic
-	contractOutputBytes, err := c.SendTransaction(contract.REQUEST_METHOD_GET_STATE, txInput, c.replyTo)
+	contractOutputBytes, err := c.SendTransaction(handler.REQUEST_METHOD_GET_STATE, txInput, c.replyTo)
 	if err != nil {
 		return types.ContractOutput{}, err
 	}
@@ -664,7 +665,7 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 		Ascending:      ascending,
 	}
 
-	blockBytes, err := c.SendTransaction(contract.REQUEST_METHOD_GET_BLOCKS, blockParams, c.replyTo)
+	blockBytes, err := c.SendTransaction(handler.REQUEST_METHOD_GET_BLOCKS, blockParams, c.replyTo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send transaction - List Blocks %w", err)
 	}
@@ -713,7 +714,7 @@ func (c *networkClient) DeployContract(contractVersion, contractAddress string) 
 	if contractAddress != "" {
 		to = contractAddress
 	}
-	method := contract.METHOD_DEPLOY_CONTRACT
+	method := contractV1.METHOD_DEPLOY_CONTRACT
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
 	}
