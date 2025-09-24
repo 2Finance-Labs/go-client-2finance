@@ -215,8 +215,7 @@ func Test_EndToEnd_MinimalFlow(t *testing.T) {
 
 // (Optional) tiny compile-time/proto sanity check for Transaction serialization
 func Test_TransactionRoundtrip_Sanity(t *testing.T) {
-	now := time.Now().UTC()
 	pub, _ := genKey(t, setupClient(t))
-	tx := transaction.NewTransaction(pub, pub, now, "walletV1", "echo", utils.JSONB(map[string]interface{}{"k": "v"}), 7)
+	tx := transaction.NewTransaction(pub, pub, "walletV1", "echo", utils.JSONB(map[string]interface{}{"k": "v"}), 7)
 	_ = tx.Get() // ensure .Get() is accessible
 }

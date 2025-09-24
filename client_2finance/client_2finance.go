@@ -680,11 +680,8 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 
 
 func (c *networkClient) SignTransaction(from, to, contractVersion, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error) {
-	//TODO REMOVE TIMESTAMP
-	timestamp := time.Now().UTC()
-
 	// 1. create new tx
-	newTx := transaction.NewTransaction(from, to, timestamp, contractVersion, method, data, nonce)
+	newTx := transaction.NewTransaction(from, to, contractVersion, method, data, nonce)
 
 	// 2. get serialized form (here it's just the object)
 	tx := newTx.Get()

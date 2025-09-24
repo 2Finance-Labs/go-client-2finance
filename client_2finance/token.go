@@ -654,13 +654,12 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 		"creator_website":        creatorWebsite,
 		"expired_at":           expired_at,
 	}
-	timestamp := time.Now().UTC()
 	nonce, err := c.GetNonce(from)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get nonce: %w", err)
 	}
 	nonce += 1
-	newTx := transaction.NewTransaction(from, tokenAddress, timestamp, contractVersion, method, data, nonce)
+	newTx := transaction.NewTransaction(from, tokenAddress, contractVersion, method, data, nonce)
 	tx := newTx.Get()
 	// Sign the transaction
 	txSigned, err := transaction.SignTransactionHexKey(c.privateKey, tx)

@@ -3,7 +3,6 @@ package client_2finance
 import (
 
 	"fmt"
-	"time"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/handler"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
@@ -119,15 +118,13 @@ func (c *networkClient) TransferWallet(to, amount string, decimals int) (types.C
 		"amount":  amount,
 	}
 
-	timestamp := time.Now().UTC()
-
 	nonce, err := c.GetNonce(c.publicKey)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get nonce: %w", err)
 	}
 	nonce += 1
 	// Sign the transaction
-	newTx := transaction.NewTransaction(c.publicKey, to, timestamp, contractVersion, method, data, nonce)
+	newTx := transaction.NewTransaction(c.publicKey, to, contractVersion, method, data, nonce)
 	tx := newTx.Get()
 	txSigned, err := transaction.SignTransactionHexKey(c.privateKey, tx)
 	if err != nil {
