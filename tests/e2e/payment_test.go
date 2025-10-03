@@ -68,8 +68,10 @@ func TestPaymentFlow(t *testing.T) {
 
 	// pause/unpause by owner/admin (if applicable)
 	c.SetPrivateKey(ownerPriv)
-	_, _ = c.PausePayment(pay.Address, true)
-	_, _ = c.UnpausePayment(pay.Address, false)
+	_, err = c.PausePayment(pay.Address, true)
+	if err != nil { t.Fatalf("PausePayment: %v", err) }
+	_, err = c.UnpausePayment(pay.Address, false)
+	if err != nil { t.Fatalf("UnpausePayment: %v", err) }
 
 	// getters
 	if _, err := c.GetPayment(pay.Address); err != nil { t.Fatalf("GetPayment: %v", err) }
@@ -118,7 +120,7 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 
 	c.SetPrivateKey(payerPriv)
 	if _, err := c.AuthorizePayment(pay.Address); err != nil { t.Fatalf("AuthorizePayment: %v", err) }
-	if _, err := c.VoidPayment(pay.Address); err != nil { t.Logf("VoidPayment warning: %v", err) }
+	if _, err := c.VoidPayment(pay.Address); err != nil { t.Fatalf("VoidPayment warning: %v", err) }
 }
 
 // func TestPaymentStatusQueries(t *testing.T) {

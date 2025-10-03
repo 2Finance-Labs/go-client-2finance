@@ -6,11 +6,8 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
-	"gitlab.com/2finance/2finance-network/blockchain/handler"
 	"fmt"
-	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"time"
-	"encoding/json"
 )
 
 func (c *networkClient) AddToken(
@@ -654,27 +651,18 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 		"creator_website":        creatorWebsite,
 		"expired_at":           expired_at,
 	}
-	nonce, err := c.GetNonce(from)
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to get nonce: %w", err)
-	}
-	nonce += 1
-	newTx := transaction.NewTransaction(from, tokenAddress, contractVersion, method, data, nonce)
-	tx := newTx.Get()
-	// Sign the transaction
-	txSigned, err := transaction.SignTransactionHexKey(c.privateKey, tx)
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
-	}
-
-	contractOutputBytes, err := c.SendTransaction(handler.REQUEST_METHOD_SEND, txSigned, c.replyTo)
+	
+	contractOutput, err := c.SignAndSendTransaction(
+		from,
+		tokenAddress,
+		contractVersion,
+		method,
+		data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
-	var contractOutput types.ContractOutput
-	if err := json.Unmarshal(contractOutputBytes, &contractOutput); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to unmarshal contract output: %w", err)
-	}
+	
+
 	return contractOutput, nil
 }
 

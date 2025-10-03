@@ -56,7 +56,7 @@ func TestCashbackFlow(t *testing.T) {
 	if err != nil { t.Fatalf("AllowUsers: %v", err) }
 
 	c.SetPrivateKey(userPriv)
-	if _, err := c.ClaimCashback(cb.Address, amt(100, dec)); err != nil { t.Logf("ClaimCashback warning: %v", err) }
+	if _, err := c.ClaimCashback(cb.Address, amt(100, dec)); err != nil { t.Fatalf("ClaimCashback warning: %v", err) }
 
 
 	// getters

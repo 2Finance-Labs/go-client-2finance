@@ -3,8 +3,6 @@ package client_2finance
 import (
 
 	"fmt"
-	"gitlab.com/2finance/2finance-network/blockchain/transaction"
-	"gitlab.com/2finance/2finance-network/blockchain/handler"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
@@ -118,26 +116,16 @@ func (c *networkClient) TransferWallet(to, amount string, decimals int) (types.C
 		"amount":  amount,
 	}
 
-	nonce, err := c.GetNonce(c.publicKey)
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to get nonce: %w", err)
-	}
-	nonce += 1
-	// Sign the transaction
-	newTx := transaction.NewTransaction(c.publicKey, to, contractVersion, method, data, nonce)
-	tx := newTx.Get()
-	txSigned, err := transaction.SignTransactionHexKey(c.privateKey, tx)
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
-	}
-	// Use a unique reply topic
-
-	_, err = c.SendTransaction(handler.REQUEST_METHOD_SEND, txSigned, c.replyTo)
+	contractOutput, err := c.SignAndSendTransaction(
+		c.publicKey,
+		to,
+		contractVersion,
+		method,
+		data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
 	
-	var transferOutput types.ContractOutput
 	//TODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 	// transferOutput.Transfer = contractOutput.States[0].Object.(*domain.Transfer)
 	// transferOutput.EventTransfer = &contractOutput.Events[0]
@@ -151,5 +139,5 @@ func (c *networkClient) TransferWallet(to, amount string, decimals int) (types.C
 	// transferOutput.EventReceiver = &contractOutput.Events[2]
 	// transferOutput.LogTypeReceiver = &contractOutput.LogTypes[2]
 
-	return transferOutput, nil
+	return contractOutput, nil
 }

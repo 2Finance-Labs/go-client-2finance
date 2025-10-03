@@ -114,10 +114,10 @@ func TestMgMFlow(t *testing.T) {
 
 	// getters — should work even if business state is minimal
 	if _, err := c.GetMgM(mgmAddress); err != nil {
-		t.Logf("GetMgM warning: %v", err)
+		t.Fatalf("GetMgM warning: %v", err)
 	}
 	if _, err := c.GetInviterMember(mgmAddress, inviter.PublicKey); err != nil {
-		t.Logf("GetInviterMember warning: %v", err)
+		t.Fatalf("GetInviterMember warning: %v", err)
 	}
 
 	// Wait until the original start time to allow actions that require activation
@@ -125,19 +125,19 @@ func TestMgMFlow(t *testing.T) {
 
 	// Best-effort claim reward (may depend on backend rules)
 	if _, err := c.ClaimReward(mgmAddress, "pw2", invited.PublicKey); err != nil {
-		t.Logf("ClaimReward warning: %v", err)
+		t.Fatalf("ClaimReward warning: %v", err)
 	}
 
 	// Inspect claim snapshots (best effort)
 	if _, err := c.GetClaimInviter(mgmAddress, inviter.PublicKey); err != nil {
-		t.Logf("GetClaimInviter warning: %v", err)
+		t.Fatalf("GetClaimInviter warning: %v", err)
 	}
 	if _, err := c.GetClaimInvited(mgmAddress, invited.PublicKey); err != nil {
-		t.Logf("GetClaimInvited warning: %v", err)
+		t.Fatalf("GetClaimInvited warning: %v", err)
 	}
 
 	// Optional: delete inviter (cleanup path)
 	if _, err := c.DeleteInviterMember(mgmAddress, inviter.PublicKey); err != nil {
-		t.Logf("DeleteInviterMember warning: %v", err)
+		t.Fatalf("DeleteInviterMember warning: %v", err)
 	}
 }

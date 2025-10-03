@@ -63,13 +63,15 @@ func TestFaucetFlow(t *testing.T) {
 	_, err = c.AllowUsers(tok.Address, map[string]bool{user.PublicKey: true})
 	if err != nil { t.Fatalf("AllowUsers: %v", err) }
 	c.SetPrivateKey(userPriv)
-	if _, err := c.ClaimFunds(f.Address); err != nil { t.Logf("ClaimFunds warning: %v", err) }
+	if _, err := c.ClaimFunds(f.Address); err != nil { t.Fatalf("ClaimFunds warning: %v", err) }
 	
 
 	// pause/unpause & getters
 	c.SetPrivateKey(merchPriv)
-	_, _ = c.PauseFaucet(f.Address, true)
-	_, _ = c.UnpauseFaucet(f.Address, false)
+	_, err = c.PauseFaucet(f.Address, true)
+	if err != nil { t.Fatalf("PauseFaucet: %v", err) }
+	_, err = c.UnpauseFaucet(f.Address, false)
+	if err != nil { t.Fatalf("UnpauseFaucet: %v", err) }
 	if _, err := c.GetFaucet(f.Address); err != nil { t.Fatalf("GetFaucet: %v", err) }
 	if _, err := c.ListFaucets(merchant.PublicKey, 1, 10, true); err != nil { t.Fatalf("ListFaucets: %v", err) }
 }

@@ -55,7 +55,7 @@ func TestCouponFlow(t *testing.T) {
 	// wait and redeem
 	waitUntil(t, 20*time.Second, func() bool { return time.Now().After(start2) })
 	if _, err := c.RedeemCoupon(cp.Address, amt(20, dec), "e2e-passcode-2"); err != nil {
-	t.Logf("RedeemCoupon warning: %v", err) // allow policy-gate differences
+		t.Fatalf("RedeemCoupon warning: %v", err) // allow policy-gate differences
 	}
 
 

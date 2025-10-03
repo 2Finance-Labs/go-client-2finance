@@ -163,7 +163,7 @@ func TestRaffleFlow(t *testing.T) {
 	c.SetPrivateKey(merchPriv)
 	//TODO NEEDS TO MAKE THIS DETERMINISTIC
 	draw, err := c.DrawRaffle(rf.Address, seedPass+"2")
-	if err != nil { t.Logf("DrawRaffle warning: %v", err) }
+	if err != nil { t.Fatalf("DrawRaffle warning: %v", err) }
 	// fmt.Printf("DrawRaffle output: %+v\n", draw)
 	var d []raffleV1Models.RafflePrizeModel
 	unmarshalState(t, draw.States[0].Object, &d)
@@ -177,13 +177,13 @@ func TestRaffleFlow(t *testing.T) {
 		if prize.Winner != "" {
 			c.SetPrivateKey(mapOfPubPriv[prize.Winner])
 			claim, err := c.ClaimRaffle(rf.Address, prize.Winner)
-			if err != nil { t.Logf("ClaimRaffle warning: %v", err) }
+			if err != nil { t.Fatalf("ClaimRaffle warning: %v", err) }
 			fmt.Printf("ClaimRaffle output: %+v\n", claim)
 		}
 		if len(d) == index + 1 {
 			c.SetPrivateKey(mapOfPubPriv[prize.Winner])
 			_, err := c.ClaimRaffle(rf.Address, prize.Winner)
-			if err == nil { t.Logf("A error must not be nil: %v", err) }
+			if err == nil { t.Fatalf("A error must not be nil: %v", err) }
 		}
 	}
 
