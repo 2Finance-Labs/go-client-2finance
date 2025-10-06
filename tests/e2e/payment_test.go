@@ -67,7 +67,13 @@ func TestPaymentFlow(t *testing.T) {
 	_, _ = c.DirectPay(address, tok.Address, orderID+"-direct", payer.PublicKey, payee.PublicKey, amt(2, dec))
 
 	// pause/unpause by owner/admin (if applicable)
-	c.SetPrivateKey(ownerPriv)
+	c.SetPrivateKey(payerPriv)
+	_, err = c.PausePayment(pay.Address, true)
+	if err != nil { t.Fatalf("PausePayment: %v", err) }
+	_, err = c.UnpausePayment(pay.Address, false)
+	if err != nil { t.Fatalf("UnpausePayment: %v", err) }
+
+	c.SetPrivateKey(payeePriv)
 	_, err = c.PausePayment(pay.Address, true)
 	if err != nil { t.Fatalf("PausePayment: %v", err) }
 	_, err = c.UnpausePayment(pay.Address, false)

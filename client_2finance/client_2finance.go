@@ -305,7 +305,7 @@ type Client2FinanceNetwork interface {
 	AddInviterMember(mgmAddress, inviterAddress, password string) (types.ContractOutput, error)
 	UpdateInviterPassword(mgmAddress, inviterAddress, newPassword string) (types.ContractOutput, error)
 	DeleteInviterMember(mgmAddress, inviterAddress string) (types.ContractOutput, error)
-	ClaimReward(mgmAddress, inviterAddress, password string) (types.ContractOutput, error)
+	ClaimReward(mgmAddress, invitedAddress, password string) (types.ContractOutput, error)
 
 	GetMgM(mgmAddress string) (types.ContractOutput, error)
 	GetInviterMember(mgmAddress string, inviterAddress string) (types.ContractOutput, error)

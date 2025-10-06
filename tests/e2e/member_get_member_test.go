@@ -101,7 +101,7 @@ func TestMgMFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Inviter lifecycle
 	// --------------------------------------------------------------------
-	inviter, _ := createWallet(t, c)
+	inviter, inviterPriv := createWallet(t, c)
 	invited, _ := createWallet(t, c)
 
 	c.SetPrivateKey(ownerPriv)
@@ -124,7 +124,8 @@ func TestMgMFlow(t *testing.T) {
 	waitUntil(t, 10*time.Second, func() bool { return time.Now().After(start) })
 
 	// Best-effort claim reward (may depend on backend rules)
-	if _, err := c.ClaimReward(mgmAddress, "pw2", invited.PublicKey); err != nil {
+	c.SetPrivateKey(inviterPriv)
+	if _, err := c.ClaimReward(mgmAddress, invited.PublicKey, "pw2"); err != nil {
 		t.Fatalf("ClaimReward warning: %v", err)
 	}
 
