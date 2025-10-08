@@ -89,7 +89,6 @@ func (c *networkClient) AddToken(
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_ADD_TOKEN
 	data := map[string]interface{}{
-		"address":               address,
 		"symbol":                symbol,
 		"name":                  name,
 		"decimals":              decimals,
@@ -173,7 +172,6 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int) (type
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_MINT_TOKEN
 	data := map[string]interface{}{
-		"token_address": to,
 		"mint_to":       mintTo,
 		"amount":        amount,
 	}
@@ -223,7 +221,6 @@ func (c *networkClient) BurnToken(to, amount string, decimals int) (types.Contra
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_BURN_TOKEN
 	data := map[string]interface{}{
-		"token_address": to,
 		"amount":        amount,
 	}
 
@@ -281,8 +278,7 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_TRANSFER_TOKEN
 	data := map[string]interface{}{
-		"token_address": tokenAddress,
-		"transfer_to":            transferTo,
+		"transfer_to":   transferTo,
 		"amount":        amount,
 	}
 
@@ -328,7 +324,6 @@ func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_ALLOW_USERS
 	data := map[string]interface{}{
-		"address": tokenAddress,
 		"allow_users": users,
 	}
 
@@ -375,7 +370,6 @@ func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_DISALLOW_USERS
 	data := map[string]interface{}{
-		"address": tokenAddress,
 		"allow_users": users,
 	}
 
@@ -421,7 +415,6 @@ func (c *networkClient) BlockUsers(tokenAddress string, users map[string]bool) (
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_BLOCK_USERS
 	data := map[string]interface{}{
-		"address": tokenAddress,
 		"block_users": users,
 	}
 
@@ -467,7 +460,6 @@ func (c *networkClient) UnblockUsers(tokenAddress string, users map[string]bool)
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_UNBLOCK_USERS
 	data := map[string]interface{}{
-		"address": tokenAddress,
 		"block_users": users,
 	}
 
@@ -505,7 +497,6 @@ func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_REVOKE_FREEZE_AUTHORITY
 	data := map[string]interface{}{
-		"address": tokenAddress,
 		"freeze_authority_revoked":  revoke,
 	}
 
@@ -542,7 +533,6 @@ func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_REVOKE_MINT_AUTHORITY
 	data := map[string]interface{}{
-		"address": tokenAddress,
 		"mint_authority_revoked":  revoke,
 	}
 
@@ -579,7 +569,6 @@ func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_REVOKE_UPDATE_AUTHORITY
 	data := map[string]interface{}{
-		"address": tokenAddress,
 		"update_authority_revoked":  revoke,
 	}
 
@@ -637,7 +626,6 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_UPDATE_METADATA
 	data := map[string]interface{}{
-		"address":               tokenAddress,
 		"symbol":                symbol,
 		"name":                  name,
 		"decimals":              decimals,
@@ -690,7 +678,6 @@ func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.Cont
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_PAUSE_TOKEN
 	data := map[string]interface{}{
-		"address": tokenAddress,
 		"paused":  paused,
 	}
 
@@ -730,7 +717,6 @@ func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.Co
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_UNPAUSE_TOKEN
 	data := map[string]interface{}{
-		"address": tokenAddress,
 		"paused":  paused,
 	}
 
@@ -770,7 +756,6 @@ func (c *networkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[s
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_UPDATE_FEE_TIERS
 	data := map[string]interface{}{
-		"token_address": tokenAddress,
 		"fee_tiers_list": feeTiersList,
 	}
 
@@ -810,7 +795,6 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_UPDATE_FEE_ADDRESS
 	data := map[string]interface{}{
-		"address": tokenAddress,
 		"fee_address":   feeAddress,
 	}
 
@@ -848,12 +832,11 @@ func (c *networkClient) GetToken(tokenAddress string, symbol string, name string
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_GET_TOKEN
 	data := map[string]interface{}{
-		"address": tokenAddress,
 		"symbol":  symbol,
 		"name":    name,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, method, data)
+	contractOutput, err := c.GetState(contractVersion, tokenAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -888,7 +871,7 @@ func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limi
 		"ascending": ascending,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, method, data)
+	contractOutput, err := c.GetState(contractVersion, "", method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -923,11 +906,10 @@ func (c *networkClient) GetTokenBalance(tokenAddress, ownerAddress string) (type
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_GET_TOKEN_BALANCE
 	data := map[string]interface{}{
-		"token_address": tokenAddress,
 		"owner_address": ownerAddress,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, method, data)
+	contractOutput, err := c.GetState(contractVersion, tokenAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -960,14 +942,13 @@ func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress string, pag
 	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_LIST_TOKEN_BALANCES
 	data := map[string]interface{}{
-		"token_address": tokenAddress,
 		"owner_address": ownerAddress,
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, method, data)
+	contractOutput, err := c.GetState(contractVersion, tokenAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}

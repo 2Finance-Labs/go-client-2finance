@@ -346,11 +346,8 @@ func (c *networkClient) GetPayment(address string) (types.ContractOutput, error)
 
 	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_GET_PAYMENT
-	data := map[string]interface{}{
-		"address": address,
-	}
 
-	return c.GetState(contractVersion, method, data)
+	return c.GetState(contractVersion, address, method, nil)
 }
 
 //payer, payee, orderId, tokenAddress string, status []string, page, limit int, ascending bool
@@ -399,7 +396,6 @@ func (c *networkClient) ListPayments(
 	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_LIST_PAYMENTS
 	data := map[string]interface{}{
-		"token_address": tokenAddress,
 		"status":        status,
 		"payer":         payer,
 		"payee":         payee,
@@ -408,5 +404,5 @@ func (c *networkClient) ListPayments(
 		"ascending":     ascending,
 	}
 
-	return c.GetState(contractVersion, method, data)
+	return c.GetState(contractVersion, tokenAddress, method, data)
 }

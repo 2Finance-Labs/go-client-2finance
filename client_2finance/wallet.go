@@ -75,7 +75,7 @@ func (c *networkClient) GetWallet(pubKey string) (types.ContractOutput, error) {
 		"public_key": pubKey,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, method, data)
+	contractOutput, err := c.GetState(contractVersion, "", method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}

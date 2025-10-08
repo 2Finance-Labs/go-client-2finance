@@ -487,11 +487,7 @@ func (c *networkClient) GetMgM(mgmAddress string) (types.ContractOutput, error) 
 	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_GET_MGM
 
-	data := map[string]interface{}{
-		"mgm_address": mgmAddress,
-	}
-
-	contractOutput, err := c.GetState(contractVersion, method, data)
+	contractOutput, err := c.GetState(contractVersion, mgmAddress, method, nil)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -526,11 +522,10 @@ func (c *networkClient) GetInviterMember(mgmAddress string, inviterAddress strin
 	method := memberGetMemberV1.METHOD_GET_INVITER_MEMBER
 
 	data := map[string]interface{}{
-		"mgm_address":     mgmAddress,
 		"inviter_address": inviterAddress,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, method, data)
+	contractOutput, err := c.GetState(contractVersion, mgmAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -565,11 +560,10 @@ func (c *networkClient) GetClaimInviter(mgmAddress string, inviterAddress string
 	method := memberGetMemberV1.METHOD_GET_CLAIM_INVITER
 
 	data := map[string]interface{}{
-		"mgm_address":     mgmAddress,
 		"inviter_address": inviterAddress,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, method, data)
+	contractOutput, err := c.GetState(contractVersion, mgmAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -604,11 +598,10 @@ func (c *networkClient) GetClaimInvited(mgmAddress string, invitedAddress string
 	method := memberGetMemberV1.METHOD_GET_CLAIM_INVITED
 
 	data := map[string]interface{}{
-		"mgm_address":     mgmAddress,
 		"invited_address": invitedAddress,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, method, data)
+	contractOutput, err := c.GetState(contractVersion, mgmAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}

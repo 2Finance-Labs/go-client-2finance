@@ -418,11 +418,8 @@ func (c *networkClient) GetFaucet(faucetAddress string) (types.ContractOutput, e
 
 	contractVersion := faucetV1.FAUCET_CONTRACT_V1
 	method := faucetV1.METHOD_GET_FAUCET
-	data := map[string]interface{}{
-		"address": faucetAddress,
-	}
 
-	contractOutput, err := c.GetState(contractVersion, method, data)
+	contractOutput, err := c.GetState(contractVersion, faucetAddress, method, nil)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -467,7 +464,7 @@ func (c *networkClient) ListFaucets(
 		"ascending":     ascending,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, method, data)
+	contractOutput, err := c.GetState(contractVersion, "", method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to list faucet states: %w", err)
 	}
