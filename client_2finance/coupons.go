@@ -269,10 +269,8 @@ func (c *networkClient) GetCoupon(address string) (types.ContractOutput, error) 
 
 	contractVersion := couponV1.COUPON_CONTRACT_V1
 	method := couponV1.METHOD_GET_COUPON
-	data := map[string]interface{}{
-		"address": address,
-	}
-	return c.GetState(contractVersion, method, data)
+
+	return c.GetState(contractVersion, address, method, nil)
 }
 
 func (c *networkClient) ListCoupons(
@@ -317,7 +315,6 @@ func (c *networkClient) ListCoupons(
 
 	data := map[string]interface{}{
 		"owner":         owner,
-		"token_address": tokenAddress,
 		"program_type":  programType,
 		"paused":        paused,   // send as pointer; your read handler can interpret tri-state
 		"page":          page,
@@ -325,5 +322,5 @@ func (c *networkClient) ListCoupons(
 		"ascending":     ascending,
 	}
 
-	return c.GetState(contractVersion, method, data)
+	return c.GetState(contractVersion, tokenAddress, method, data)
 }

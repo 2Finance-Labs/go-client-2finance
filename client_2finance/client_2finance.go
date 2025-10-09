@@ -53,6 +53,7 @@ type Client2FinanceNetwork interface {
 		data map[string]interface{}) (types.ContractOutput, error)
 	GetState(
 		contractVersion string,
+		to string,
 		method string,
 		data map[string]interface{}) (types.ContractOutput, error)
 	ListBlocks(blockNumber uint64, blockTimestamp time.Time, hash string, previousHash string,
@@ -61,9 +62,9 @@ type Client2FinanceNetwork interface {
 		ascending bool) ([]block.Block, error)
 
 	// WALLET
-	AddWallet(address, pubKey string) (types.ContractOutput, error)
+	AddWallet(address string) (types.ContractOutput, error)
 	GetWallet(pubKey string) (types.ContractOutput, error)
-	TransferWallet(to, amount string, decimals int) (types.ContractOutput, error)
+	// TransferWallet(to, amount string, decimals int) (types.ContractOutput, error)
 
 	// TOKEN
 	AddToken(
@@ -619,6 +620,7 @@ func (c *networkClient) SignAndSendTransaction(
 
 func (c *networkClient) GetState(
 	contractVersion string,
+	to string,
 	method string,
 	data map[string]interface{},
 ) (types.ContractOutput, error) {
@@ -630,6 +632,7 @@ func (c *networkClient) GetState(
 
 	// Build a transaction input without signature and hash for query
 	txInput := transaction.TransactionInput{
+		To:              to,
 		ContractVersion: contractVersion,
 		Method:          method,
 		Data:            jsonData,

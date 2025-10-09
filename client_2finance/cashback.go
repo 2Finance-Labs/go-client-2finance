@@ -295,11 +295,8 @@ func (c *networkClient) GetCashback(address string) (types.ContractOutput, error
 
 	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_GET_CASHBACK
-	data := map[string]interface{}{
-		"address": address,
-	}
 
-	return c.GetState(contractVersion, method, data)
+	return c.GetState(contractVersion, address, method, nil)
 }
 
 // ListCashBack queries cashback programs with filters + pagination.
@@ -344,7 +341,6 @@ func (c *networkClient) ListCashbacks(
 	method := cashbackV1.METHOD_LIST_CASHBACKS
 	data := map[string]interface{}{
 		"owner":         owner,
-		"token_address": tokenAddress,
 		"program_type":  programType,
 		"paused":        paused,
 		"page":          page,
@@ -352,7 +348,7 @@ func (c *networkClient) ListCashbacks(
 		"ascending":     ascending,
 	}
 
-	return c.GetState(contractVersion, method, data)
+	return c.GetState(contractVersion, tokenAddress, method, data)
 }
 
 func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOutput, error) {

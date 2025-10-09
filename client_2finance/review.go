@@ -299,10 +299,8 @@ func (c *networkClient) GetReview(address string) (types.ContractOutput, error) 
 
 	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_GET_REVIEW
-	data := map[string]interface{}{
-		"address": address,
-	}
-	return c.GetState(contractVersion, method, data)
+	
+	return c.GetState(contractVersion, address, method, nil)
 }
 
 // ListReviews queries reviews with filters + pagination.
@@ -371,5 +369,5 @@ func (c *networkClient) ListReviews(
 		data["include_hidden"] = *includeHidden
 	}
 
-	return c.GetState(contractVersion, method, data)
+	return c.GetState(contractVersion, "", method, data)
 }

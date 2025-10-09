@@ -320,8 +320,8 @@ func (c *networkClient) GetRaffle(address string) (types.ContractOutput, error) 
 
 	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_GET_RAFFLE
-	data := map[string]interface{}{"address": address}
-	return c.GetState(contractVersion, method, data)
+
+	return c.GetState(contractVersion, address, method, nil)
 }
 
 // ListRaffles queries raffles with filters + pagination.
@@ -343,7 +343,6 @@ func (c *networkClient) ListRaffles(owner, tokenAddress string, paused *bool, ac
 	method := raffleV1.METHOD_LIST_RAFFLES
 	data := map[string]interface{}{
 		"owner":         owner,
-		"token_address": tokenAddress,
 		"page":          page,
 		"limit":         limit,
 		"ascending":     asc,
@@ -351,7 +350,7 @@ func (c *networkClient) ListRaffles(owner, tokenAddress string, paused *bool, ac
 	if paused != nil { data["paused"] = *paused }
 	if activeOnly != nil { data["active_only"] = *activeOnly }
 
-	return c.GetState(contractVersion, method, data)
+	return c.GetState(contractVersion, tokenAddress, method, data)
 }
 
 func (c *networkClient) ListPrizes(raffleAddress string,  page, limit int, asc bool) (types.ContractOutput, error) {
@@ -372,7 +371,7 @@ func (c *networkClient) ListPrizes(raffleAddress string,  page, limit int, asc b
 		"ascending":      asc,
 	}
 
-	return c.GetState(contractVersion, method, data)
+	return c.GetState(contractVersion, "", method, data)
 }
 
 
