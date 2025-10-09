@@ -12,7 +12,7 @@ import (
 // createWallet generates a keypair, registers the wallet and returns the parsed state + priv.
 func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (walletDomain.Wallet, string) {
 	t.Helper()
-	_, priv := genKey(t, c)
+	pub, priv := genKey(t, c)
 	c.SetPrivateKey(priv)
 
 	contractState := models.ContractStateModel{}
@@ -20,7 +20,7 @@ func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (walletDomain.
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)	
 
-	wOut, err := c.AddWallet(contractState.Address)
+	wOut, err := c.AddWallet(contractState.Address, pub)
 	if err != nil { t.Fatalf("AddWallet: %v", err) }
 	var w walletDomain.Wallet
 	unmarshalState(t, wOut.States[0].Object, &w)

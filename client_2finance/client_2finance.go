@@ -62,9 +62,9 @@ type Client2FinanceNetwork interface {
 		ascending bool) ([]block.Block, error)
 
 	// WALLET
-	AddWallet(address string) (types.ContractOutput, error)
+	AddWallet(address, pubKey string) (types.ContractOutput, error)
 	GetWallet(pubKey string) (types.ContractOutput, error)
-	// TransferWallet(to, amount string, decimals int) (types.ContractOutput, error)
+	TransferWallet(to, amount string, decimals int) (types.ContractOutput, error)
 
 	// TOKEN
 	AddToken(
