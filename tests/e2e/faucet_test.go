@@ -33,7 +33,7 @@ func TestFaucetFlow(t *testing.T) {
 	amount := "4"
 
 	contractState := models.ContractStateModel{}
-	deployedContract, err := c.DeployContract(faucetV1.FAUCET_CONTRACT_V1, "")
+	deployedContract, err := c.DeployContract1(faucetV1.FAUCET_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address

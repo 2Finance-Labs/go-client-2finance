@@ -40,9 +40,8 @@ type Client2FinanceNetwork interface {
 	ListLogs(logType []string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
 		page, limit int,
 		ascending bool) ([]blockchainLog.Log, error)
-	DeployContract(
+	DeployContract1(
 		contractVersion string,
-		contractAddress string,
 	) (types.ContractOutput, error)
 	DeployContract2(
 		contractVersion string, 
@@ -695,7 +694,7 @@ func (c *networkClient) SignTransaction(from, to, method string, data utils.JSON
 	return signedTx, nil
 }
 
-func (c *networkClient) DeployContract(contractVersion, contractAddress string) (types.ContractOutput, error) {
+func (c *networkClient) DeployContract1(contractVersion string) (types.ContractOutput, error) {
 	if c.publicKey == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address is required")
 	}
@@ -708,10 +707,9 @@ func (c *networkClient) DeployContract(contractVersion, contractAddress string) 
 	if contractVersion == "" {
 		return types.ContractOutput{}, fmt.Errorf("contract version is required")
 	}
+
 	to := types.DEPLOY_CONTRACT_ADDRESS
-	if contractAddress != "" {
-		to = contractAddress
-	}
+	
 	method := contractV1.METHOD_DEPLOY_CONTRACT
 	data := map[string]interface{}{
 		"contract_version": contractVersion,

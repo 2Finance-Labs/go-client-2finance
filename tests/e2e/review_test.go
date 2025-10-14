@@ -22,7 +22,7 @@ func TestReviewFlow(t *testing.T) {
 	exp := time.Now().Add(24 * time.Hour)
 
 	contractState := models.ContractStateModel{}
-	deployedContract, err := c.DeployContract(reviewV1.REVIEW_CONTRACT_V1, "")
+	deployedContract, err := c.DeployContract1(reviewV1.REVIEW_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address

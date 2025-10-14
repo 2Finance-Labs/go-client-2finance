@@ -154,7 +154,7 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 	c := setupClient(t)
 
 	// without SetPrivateKey -> no public key in client
-	if _, err := c.DeployContract(walletV1.WALLET_CONTRACT_V1, ""); err == nil {
+	if _, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1); err == nil {
 		t.Fatalf("expected error when from address is not set")
 	}
 
@@ -163,12 +163,12 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 	c.SetPrivateKey(priv)
 
 	// empty contract version
-	if _, err := c.DeployContract("", ""); err == nil {
+	if _, err := c.DeployContract1(""); err == nil {
 		t.Fatalf("expected error when contract version is empty")
 	}
 
 	// happy path: deploy wallet contract
-	deployed, err := c.DeployContract(walletV1.WALLET_CONTRACT_V1, "")
+	deployed, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}

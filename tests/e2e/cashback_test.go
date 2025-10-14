@@ -30,7 +30,7 @@ func TestCashbackFlow(t *testing.T) {
 	exp := time.Now().Add(30 * time.Minute)
 
 	contractState := models.ContractStateModel{}
-	deployedContract, err := c.DeployContract(cashbackV1.CASHBACK_CONTRACT_V1, "")
+	deployedContract, err := c.DeployContract1(cashbackV1.CASHBACK_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address

@@ -58,7 +58,6 @@ func (c *networkClient) AddCashback(
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_ADD_CASHBACK
 	data := map[string]interface{}{
 		"address":       address,
@@ -69,7 +68,6 @@ func (c *networkClient) AddCashback(
 		"start_at":      startAt,
 		"expired_at":    expiredAt,
 		"paused":        paused,
-		"contract_version": contractVersion,
 	}
 
 	cashback, err := c.SignAndSendTransaction(from, to, method, data)
@@ -116,7 +114,6 @@ func (c *networkClient) UpdateCashback(
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_UPDATE_CASHBACK
 
 	data := map[string]interface{}{
@@ -126,7 +123,6 @@ func (c *networkClient) UpdateCashback(
 		"percentage":    percentage,
 		"start_at":      startAt,
 		"expired_at":    expiredAt,
-		"contract_version": contractVersion,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -153,13 +149,11 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_PAUSE_CASHBACK
 
 	data := map[string]interface{}{
 		"address": address,
 		"paused":  pause,
-		"contract_version": contractVersion,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -186,13 +180,11 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_UNPAUSE_CASHBACK
 
 	data := map[string]interface{}{
 		"address": address,
 		"paused":  pause,
-		"contract_version": contractVersion,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -225,14 +217,12 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount strin
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_DEPOSIT_CASHBACK
 
 	data := map[string]interface{}{
 		"address": address,
 		"token_address": tokenAddress, // token address inferred from state
 		"amount":  amount,
-		"contract_version": contractVersion,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(from, to, method, data)
@@ -270,14 +260,12 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount stri
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_WITHDRAW_CASHBACK
 
 	data := map[string]interface{}{
 		"address": address,
 		"amount":  amount,
 		"token_address": tokenAddress, // token address inferred from state
-		"contract_version": contractVersion,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -299,14 +287,9 @@ func (c *networkClient) GetCashback(address string) (types.ContractOutput, error
 		return types.ContractOutput{}, fmt.Errorf("invalid cashback address: %w", err)
 	}
 
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_GET_CASHBACK
 
-	data := map[string]interface{}{
-		"contract_version": contractVersion,
-	}
-
-	return c.GetState(address, method, data)
+	return c.GetState(address, method, nil)
 }
 
 // ListCashBack queries cashback programs with filters + pagination.
@@ -347,7 +330,6 @@ func (c *networkClient) ListCashbacks(
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_LIST_CASHBACKS
 	data := map[string]interface{}{
 		"owner":         owner,
@@ -356,7 +338,6 @@ func (c *networkClient) ListCashbacks(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
-		"contract_version": contractVersion,
 	}
 
 	return c.GetState(tokenAddress, method, data)
@@ -382,13 +363,11 @@ func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOut
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_CLAIM_CASHBACK
 
 	data := map[string]interface{}{
 		"address": address,
 		"amount":  amount,
-		"contract_version": contractVersion,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)

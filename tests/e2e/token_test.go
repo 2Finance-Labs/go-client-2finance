@@ -92,7 +92,7 @@ func createBasicToken(t *testing.T, c client2f.Client2FinanceNetwork, ownerPub s
 	expiredAt := time.Time{}
 
 	contractState := models.ContractStateModel{}
-	deployedContract, err := c.DeployContract(tokenV1.TOKEN_CONTRACT_V1, "")
+	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address

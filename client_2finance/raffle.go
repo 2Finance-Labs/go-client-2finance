@@ -64,7 +64,6 @@ func (c *networkClient) AddRaffle(
 	}
 
 	to := address
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_ADD_RAFFLE
 
 	data := map[string]interface{}{
@@ -79,7 +78,6 @@ func (c *networkClient) AddRaffle(
 		"paused":                paused,
 		"seed_commit_hex":       seedCommitHex,
 		"metadata":              metadata,
-		"contract_version":      contractVersion,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -124,7 +122,6 @@ func (c *networkClient) UpdateRaffle(
 	}
 
 	to := address
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_UPDATE_RAFFLE
 	data := map[string]interface{}{
 		"address":              address,
@@ -134,7 +131,6 @@ func (c *networkClient) UpdateRaffle(
 		"max_entries_per_user": maxEntriesPerUser,
 		"seed_commit_hex":      seedCommitHex,
 		"metadata":             metadata,
-		"contract_version":     contractVersion,
 	}
 	if startAt != nil { data["start_at"] = *startAt }
 	if expiredAt != nil { data["expired_at"] = *expiredAt }
@@ -153,9 +149,8 @@ func (c *networkClient) PauseRaffle(address string, paused bool) (types.Contract
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
 
 	to := address
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_PAUSE_RAFFLE
-	data := map[string]interface{}{"address": address, "paused": paused, "contract_version": contractVersion}
+	data := map[string]interface{}{"address": address, "paused": paused}
 	return c.SignAndSendTransaction(from, to, method, data)
 }
 
@@ -170,9 +165,8 @@ func (c *networkClient) UnpauseRaffle(address string, paused bool) (types.Contra
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
 
 	to := address
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_UNPAUSE_RAFFLE
-	data := map[string]interface{}{"address": address, "paused": paused, "contract_version": contractVersion}
+	data := map[string]interface{}{"address": address, "paused": paused}
 	return c.SignAndSendTransaction(from, to, method, data)
 }
 
@@ -207,7 +201,6 @@ func (c *networkClient) EnterRaffle(address string, tickets int, payTokenAddress
 		"entrant":            c.publicKey,
         "tickets":            tickets,
         "pay_token_address":  payTokenAddress,
-		"contract_version":   raffleV1.RAFFLE_CONTRACT_V1,
     }
 
     // Send: from = caller (client public key), to = raffle instance address
@@ -231,12 +224,10 @@ func (c *networkClient) DrawRaffle(address, revealSeed string) (types.ContractOu
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
 
 	to := address
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_DRAW_RAFFLE
 	data := map[string]interface{}{
 		"address":      address,
 		"reveal_seed":  revealSeed,
-		"contract_version": contractVersion,
 	}
 	return c.SignAndSendTransaction(from, to, method, data)
 }
@@ -253,9 +244,8 @@ func (c *networkClient) ClaimRaffle(address, winner string) (types.ContractOutpu
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
 
 	to := address
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_CLAIM_RAFFLE
-	data := map[string]interface{}{"address": address, "winner": winner, "contract_version": contractVersion}
+	data := map[string]interface{}{"address": address, "winner": winner}
 	return c.SignAndSendTransaction(from, to, method, data)
 }
 
@@ -273,9 +263,8 @@ func (c *networkClient) WithdrawRaffle(address, tokenAddress, amount string) (ty
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
 
 	to := address
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_WITHDRAW_RAFFLE
-	data := map[string]interface{}{"address": address, "token_address": tokenAddress, "amount": amount, "contract_version": contractVersion}
+	data := map[string]interface{}{"address": address, "token_address": tokenAddress, "amount": amount}
 	return c.SignAndSendTransaction(from, to, method, data)
 }
 
@@ -291,9 +280,8 @@ func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
 
 	to := raffleAddress
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_ADD_RAFFLE_PRIZE
-	data := map[string]interface{}{"amount": amount, "raffle_address": raffleAddress, "token_address": tokenAddress, "contract_version": contractVersion}
+	data := map[string]interface{}{"amount": amount, "raffle_address": raffleAddress, "token_address": tokenAddress}
 	return c.SignAndSendTransaction(from, to, method, data)
 }
 
@@ -308,9 +296,8 @@ func (c *networkClient) RemoveRafflePrize(raffleAddress string, uuid string) (ty
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err) }
 
 	to := raffleAddress
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_REMOVE_RAFFLE_PRIZE
-	data := map[string]interface{}{"raffle_address": raffleAddress, "uuid": uuid, "contract_version": contractVersion}
+	data := map[string]interface{}{"raffle_address": raffleAddress, "uuid": uuid}
 	return c.SignAndSendTransaction(from, to, method, data)
 }
 // GetRaffle reads a single raffle state.
@@ -321,11 +308,9 @@ func (c *networkClient) GetRaffle(address string) (types.ContractOutput, error) 
 	if address == "" { return types.ContractOutput{}, fmt.Errorf("raffle address must be set") }
 	if err := keys.ValidateEDDSAPublicKey(address); err != nil { return types.ContractOutput{}, fmt.Errorf("invalid raffle address: %w", err) }
 
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_GET_RAFFLE
-	data := map[string]interface{}{"contract_version": contractVersion}
 
-	return c.GetState(address, method, data)
+	return c.GetState(address, method, nil)
 }
 
 // ListRaffles queries raffles with filters + pagination.
@@ -343,14 +328,12 @@ func (c *networkClient) ListRaffles(owner, tokenAddress string, paused *bool, ac
 	if page < 1 { return types.ContractOutput{}, fmt.Errorf("page must be greater than 0") }
 	if limit < 1 { return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0") }
 
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_LIST_RAFFLES
 	data := map[string]interface{}{
 		"owner":         owner,
 		"page":          page,
 		"limit":         limit,
 		"ascending":     asc,
-		"contract_version": contractVersion,
 	}
 	if paused != nil { data["paused"] = *paused }
 	if activeOnly != nil { data["active_only"] = *activeOnly }
@@ -367,14 +350,12 @@ func (c *networkClient) ListPrizes(raffleAddress string,  page, limit int, asc b
 	if page < 1 { return types.ContractOutput{}, fmt.Errorf("page must be greater than 0") }
 	if limit < 1 { return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0") }
 
-	contractVersion := raffleV1.RAFFLE_CONTRACT_V1
 	method := raffleV1.METHOD_LIST_PRIZES
 	data := map[string]interface{}{
 		"raffle_address": raffleAddress,
 		"page":           page,
 		"limit":          limit,
 		"ascending":      asc,
-		"contract_version": contractVersion,
 	}
 
 	return c.GetState("", method, data)

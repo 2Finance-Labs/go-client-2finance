@@ -37,14 +37,12 @@ func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput,
 	}
 
 	to := address
-	contractVersion := walletV1.WALLET_CONTRACT_V1
 	method := walletV1.METHOD_ADD_WALLET
 	data := map[string]interface{}{
 		"address":    address,
 		"public_key": pubKey,
 		//TODO REMOVER
 		"amount":     "0",
-		"contract_version": contractVersion,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -69,11 +67,9 @@ func (c *networkClient) GetWallet(pubKey string) (types.ContractOutput, error) {
 		return types.ContractOutput{}, fmt.Errorf("invalid public key: %w", err)
 	}
 
-	contractVersion := walletV1.WALLET_CONTRACT_V1
 	method := walletV1.METHOD_GET_WALLET_BY_PUBLIC_KEY
 	data := map[string]interface{}{
 		"public_key": pubKey,
-		"contract_version": contractVersion,
 	}
 
 	contractOutput, err := c.GetState("", method, data)
@@ -109,13 +105,11 @@ func (c *networkClient) TransferWallet(to, amount string, decimals int) (types.C
 		amount = amountConverted
 	}
 
-	contractVersion := walletV1.WALLET_CONTRACT_V1
 	method := walletV1.METHOD_TRANSFER_WALLET
 	data := map[string]interface{}{
 		"from":    c.publicKey,
 		"to":      to,
 		"amount":  amount,
-		"contract_version": contractVersion,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(

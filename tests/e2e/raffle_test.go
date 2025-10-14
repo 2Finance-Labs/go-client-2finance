@@ -72,7 +72,7 @@ func TestRaffleFlow(t *testing.T) {
 	meta := map[string]string{"campaign":"e2e"}
 
 	contractState := models.ContractStateModel{}
-	deployedContract, err := c.DeployContract(raffleV1.RAFFLE_CONTRACT_V1, "")
+	deployedContract, err := c.DeployContract1(raffleV1.RAFFLE_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address

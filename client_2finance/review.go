@@ -70,7 +70,6 @@ func (c *networkClient) AddReview(
 	}
 
 	to := address
-	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_ADD_REVIEW
 
 	data := map[string]interface{}{
@@ -86,7 +85,6 @@ func (c *networkClient) AddReview(
 		"start_at":      startAt,
 		"expired_at":    expiredAt,
 		"hidden":        hidden,
-		"contract_version": contractVersion,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -127,7 +125,6 @@ func (c *networkClient) UpdateReview(
 	}
 
 	to := address
-	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_UPDATE_REVIEW
 
 	data := map[string]interface{}{
@@ -138,7 +135,6 @@ func (c *networkClient) UpdateReview(
 		"comment":      comment,
 		"tags":         tags,
 		"media_hashes": mediaHashes,
-		"contract_version": contractVersion,
 	}
 	if startAt != nil {
 		data["start_at"] = *startAt
@@ -168,12 +164,10 @@ func (c *networkClient) HideReview(address string, hidden bool) (types.ContractO
 	}
 
 	to := address
-	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_HIDE_REVIEW
 	data := map[string]interface{}{
 		"address": address,
 		"hidden":  hidden,
-		"contract_version": contractVersion,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -203,13 +197,11 @@ func (c *networkClient) VoteHelpful(address, voter string, isHelpful bool) (type
 	}
 
 	to := address
-	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_VOTE_HELPFUL
 	data := map[string]interface{}{
 		"address":    address,
 		"voter":      voter,
 		"is_helpful": isHelpful,
-		"contract_version": contractVersion,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -242,13 +234,11 @@ func (c *networkClient) ReportReview(address, reporter, reason string) (types.Co
 	}
 
 	to := address
-	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_REPORT_REVIEW
 	data := map[string]interface{}{
 		"address":  address,
 		"reporter": reporter,
 		"reason":   reason,
-		"contract_version": contractVersion,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -275,13 +265,11 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 	}
 
 	to := address
-	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_MODERATE_REVIEW
 	data := map[string]interface{}{
 		"address": address,
 		"action":  action,
 		"note":    note,
-		"contract_version": contractVersion,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -303,11 +291,9 @@ func (c *networkClient) GetReview(address string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("invalid review address: %w", err)
 	}
 
-	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_GET_REVIEW
-	data := map[string]interface{}{"contract_version": contractVersion}
 
-	return c.GetState(address, method, data)
+	return c.GetState(address, method, nil)
 }
 
 // ListReviews queries reviews with filters + pagination.
@@ -359,7 +345,6 @@ func (c *networkClient) ListReviews(
 		return types.ContractOutput{}, fmt.Errorf("min_rating cannot be greater than max_rating")
 	}
 
-	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_LIST_REVIEWS
 	data := map[string]interface{}{
 		"reviewer":      reviewer,
@@ -371,7 +356,6 @@ func (c *networkClient) ListReviews(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     asc,
-		"contract_version": contractVersion,
 	}
 	if includeHidden != nil {
 		data["include_hidden"] = *includeHidden
