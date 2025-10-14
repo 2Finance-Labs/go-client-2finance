@@ -69,9 +69,10 @@ func (c *networkClient) AddCashback(
 		"start_at":      startAt,
 		"expired_at":    expiredAt,
 		"paused":        paused,
+		"contract_version": contractVersion,
 	}
 
-	cashback, err := c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	cashback, err := c.SignAndSendTransaction(from, to, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to add cashback: %w", err)
 	}
@@ -125,9 +126,10 @@ func (c *networkClient) UpdateCashback(
 		"percentage":    percentage,
 		"start_at":      startAt,
 		"expired_at":    expiredAt,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // PauseCashBack pauses a cashback program. OnlyOwner.
@@ -157,9 +159,10 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 	data := map[string]interface{}{
 		"address": address,
 		"paused":  pause,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // UnpauseCashback unpauses a cashback program. OnlyOwner.
@@ -189,9 +192,10 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 	data := map[string]interface{}{
 		"address": address,
 		"paused":  pause,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // DepositCashBack funds the cashback pool (token inferred from state).
@@ -228,9 +232,10 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount strin
 		"address": address,
 		"token_address": tokenAddress, // token address inferred from state
 		"amount":  amount,
+		"contract_version": contractVersion,
 	}
 
-	contractOutput, err := c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	contractOutput, err := c.SignAndSendTransaction(from, to, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deposit cashback: %w", err)
 	}
@@ -272,9 +277,10 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount stri
 		"address": address,
 		"amount":  amount,
 		"token_address": tokenAddress, // token address inferred from state
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // GetCashBack reads a single cashback state.
@@ -296,7 +302,11 @@ func (c *networkClient) GetCashback(address string) (types.ContractOutput, error
 	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_GET_CASHBACK
 
-	return c.GetState(contractVersion, address, method, nil)
+	data := map[string]interface{}{
+		"contract_version": contractVersion,
+	}
+
+	return c.GetState(address, method, data)
 }
 
 // ListCashBack queries cashback programs with filters + pagination.
@@ -346,9 +356,10 @@ func (c *networkClient) ListCashbacks(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"contract_version": contractVersion,
 	}
 
-	return c.GetState(contractVersion, tokenAddress, method, data)
+	return c.GetState(tokenAddress, method, data)
 }
 
 func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOutput, error) {
@@ -377,7 +388,8 @@ func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOut
 	data := map[string]interface{}{
 		"address": address,
 		"amount":  amount,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }

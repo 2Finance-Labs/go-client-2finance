@@ -82,9 +82,10 @@ func (c *networkClient) CreatePayment(
 		"payee":         payee,
 		"amount":        amount,
 		"expired_at":   expiredAt,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // DirectPay is a one-step convenience: create + immediate capture.
@@ -148,9 +149,10 @@ func (c *networkClient) DirectPay(
 		"payer":         payer,
 		"payee":         payee,
 		"amount":        amount,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // AuthorizePayment places a hold on funds (payer -> payee) for a payment address.
@@ -175,9 +177,10 @@ func (c *networkClient) AuthorizePayment(address string) (types.ContractOutput, 
 	method := paymentV1.METHOD_AUTHORIZE_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // CapturePayment settles funds (full/partial).
@@ -202,9 +205,10 @@ func (c *networkClient) CapturePayment(address string) (types.ContractOutput, er
 	method := paymentV1.METHOD_CAPTURE_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // RefundPayment returns funds (full/partial) from payee back to payer.
@@ -233,9 +237,10 @@ func (c *networkClient) RefundPayment(address, amount string) (types.ContractOut
 	data := map[string]interface{}{
 		"address": address,
 		"amount":  amount,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // VoidPayment releases an authorization hold.
@@ -260,9 +265,10 @@ func (c *networkClient) VoidPayment(address string) (types.ContractOutput, error
 	method := paymentV1.METHOD_VOID_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // PausePayment toggles the paused state to true. OnlyOwner.
@@ -291,9 +297,10 @@ func (c *networkClient) PausePayment(address string, paused bool) (types.Contrac
 	data := map[string]interface{}{
 		"address": address,
 		"paused":  paused,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // UnpausePayment toggles the paused state to false. OnlyOwner.
@@ -322,9 +329,10 @@ func (c *networkClient) UnpausePayment(address string, paused bool) (types.Contr
 	data := map[string]interface{}{
 		"address": address,
 		"paused":  paused,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // GetPayment reads a single payment state.
@@ -346,8 +354,11 @@ func (c *networkClient) GetPayment(address string) (types.ContractOutput, error)
 
 	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_GET_PAYMENT
+	data := map[string]interface{}{
+		"contract_version": contractVersion,
+	}
 
-	return c.GetState(contractVersion, address, method, nil)
+	return c.GetState(address, method, data)
 }
 
 //payer, payee, orderId, tokenAddress string, status []string, page, limit int, ascending bool
@@ -402,7 +413,8 @@ func (c *networkClient) ListPayments(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"contract_version": contractVersion,
 	}
 
-	return c.GetState(contractVersion, tokenAddress, method, data)
+	return c.GetState(tokenAddress, method, data)
 }

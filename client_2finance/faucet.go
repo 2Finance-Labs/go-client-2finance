@@ -64,12 +64,12 @@ func (c *networkClient) AddFaucet(
 		"request_limit":           requestLimit,
 		"claim_amount":            claimAmount,
 		"claim_interval_duration": claimIntervalDuration,
+		"contract_version":        contractVersion,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -115,12 +115,12 @@ func (c *networkClient) UpdateFaucet(
 		"claim_amount":            claimAmount,
 		"claim_interval_duration": claimIntervalDuration,
 		"last_claim_by_user":      lastClaimByUser,
+		"contract_version":        contractVersion,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -162,12 +162,12 @@ func (c *networkClient) PauseFaucet(
 	data := map[string]interface{}{
 		"address": address,
 		"paused":  pause,
+		"contract_version": contractVersion,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -209,12 +209,12 @@ func (c *networkClient) UnpauseFaucet(
 	data := map[string]interface{}{
 		"address": address,
 		"pause":   pause,
+		"contract_version": contractVersion,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -256,12 +256,12 @@ func (c *networkClient) DepositFunds(address, tokenAddress, amount string) (type
 		"address":       address,
 		"token_address": tokenAddress,
 		"amount":        amount,
+		"contract_version": contractVersion,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -303,12 +303,12 @@ func (c *networkClient) WithdrawFunds(address, tokenAddress, amount string) (typ
 		"address":       address,
 		"token_address": tokenAddress,
 		"amount":        amount,
+		"contract_version": contractVersion,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -346,12 +346,12 @@ func (c *networkClient) UpdateRequestLimitPerUser(address string, requestLimit i
 	data := map[string]interface{}{
 		"address":       address,
 		"request_limit": requestLimit,
+		"contract_version": contractVersion,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -382,12 +382,12 @@ func (c *networkClient) ClaimFunds(address string) (types.ContractOutput, error)
 	to := address
 	data := map[string]interface{}{
 		"address": address,
+		"contract_version": contractVersion,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -418,8 +418,11 @@ func (c *networkClient) GetFaucet(faucetAddress string) (types.ContractOutput, e
 
 	contractVersion := faucetV1.FAUCET_CONTRACT_V1
 	method := faucetV1.METHOD_GET_FAUCET
+	data := map[string]interface{}{
+		"contract_version": contractVersion,
+	}
 
-	contractOutput, err := c.GetState(contractVersion, faucetAddress, method, nil)
+	contractOutput, err := c.GetState(faucetAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -462,9 +465,10 @@ func (c *networkClient) ListFaucets(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"contract_version": contractVersion,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, "", method, data)
+	contractOutput, err := c.GetState("", method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to list faucet states: %w", err)
 	}

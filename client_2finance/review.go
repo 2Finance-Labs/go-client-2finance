@@ -86,9 +86,10 @@ func (c *networkClient) AddReview(
 		"start_at":      startAt,
 		"expired_at":    expiredAt,
 		"hidden":        hidden,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // UpdateReview modifies fields of an existing review.
@@ -137,6 +138,7 @@ func (c *networkClient) UpdateReview(
 		"comment":      comment,
 		"tags":         tags,
 		"media_hashes": mediaHashes,
+		"contract_version": contractVersion,
 	}
 	if startAt != nil {
 		data["start_at"] = *startAt
@@ -145,7 +147,7 @@ func (c *networkClient) UpdateReview(
 		data["expired_at"] = *expiredAt
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // HideReview toggles the hidden state. OnlyOwner.
@@ -171,9 +173,10 @@ func (c *networkClient) HideReview(address string, hidden bool) (types.ContractO
 	data := map[string]interface{}{
 		"address": address,
 		"hidden":  hidden,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // VoteHelpful registers an up/down helpful vote for a review.
@@ -206,9 +209,10 @@ func (c *networkClient) VoteHelpful(address, voter string, isHelpful bool) (type
 		"address":    address,
 		"voter":      voter,
 		"is_helpful": isHelpful,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // ReportReview flags a review with a reason string by a reporter.
@@ -244,9 +248,10 @@ func (c *networkClient) ReportReview(address, reporter, reason string) (types.Co
 		"address":  address,
 		"reporter": reporter,
 		"reason":   reason,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // ModerateReview applies a moderation action (e.g., approve/reject/remove) with an optional note. OnlyModerator/Owner per contract rules.
@@ -276,9 +281,10 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 		"address": address,
 		"action":  action,
 		"note":    note,
+		"contract_version": contractVersion,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // GetReview retrieves a single review state.
@@ -299,8 +305,9 @@ func (c *networkClient) GetReview(address string) (types.ContractOutput, error) 
 
 	contractVersion := reviewV1.REVIEW_CONTRACT_V1
 	method := reviewV1.METHOD_GET_REVIEW
-	
-	return c.GetState(contractVersion, address, method, nil)
+	data := map[string]interface{}{"contract_version": contractVersion}
+
+	return c.GetState(address, method, data)
 }
 
 // ListReviews queries reviews with filters + pagination.
@@ -364,10 +371,11 @@ func (c *networkClient) ListReviews(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     asc,
+		"contract_version": contractVersion,
 	}
 	if includeHidden != nil {
 		data["include_hidden"] = *includeHidden
 	}
 
-	return c.GetState(contractVersion, "", method, data)
+	return c.GetState("", method, data)
 }
