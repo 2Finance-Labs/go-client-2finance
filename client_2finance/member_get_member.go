@@ -51,7 +51,6 @@ func (c *networkClient) AddMgM(
 	}
 
 	to := address
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_ADD_MGM
 	data := map[string]interface{}{
 		"address":       address,
@@ -67,7 +66,6 @@ func (c *networkClient) AddMgM(
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -96,7 +94,6 @@ func (c *networkClient) UpdateMgM(
 	}
 
 	to := mgmAddress
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_UPDATE_MGM
 
 	data := map[string]interface{}{
@@ -109,7 +106,6 @@ func (c *networkClient) UpdateMgM(
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -141,7 +137,6 @@ func (c *networkClient) PauseMgM(mgmAddress string, pause bool) (types.ContractO
 	}
 
 	to := mgmAddress
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_PAUSE_MGM
 
 	data := map[string]interface{}{
@@ -152,7 +147,6 @@ func (c *networkClient) PauseMgM(mgmAddress string, pause bool) (types.ContractO
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -184,7 +178,6 @@ func (c *networkClient) UnpauseMgM(mgmAddress string, pause bool) (types.Contrac
 	}
 
 	to := mgmAddress
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_UNPAUSE_MGM
 
 	data := map[string]interface{}{
@@ -195,7 +188,6 @@ func (c *networkClient) UnpauseMgM(mgmAddress string, pause bool) (types.Contrac
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -230,7 +222,6 @@ func (c *networkClient) DepositMgM(
 	}
 
 	to := mgmAddress
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_DEPOSIT_MGM
 
 	data := map[string]interface{}{
@@ -241,7 +232,6 @@ func (c *networkClient) DepositMgM(
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -276,7 +266,6 @@ func (c *networkClient) WithdrawMgM(
 	}
 
 	to := mgmAddress
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_WITHDRAW_MGM
 
 	data := map[string]interface{}{
@@ -287,7 +276,6 @@ func (c *networkClient) WithdrawMgM(
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -319,7 +307,6 @@ func (c *networkClient) AddInviterMember(mgmAddress string, inviterAddress strin
 	}
 
 	to := mgmAddress
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_ADD_INVITER_MEMBER
 
 	data := map[string]interface{}{
@@ -331,7 +318,6 @@ func (c *networkClient) AddInviterMember(mgmAddress string, inviterAddress strin
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -361,7 +347,6 @@ func (c *networkClient) UpdateInviterPassword(mgmAddress string, inviterAddress 
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_UPDATE_INVITER_PASSWORD
 
 	data := map[string]interface{}{
@@ -374,7 +359,6 @@ func (c *networkClient) UpdateInviterPassword(mgmAddress string, inviterAddress 
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -402,7 +386,6 @@ func (c *networkClient) DeleteInviterMember(mgmAddress string, inviterAddress st
 	}
 
 	to := mgmAddress
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_DELETE_INVITER_MEMBER
 
 	data := map[string]interface{}{
@@ -413,7 +396,6 @@ func (c *networkClient) DeleteInviterMember(mgmAddress string, inviterAddress st
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -445,7 +427,6 @@ func (c *networkClient) ClaimReward(mgmAddress, invitedAddress, password string)
 	}
 
 	to := mgmAddress
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_CLAIM_REWARD
 
 	data := map[string]interface{}{
@@ -457,7 +438,6 @@ func (c *networkClient) ClaimReward(mgmAddress, invitedAddress, password string)
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data,
 	)
@@ -484,10 +464,9 @@ func (c *networkClient) GetMgM(mgmAddress string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_GET_MGM
 
-	contractOutput, err := c.GetState(contractVersion, mgmAddress, method, nil)
+	contractOutput, err := c.GetState(mgmAddress, method, nil)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -518,14 +497,13 @@ func (c *networkClient) GetInviterMember(mgmAddress string, inviterAddress strin
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_GET_INVITER_MEMBER
 
 	data := map[string]interface{}{
 		"inviter_address": inviterAddress,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, mgmAddress, method, data)
+	contractOutput, err := c.GetState(mgmAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -556,14 +534,13 @@ func (c *networkClient) GetClaimInviter(mgmAddress string, inviterAddress string
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_GET_CLAIM_INVITER
 
 	data := map[string]interface{}{
 		"inviter_address": inviterAddress,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, mgmAddress, method, data)
+	contractOutput, err := c.GetState(mgmAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -594,14 +571,13 @@ func (c *networkClient) GetClaimInvited(mgmAddress string, invitedAddress string
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	contractVersion := memberGetMemberV1.MEMBER_GET_MEMBER_CONTRACT_V1
 	method := memberGetMemberV1.METHOD_GET_CLAIM_INVITED
 
 	data := map[string]interface{}{
 		"invited_address": invitedAddress,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, mgmAddress, method, data)
+	contractOutput, err := c.GetState(mgmAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}

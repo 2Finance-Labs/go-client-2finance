@@ -86,7 +86,6 @@ func (c *networkClient) AddToken(
 	}
 
 	to := address
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_ADD_TOKEN
 	data := map[string]interface{}{
 		"symbol":                symbol,
@@ -116,7 +115,6 @@ func (c *networkClient) AddToken(
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -169,7 +167,6 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int) (type
 		return types.ContractOutput{}, fmt.Errorf("invalid mint to address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_MINT_TOKEN
 	data := map[string]interface{}{
 		"mint_to":       mintTo,
@@ -179,7 +176,6 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int) (type
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -218,7 +214,6 @@ func (c *networkClient) BurnToken(to, amount string, decimals int) (types.Contra
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_BURN_TOKEN
 	data := map[string]interface{}{
 		"amount":        amount,
@@ -227,7 +222,6 @@ func (c *networkClient) BurnToken(to, amount string, decimals int) (types.Contra
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		to,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -275,7 +269,6 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_TRANSFER_TOKEN
 	data := map[string]interface{}{
 		"transfer_to":   transferTo,
@@ -285,7 +278,6 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -321,7 +313,6 @@ func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (
 		return types.ContractOutput{}, fmt.Errorf("invalid allow users: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_ALLOW_USERS
 	data := map[string]interface{}{
 		"allow_users": users,
@@ -330,7 +321,6 @@ func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -367,7 +357,6 @@ func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool
 		return types.ContractOutput{}, fmt.Errorf("invalid disallow users: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_DISALLOW_USERS
 	data := map[string]interface{}{
 		"allow_users": users,
@@ -376,7 +365,6 @@ func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -412,7 +400,6 @@ func (c *networkClient) BlockUsers(tokenAddress string, users map[string]bool) (
 		return types.ContractOutput{}, fmt.Errorf("invalid block users: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_BLOCK_USERS
 	data := map[string]interface{}{
 		"block_users": users,
@@ -421,7 +408,6 @@ func (c *networkClient) BlockUsers(tokenAddress string, users map[string]bool) (
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -457,7 +443,6 @@ func (c *networkClient) UnblockUsers(tokenAddress string, users map[string]bool)
 		return types.ContractOutput{}, fmt.Errorf("invalid unblock users: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_UNBLOCK_USERS
 	data := map[string]interface{}{
 		"block_users": users,
@@ -466,7 +451,6 @@ func (c *networkClient) UnblockUsers(tokenAddress string, users map[string]bool)
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -494,7 +478,6 @@ func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_REVOKE_FREEZE_AUTHORITY
 	data := map[string]interface{}{
 		"freeze_authority_revoked":  revoke,
@@ -503,7 +486,6 @@ func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -530,7 +512,6 @@ func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_REVOKE_MINT_AUTHORITY
 	data := map[string]interface{}{
 		"mint_authority_revoked":  revoke,
@@ -539,7 +520,6 @@ func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -566,7 +546,6 @@ func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_REVOKE_UPDATE_AUTHORITY
 	data := map[string]interface{}{
 		"update_authority_revoked":  revoke,
@@ -575,7 +554,6 @@ func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -623,7 +601,6 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_UPDATE_METADATA
 	data := map[string]interface{}{
 		"symbol":                symbol,
@@ -643,7 +620,6 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -675,7 +651,6 @@ func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.Cont
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_PAUSE_TOKEN
 	data := map[string]interface{}{
 		"paused":  paused,
@@ -684,7 +659,6 @@ func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.Cont
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -714,7 +688,6 @@ func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.Co
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_UNPAUSE_TOKEN
 	data := map[string]interface{}{
 		"paused":  paused,
@@ -723,7 +696,6 @@ func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.Co
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -753,7 +725,6 @@ func (c *networkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[s
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_UPDATE_FEE_TIERS
 	data := map[string]interface{}{
 		"fee_tiers_list": feeTiersList,
@@ -762,7 +733,6 @@ func (c *networkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[s
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -792,7 +762,6 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_UPDATE_FEE_ADDRESS
 	data := map[string]interface{}{
 		"fee_address":   feeAddress,
@@ -801,7 +770,6 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
-		contractVersion,
 		method,
 		data)
 	if err != nil {
@@ -829,14 +797,13 @@ func (c *networkClient) GetToken(tokenAddress string, symbol string, name string
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_GET_TOKEN
 	data := map[string]interface{}{
 		"symbol":  symbol,
 		"name":    name,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, tokenAddress, method, data)
+	contractOutput, err := c.GetState(tokenAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -860,7 +827,6 @@ func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limi
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_LIST_TOKENS
 	data := map[string]interface{}{
 		"owner":   ownerAddress,
@@ -869,9 +835,10 @@ func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limi
 		"page":    page,
 		"limit":   limit,
 		"ascending": ascending,
+		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, "", method, data)
+	contractOutput, err := c.GetState("", method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -903,13 +870,12 @@ func (c *networkClient) GetTokenBalance(tokenAddress, ownerAddress string) (type
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_GET_TOKEN_BALANCE
 	data := map[string]interface{}{
 		"owner_address": ownerAddress,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, tokenAddress, method, data)
+	contractOutput, err := c.GetState(tokenAddress, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}
@@ -939,16 +905,17 @@ func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress string, pag
 		}
 	}
 
-	contractVersion := tokenV1.TOKEN_CONTRACT_V1
 	method := tokenV1.METHOD_LIST_TOKEN_BALANCES
 	data := map[string]interface{}{
 		"owner_address": ownerAddress,
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"token_address":  tokenAddress,
+		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
 	}
 
-	contractOutput, err := c.GetState(contractVersion, tokenAddress, method, data)
+	contractOutput, err := c.GetState("", method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}

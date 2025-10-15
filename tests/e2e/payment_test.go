@@ -35,7 +35,7 @@ func TestPaymentFlow(t *testing.T) {
 
 	
 	contractState := models.ContractStateModel{}
-	deployedContract, err := c.DeployContract(paymentV1.PAYMENT_CONTRACT_V1, "")
+	deployedContract, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address
@@ -59,7 +59,7 @@ func TestPaymentFlow(t *testing.T) {
 
 	// direct pay (no auth/capture)
 	contractState = models.ContractStateModel{}
-	deployedContract, err = c.DeployContract(paymentV1.PAYMENT_CONTRACT_V1, "")
+	deployedContract, err = c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address = contractState.Address
@@ -109,7 +109,7 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 
 
 	contractState := models.ContractStateModel{}
-	deployedContract, err := c.DeployContract(paymentV1.PAYMENT_CONTRACT_V1, "")
+	deployedContract, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address

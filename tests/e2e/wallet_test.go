@@ -16,7 +16,7 @@ func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (walletDomain.
 	c.SetPrivateKey(priv)
 
 	contractState := models.ContractStateModel{}
-	deployedContract, err := c.DeployContract(walletV1.WALLET_CONTRACT_V1, "")
+	deployedContract, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)	
 

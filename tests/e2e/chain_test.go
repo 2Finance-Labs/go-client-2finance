@@ -17,6 +17,11 @@ func TestChainBasics(t *testing.T) {
 	c := setupClient(t)
 	w, _ := createWallet(t, c)
 
+	_, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
+    if err != nil {
+        t.Fatalf("DeployContract wallet: %v", err)
+    }
+
 	if got, err := c.GetWallet(w.PublicKey); err != nil {
 	t.Fatalf("GetWallet: %v", err)
 	} else {
@@ -130,7 +135,7 @@ func Test_SignTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MapToJSONB: %v", err)
 	}
-	signed, err := c.SignTransaction(fromPub, toPub, "walletV1", "noop_method", jb, 42)
+	signed, err := c.SignTransaction(fromPub, toPub, "noop_method", jb, 42)
 	if err != nil {
 		t.Fatalf("SignTransaction: %v", err)
 	}
@@ -154,7 +159,7 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 	c := setupClient(t)
 
 	// without SetPrivateKey -> no public key in client
-	if _, err := c.DeployContract(walletV1.WALLET_CONTRACT_V1, ""); err == nil {
+	if _, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1); err == nil {
 		t.Fatalf("expected error when from address is not set")
 	}
 
@@ -163,12 +168,12 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 	c.SetPrivateKey(priv)
 
 	// empty contract version
-	if _, err := c.DeployContract("", ""); err == nil {
+	if _, err := c.DeployContract1(""); err == nil {
 		t.Fatalf("expected error when contract version is empty")
 	}
 
 	// happy path: deploy wallet contract
-	deployed, err := c.DeployContract(walletV1.WALLET_CONTRACT_V1, "")
+	deployed, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -180,11 +185,11 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 
 	pub, priv := genKey(t, c)
 
-	deployed, err = c.DeployContract(walletV1.WALLET_CONTRACT_V1, pub)
+	deployed2, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, pub)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
-	unmarshalState(t, deployed.States[0].Object, &cs)
+	unmarshalState(t, deployed2.States[0].Object, &cs)
 	if cs.Address != pub {
 		t.Fatalf("deployed contract address mismatch: want %s, got %s", pub, cs.Address)
 	}
@@ -216,6 +221,6 @@ func Test_EndToEnd_MinimalFlow(t *testing.T) {
 // (Optional) tiny compile-time/proto sanity check for Transaction serialization
 func Test_TransactionRoundtrip_Sanity(t *testing.T) {
 	pub, _ := genKey(t, setupClient(t))
-	tx := transaction.NewTransaction(pub, pub, "walletV1", "echo", utils.JSONB(map[string]interface{}{"k": "v"}), 7)
+	tx := transaction.NewTransaction(pub, pub, "echo", utils.JSONB(map[string]interface{}{"contract_version": "walletV1", "k": "v"}), 7)
 	_ = tx.Get() // ensure .Get() is accessible
 }

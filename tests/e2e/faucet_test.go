@@ -1,14 +1,12 @@
 package e2e_test
 
-
 import (
 	"testing"
 	"time"
 
-
-	faucetV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1/domain"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1"
+	faucetV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1/domain"
 )
 
 func TestFaucetFlow(t *testing.T) {
@@ -33,7 +31,7 @@ func TestFaucetFlow(t *testing.T) {
 	amount := "4"
 
 	contractState := models.ContractStateModel{}
-	deployedContract, err := c.DeployContract(faucetV1.FAUCET_CONTRACT_V1, "")
+	deployedContract, err := c.DeployContract1(faucetV1.FAUCET_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address
@@ -68,10 +66,8 @@ func TestFaucetFlow(t *testing.T) {
 
 	// pause/unpause & getters
 	c.SetPrivateKey(merchPriv)
-	_, err = c.PauseFaucet(f.Address, true)
-	if err != nil { t.Fatalf("PauseFaucet: %v", err) }
-	_, err = c.UnpauseFaucet(f.Address, false)
-	if err != nil { t.Fatalf("UnpauseFaucet: %v", err) }
+	if _, err = c.PauseFaucet(f.Address, true); err != nil { t.Fatalf("PauseFaucet: %v", err) }
+	if _, err = c.UnpauseFaucet(f.Address, false); err != nil { t.Fatalf("UnpauseFaucet: %v", err) }
 	if _, err := c.GetFaucet(f.Address); err != nil { t.Fatalf("GetFaucet: %v", err) }
 	if _, err := c.ListFaucets(merchant.PublicKey, 1, 10, true); err != nil { t.Fatalf("ListFaucets: %v", err) }
 }

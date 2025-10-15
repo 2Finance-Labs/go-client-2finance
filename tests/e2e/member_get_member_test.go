@@ -30,13 +30,13 @@ func TestMgMFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	var contractState models.ContractStateModel
 
-	deployedMgm, err := c.DeployContract(mgmV1.MEMBER_GET_MEMBER_CONTRACT_V1, "")
+	deployedMgm, err := c.DeployContract1(mgmV1.MEMBER_GET_MEMBER_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract (mgm): %v", err) }
 	unmarshalState(t, deployedMgm.States[0].Object, &contractState)
 	mgmAddress := contractState.Address
 	if mgmAddress == "" { t.Fatalf("mgmAddress empty") }
 
-	deployedFaucet, err := c.DeployContract(faucetV1.FAUCET_CONTRACT_V1, "")
+	deployedFaucet, err := c.DeployContract1(faucetV1.FAUCET_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract (faucet): %v", err) }
 	unmarshalState(t, deployedFaucet.States[0].Object, &contractState)
 	faucetAddress := contractState.Address

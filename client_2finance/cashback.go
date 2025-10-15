@@ -58,7 +58,6 @@ func (c *networkClient) AddCashback(
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_ADD_CASHBACK
 	data := map[string]interface{}{
 		"address":       address,
@@ -71,7 +70,7 @@ func (c *networkClient) AddCashback(
 		"paused":        paused,
 	}
 
-	cashback, err := c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	cashback, err := c.SignAndSendTransaction(from, to, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to add cashback: %w", err)
 	}
@@ -115,7 +114,6 @@ func (c *networkClient) UpdateCashback(
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_UPDATE_CASHBACK
 
 	data := map[string]interface{}{
@@ -127,7 +125,7 @@ func (c *networkClient) UpdateCashback(
 		"expired_at":    expiredAt,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // PauseCashBack pauses a cashback program. OnlyOwner.
@@ -151,7 +149,6 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_PAUSE_CASHBACK
 
 	data := map[string]interface{}{
@@ -159,7 +156,7 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 		"paused":  pause,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // UnpauseCashback unpauses a cashback program. OnlyOwner.
@@ -183,7 +180,6 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_UNPAUSE_CASHBACK
 
 	data := map[string]interface{}{
@@ -191,7 +187,7 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 		"paused":  pause,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // DepositCashBack funds the cashback pool (token inferred from state).
@@ -221,7 +217,6 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount strin
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_DEPOSIT_CASHBACK
 
 	data := map[string]interface{}{
@@ -230,7 +225,7 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount strin
 		"amount":  amount,
 	}
 
-	contractOutput, err := c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	contractOutput, err := c.SignAndSendTransaction(from, to, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deposit cashback: %w", err)
 	}
@@ -265,7 +260,6 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount stri
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_WITHDRAW_CASHBACK
 
 	data := map[string]interface{}{
@@ -274,7 +268,7 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount stri
 		"token_address": tokenAddress, // token address inferred from state
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // GetCashBack reads a single cashback state.
@@ -293,10 +287,9 @@ func (c *networkClient) GetCashback(address string) (types.ContractOutput, error
 		return types.ContractOutput{}, fmt.Errorf("invalid cashback address: %w", err)
 	}
 
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_GET_CASHBACK
 
-	return c.GetState(contractVersion, address, method, nil)
+	return c.GetState(address, method, nil)
 }
 
 // ListCashBack queries cashback programs with filters + pagination.
@@ -337,7 +330,6 @@ func (c *networkClient) ListCashbacks(
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_LIST_CASHBACKS
 	data := map[string]interface{}{
 		"owner":         owner,
@@ -346,9 +338,11 @@ func (c *networkClient) ListCashbacks(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"token_address": tokenAddress,
+		"contract_version": cashbackV1.CASHBACK_CONTRACT_V1,
 	}
 
-	return c.GetState(contractVersion, tokenAddress, method, data)
+	return c.GetState("", method, data)
 }
 
 func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOutput, error) {
@@ -371,7 +365,6 @@ func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOut
 	}
 
 	to := address
-	contractVersion := cashbackV1.CASHBACK_CONTRACT_V1
 	method := cashbackV1.METHOD_CLAIM_CASHBACK
 
 	data := map[string]interface{}{
@@ -379,5 +372,5 @@ func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOut
 		"amount":  amount,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }

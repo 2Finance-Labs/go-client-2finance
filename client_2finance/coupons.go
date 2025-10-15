@@ -62,7 +62,6 @@ func (c *networkClient) AddCoupon(
 	}
 	// Deploy new coupon program
 	to := address
-	contractVersion := couponV1.COUPON_CONTRACT_V1
 	method := couponV1.METHOD_ADD_COUPON
 	data := map[string]interface{}{
 		"address":          address,       // optional, depends on your infra
@@ -80,7 +79,7 @@ func (c *networkClient) AddCoupon(
 		"passcode_hash":    passcodeHash, // sha256(preimage) hex
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 func (c *networkClient) UpdateCoupon(
@@ -122,7 +121,6 @@ func (c *networkClient) UpdateCoupon(
 	}
 
 	to := address
-	contractVersion := couponV1.COUPON_CONTRACT_V1
 	method := couponV1.METHOD_UPDATE_COUPON
 
 	data := map[string]interface{}{
@@ -140,7 +138,7 @@ func (c *networkClient) UpdateCoupon(
 		"passcode_hash":   passcodeHash,   // "" => keep prior hash
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractOutput, error) {
@@ -163,7 +161,6 @@ func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractO
 	}
 
 	to := address
-	contractVersion := couponV1.COUPON_CONTRACT_V1
 	method := couponV1.METHOD_PAUSE_COUPON
 
 	data := map[string]interface{}{
@@ -171,7 +168,7 @@ func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractO
 		"paused":  pause,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.ContractOutput, error) {
@@ -194,7 +191,6 @@ func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 	}
 
 	to := address
-	contractVersion := couponV1.COUPON_CONTRACT_V1
 	method := couponV1.METHOD_UNPAUSE_COUPON
 
 	data := map[string]interface{}{
@@ -202,7 +198,7 @@ func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 		"paused":  pause,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // Redeem a coupon for an order amount using a passcode preimage.
@@ -236,7 +232,6 @@ func (c *networkClient) RedeemCoupon(
 	}
 
 	to := address
-	contractVersion := couponV1.COUPON_CONTRACT_V1
 	method := couponV1.METHOD_REDEEM_COUPON
 
 	data := map[string]interface{}{
@@ -245,7 +240,7 @@ func (c *networkClient) RedeemCoupon(
 		"passcode": passcode,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // ---------------------------------------------
@@ -267,10 +262,9 @@ func (c *networkClient) GetCoupon(address string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
 	}
 
-	contractVersion := couponV1.COUPON_CONTRACT_V1
 	method := couponV1.METHOD_GET_COUPON
 
-	return c.GetState(contractVersion, address, method, nil)
+	return c.GetState(address, method, nil)
 }
 
 func (c *networkClient) ListCoupons(
@@ -310,7 +304,6 @@ func (c *networkClient) ListCoupons(
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
-	contractVersion := couponV1.COUPON_CONTRACT_V1
 	method := couponV1.METHOD_LIST_COUPONS
 
 	data := map[string]interface{}{
@@ -320,7 +313,9 @@ func (c *networkClient) ListCoupons(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"contract_version": couponV1.COUPON_CONTRACT_V1,
+		"token_address": tokenAddress,
 	}
 
-	return c.GetState(contractVersion, tokenAddress, method, data)
+	return c.GetState("", method, data)
 }

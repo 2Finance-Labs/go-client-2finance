@@ -71,7 +71,6 @@ func (c *networkClient) CreatePayment(
 	}
 
 	to := address
-	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_CREATE_PAYMENT
 
 	data := map[string]interface{}{
@@ -84,7 +83,7 @@ func (c *networkClient) CreatePayment(
 		"expired_at":   expiredAt,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // DirectPay is a one-step convenience: create + immediate capture.
@@ -138,7 +137,6 @@ func (c *networkClient) DirectPay(
 	}
 
 	to := address
-	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_DIRECT_PAY
 
 	data := map[string]interface{}{
@@ -150,7 +148,7 @@ func (c *networkClient) DirectPay(
 		"amount":        amount,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // AuthorizePayment places a hold on funds (payer -> payee) for a payment address.
@@ -171,13 +169,12 @@ func (c *networkClient) AuthorizePayment(address string) (types.ContractOutput, 
 	}
 
 	to := address
-	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_AUTHORIZE_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // CapturePayment settles funds (full/partial).
@@ -198,13 +195,12 @@ func (c *networkClient) CapturePayment(address string) (types.ContractOutput, er
 	}
 
 	to := address
-	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_CAPTURE_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // RefundPayment returns funds (full/partial) from payee back to payer.
@@ -228,14 +224,13 @@ func (c *networkClient) RefundPayment(address, amount string) (types.ContractOut
 	}
 
 	to := address
-	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_REFUND_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
 		"amount":  amount,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // VoidPayment releases an authorization hold.
@@ -256,13 +251,12 @@ func (c *networkClient) VoidPayment(address string) (types.ContractOutput, error
 	}
 
 	to := address
-	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_VOID_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // PausePayment toggles the paused state to true. OnlyOwner.
@@ -286,14 +280,13 @@ func (c *networkClient) PausePayment(address string, paused bool) (types.Contrac
 	}
 
 	to := address
-	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_PAUSE_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
 		"paused":  paused,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // UnpausePayment toggles the paused state to false. OnlyOwner.
@@ -317,14 +310,13 @@ func (c *networkClient) UnpausePayment(address string, paused bool) (types.Contr
 	}
 
 	to := address
-	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_UNPAUSE_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
 		"paused":  paused,
 	}
 
-	return c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // GetPayment reads a single payment state.
@@ -344,10 +336,9 @@ func (c *networkClient) GetPayment(address string) (types.ContractOutput, error)
 		return types.ContractOutput{}, fmt.Errorf("invalid payment address: %w", err)
 	}
 
-	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_GET_PAYMENT
 
-	return c.GetState(contractVersion, address, method, nil)
+	return c.GetState(address, method, nil)
 }
 
 //payer, payee, orderId, tokenAddress string, status []string, page, limit int, ascending bool
@@ -393,7 +384,6 @@ func (c *networkClient) ListPayments(
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
-	contractVersion := paymentV1.PAYMENT_CONTRACT_V1
 	method := paymentV1.METHOD_LIST_PAYMENTS
 	data := map[string]interface{}{
 		"status":        status,
@@ -402,7 +392,9 @@ func (c *networkClient) ListPayments(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"token_address": tokenAddress,
+		"contract_version": paymentV1.PAYMENT_CONTRACT_V1,
 	}
 
-	return c.GetState(contractVersion, tokenAddress, method, data)
+	return c.GetState("", method, data)
 }

@@ -40,19 +40,20 @@ type Client2FinanceNetwork interface {
 	ListLogs(logType []string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
 		page, limit int,
 		ascending bool) ([]blockchainLog.Log, error)
-	DeployContract(
+	DeployContract1(
 		contractVersion string,
-		contractAddress string,
 	) (types.ContractOutput, error)
-	SignTransaction(from, to, contractVersion, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error)
+	DeployContract2(
+		contractVersion string, 
+		contractAddress string,
+		) (types.ContractOutput, error)
+	SignTransaction(from, to, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error)
 	SignAndSendTransaction(
 		from string,
 		to string,
-		contractVersion string,
 		method string,
 		data map[string]interface{}) (types.ContractOutput, error)
 	GetState(
-		contractVersion string,
 		to string,
 		method string,
 		data map[string]interface{}) (types.ContractOutput, error)
@@ -578,7 +579,6 @@ func (c *networkClient) SendTransaction(method string, tx interface{}, replyTo s
 func (c *networkClient) SignAndSendTransaction(
 	from string,
 	to string,
-	contractVersion string,
 	method string,
 	data map[string]interface{},
 ) (types.ContractOutput, error) {
@@ -601,7 +601,7 @@ func (c *networkClient) SignAndSendTransaction(
 
 	nonce++
 
-	txSigned, err := c.SignTransaction(from, to, contractVersion, method, data, nonce)
+	txSigned, err := c.SignTransaction(from, to, method, data, nonce)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}
@@ -619,7 +619,6 @@ func (c *networkClient) SignAndSendTransaction(
 }
 
 func (c *networkClient) GetState(
-	contractVersion string,
 	to string,
 	method string,
 	data map[string]interface{},
@@ -633,7 +632,6 @@ func (c *networkClient) GetState(
 	// Build a transaction input without signature and hash for query
 	txInput := transaction.TransactionInput{
 		To:              to,
-		ContractVersion: contractVersion,
 		Method:          method,
 		Data:            jsonData,
 	}
@@ -681,9 +679,9 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 }
 
 
-func (c *networkClient) SignTransaction(from, to, contractVersion, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error) {
+func (c *networkClient) SignTransaction(from, to, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error) {
 	// 1. create new tx
-	newTx := transaction.NewTransaction(from, to, contractVersion, method, data, nonce)
+	newTx := transaction.NewTransaction(from, to, method, data, nonce)
 
 	// 2. get serialized form (here it's just the object)
 	tx := newTx.Get()
@@ -696,7 +694,34 @@ func (c *networkClient) SignTransaction(from, to, contractVersion, method string
 	return signedTx, nil
 }
 
-func (c *networkClient) DeployContract(contractVersion, contractAddress string) (types.ContractOutput, error) {
+func (c *networkClient) DeployContract1(contractVersion string) (types.ContractOutput, error) {
+	if c.publicKey == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address is required")
+	}
+	from := c.publicKey
+	
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if contractVersion == "" {
+		return types.ContractOutput{}, fmt.Errorf("contract version is required")
+	}
+
+	to := types.DEPLOY_CONTRACT_ADDRESS
+	
+	method := contractV1.METHOD_DEPLOY_CONTRACT
+	data := map[string]interface{}{
+		"contract_version": contractVersion,
+	}
+	contractOutput, err := c.SignAndSendTransaction(from, to, method, data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to deploy contract: %w", err)
+	}
+	return contractOutput, nil
+}
+
+func (c *networkClient) DeployContract2(contractVersion, contractAddress string) (types.ContractOutput, error) {
 	if c.publicKey == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address is required")
 	}
@@ -713,11 +738,11 @@ func (c *networkClient) DeployContract(contractVersion, contractAddress string) 
 	if contractAddress != "" {
 		to = contractAddress
 	}
-	method := contractV1.METHOD_DEPLOY_CONTRACT
+	method := contractV1.METHOD_DEPLOY_CONTRACT2
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
 	}
-	contractOutput, err := c.SignAndSendTransaction(from, to, contractVersion, method, data)
+	contractOutput, err := c.SignAndSendTransaction(from, to, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deploy contract: %w", err)
 	}
