@@ -60,9 +60,13 @@ func TestCouponFlow(t *testing.T) {
 	}
 
 	// pause/unpause & getters
-	//TODO -  verify paused state error
-	_, _ = c.PauseCoupon(cp.Address, true)
-	_, _ = c.UnpauseCoupon(cp.Address, false)
+	if _, err := c.PauseCoupon(cp.Address, true); err != nil {
+		t.Fatalf("PauseCoupon: %v", err)
+	}
+	if _, err = c.UnpauseCoupon(cp.Address, false); err != nil {
+		t.Fatalf("UnpauseCoupon: %v", err)
+	}
+	// getters
 	if _, err := c.GetCoupon(cp.Address); err != nil {
 		t.Fatalf("GetCoupon: %v", err)
 	}

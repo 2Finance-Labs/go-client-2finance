@@ -60,6 +60,6 @@ func TestCashbackFlow(t *testing.T) {
 
 
 	// getters
-	_, _ = c.GetCashback(cb.Address)
-	_, _ = c.ListCashbacks(merchant.PublicKey, tok.Address, "", false, 1, 10, true)
+	if _, err := c.GetCashback(cb.Address); err != nil { t.Fatalf("GetCashback: %v", err) }
+	if _, err := c.ListCashbacks(merchant.PublicKey, tok.Address, "", false, 1, 10, true); err != nil { t.Fatalf("ListCashbacks: %v", err) }
 }

@@ -66,10 +66,8 @@ func TestFaucetFlow(t *testing.T) {
 
 	// pause/unpause & getters
 	c.SetPrivateKey(merchPriv)
-	_, err = c.PauseFaucet(f.Address, true)
-	if err != nil { t.Fatalf("PauseFaucet: %v", err) }
-	_, err = c.UnpauseFaucet(f.Address, false)
-	if err != nil { t.Fatalf("UnpauseFaucet: %v", err) }
+	if _, err = c.PauseFaucet(f.Address, true); err != nil { t.Fatalf("PauseFaucet: %v", err) }
+	if _, err = c.UnpauseFaucet(f.Address, false); err != nil { t.Fatalf("UnpauseFaucet: %v", err) }
 	if _, err := c.GetFaucet(f.Address); err != nil { t.Fatalf("GetFaucet: %v", err) }
 	if _, err := c.ListFaucets(merchant.PublicKey, 1, 10, true); err != nil { t.Fatalf("ListFaucets: %v", err) }
 }
