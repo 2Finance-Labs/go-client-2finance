@@ -911,9 +911,11 @@ func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress string, pag
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"token_address":  tokenAddress,
+		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
 	}
 
-	contractOutput, err := c.GetState(tokenAddress, method, data)
+	contractOutput, err := c.GetState("", method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
 	}

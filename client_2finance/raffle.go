@@ -334,11 +334,13 @@ func (c *networkClient) ListRaffles(owner, tokenAddress string, paused *bool, ac
 		"page":          page,
 		"limit":         limit,
 		"ascending":     asc,
+		"token_address": tokenAddress,
+		"contract_version": raffleV1.RAFFLE_CONTRACT_V1,
 	}
 	if paused != nil { data["paused"] = *paused }
 	if activeOnly != nil { data["active_only"] = *activeOnly }
 
-	return c.GetState(tokenAddress, method, data)
+	return c.GetState("", method, data)
 }
 
 func (c *networkClient) ListPrizes(raffleAddress string,  page, limit int, asc bool) (types.ContractOutput, error) {

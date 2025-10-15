@@ -338,9 +338,11 @@ func (c *networkClient) ListCashbacks(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"token_address": tokenAddress,
+		"contract_version": cashbackV1.CASHBACK_CONTRACT_V1,
 	}
 
-	return c.GetState(tokenAddress, method, data)
+	return c.GetState("", method, data)
 }
 
 func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOutput, error) {

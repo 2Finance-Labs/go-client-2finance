@@ -392,7 +392,9 @@ func (c *networkClient) ListPayments(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"token_address": tokenAddress,
+		"contract_version": paymentV1.PAYMENT_CONTRACT_V1,
 	}
 
-	return c.GetState(tokenAddress, method, data)
+	return c.GetState("", method, data)
 }
