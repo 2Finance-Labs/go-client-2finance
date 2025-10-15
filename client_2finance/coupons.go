@@ -313,7 +313,9 @@ func (c *networkClient) ListCoupons(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"contract_version": couponV1.COUPON_CONTRACT_V1,
+		"token_address": tokenAddress,
 	}
 
-	return c.GetState(tokenAddress, method, data)
+	return c.GetState("", method, data)
 }

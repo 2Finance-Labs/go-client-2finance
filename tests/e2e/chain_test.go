@@ -17,6 +17,11 @@ func TestChainBasics(t *testing.T) {
 	c := setupClient(t)
 	w, _ := createWallet(t, c)
 
+	_, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
+    if err != nil {
+        t.Fatalf("DeployContract wallet: %v", err)
+    }
+
 	if got, err := c.GetWallet(w.PublicKey); err != nil {
 	t.Fatalf("GetWallet: %v", err)
 	} else {

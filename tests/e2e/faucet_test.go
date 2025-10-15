@@ -1,14 +1,12 @@
 package e2e_test
 
-
 import (
 	"testing"
 	"time"
 
-
-	faucetV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1/domain"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1"
+	faucetV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1/domain"
 )
 
 func TestFaucetFlow(t *testing.T) {

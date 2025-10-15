@@ -70,6 +70,7 @@ func (c *networkClient) GetWallet(pubKey string) (types.ContractOutput, error) {
 	method := walletV1.METHOD_GET_WALLET_BY_PUBLIC_KEY
 	data := map[string]interface{}{
 		"public_key": pubKey,
+		"contract_version": walletV1.WALLET_CONTRACT_V1,
 	}
 
 	contractOutput, err := c.GetState("", method, data)

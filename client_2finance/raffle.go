@@ -356,6 +356,7 @@ func (c *networkClient) ListPrizes(raffleAddress string,  page, limit int, asc b
 		"page":           page,
 		"limit":          limit,
 		"ascending":      asc,
+		"contract_version": raffleV1.RAFFLE_CONTRACT_V1,
 	}
 
 	return c.GetState("", method, data)

@@ -444,6 +444,7 @@ func (c *networkClient) ListFaucets(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     ascending,
+		"contract_version": faucetV1.FAUCET_CONTRACT_V1,
 	}
 
 	contractOutput, err := c.GetState("", method, data)

@@ -835,6 +835,7 @@ func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limi
 		"page":    page,
 		"limit":   limit,
 		"ascending": ascending,
+		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
 	}
 
 	contractOutput, err := c.GetState("", method, data)

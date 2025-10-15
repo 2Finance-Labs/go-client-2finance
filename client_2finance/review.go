@@ -356,6 +356,7 @@ func (c *networkClient) ListReviews(
 		"page":          page,
 		"limit":         limit,
 		"ascending":     asc,
+		"contract_version": reviewV1.REVIEW_CONTRACT_V1,
 	}
 	if includeHidden != nil {
 		data["include_hidden"] = *includeHidden
