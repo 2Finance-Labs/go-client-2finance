@@ -21,10 +21,11 @@ func TestTokenFlow(t *testing.T) {
 
 	dec := 6
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
+	tokenType := "fungible"
 
 
 	// Mint & Burn
-	if _, err := c.MintToken(tok.Address, owner.PublicKey, amt(35, dec), dec); err != nil { t.Fatalf("MintToken: %v", err) }
+	if _, err := c.MintToken(tok.Address, owner.PublicKey, amt(35, dec), dec, tokenType); err != nil { t.Fatalf("MintToken: %v", err) }
 	if _, err := c.BurnToken(tok.Address, amt(12, dec), dec); err != nil { t.Fatalf("BurnToken: %v", err) }
 
 
@@ -97,7 +98,10 @@ func createBasicToken(t *testing.T, c client2f.Client2FinanceNetwork, ownerPub s
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address
 
-	out, err := c.AddToken(address, symbol, name, decimals, totalSupply, description, ownerPub, image, website, tagsSocial, tagsCat, tags, creator, creatorWebsite, allowUsers, blockUsers, feeTiers, feeAddress, freezeAuthorityRevoked, mintAuthorityRevoked, updateAuthorityRevoked, paused, expiredAt)
+	assetGLBUri := "https://example.com/asset.glb"
+	tokenType := "fungible"
+
+	out, err := c.AddToken(address, symbol, name, decimals, totalSupply, description, ownerPub, image, website, tagsSocial, tagsCat, tags, creator, creatorWebsite, allowUsers, blockUsers, feeTiers, feeAddress, freezeAuthorityRevoked, mintAuthorityRevoked, updateAuthorityRevoked, paused, expiredAt, assetGLBUri, tokenType)
 	if err != nil { t.Fatalf("AddToken: %v", err) }
 	var tok tokenV1Domain.Token
 	unmarshalState(t, out.States[0].Object, &tok)
@@ -108,7 +112,7 @@ func createBasicToken(t *testing.T, c client2f.Client2FinanceNetwork, ownerPub s
 
 func createMint(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int) tokenV1Domain.Mint {
 	t.Helper()
-	out, err := c.MintToken(token.Address, to, amount, decimals)
+	out, err := c.MintToken(token.Address, to, amount, decimals, token.TokenType)
 	if err != nil { t.Fatalf("MintToken: %v", err) }
 	var m tokenV1Domain.Mint
 	unmarshalState(t, out.States[0].Object, &m)

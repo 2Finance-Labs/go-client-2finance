@@ -33,7 +33,9 @@ func (c *networkClient) AddToken(
 		mintAuthorityRevoked bool, 
 		updateAuthorityRevoked bool, 
 		paused bool,
-		expired_at time.Time) (types.ContractOutput, error) {
+		expired_at time.Time,
+		assetGLBUri string,
+		tokenType string) (types.ContractOutput, error) {
 
 			
 	if symbol == "" {
@@ -65,6 +67,12 @@ func (c *networkClient) AddToken(
 	}
 	if err := keys.ValidateEDDSAPublicKey(feeAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid fee address: %w", err)
+	}
+	if assetGLBUri == "" {
+		return types.ContractOutput{}, fmt.Errorf("asset GLB URI not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 	
 	err := domain.ValidateUserMap(allowUsers, "allow users")
@@ -110,6 +118,8 @@ func (c *networkClient) AddToken(
 		"update_authority_revoked": updateAuthorityRevoked,
 		"paused":                paused,
 		"expired_at":           expired_at,
+		"asset_glb_uri":        assetGLBUri,
+		"token_type":           tokenType,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -127,7 +137,7 @@ func (c *networkClient) AddToken(
 //to is the token address, we are sending transaction to the token contract
 //mintTo is the address that will receive the minted tokens
 //amount is the amount of tokens to mint, it should be in the smallest unit (e.g. wei for ETH)
-func (c *networkClient) MintToken(to, mintTo, amount string, decimals int) (types.ContractOutput, error) {
+func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, tokenType string) (types.ContractOutput, error) {
 	
 	from := c.publicKey
 	if from == "" {
@@ -141,6 +151,9 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int) (type
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 
 	if err := keys.ValidateEDDSAPublicKey(mintTo); err != nil {
@@ -171,6 +184,7 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int) (type
 	data := map[string]interface{}{
 		"mint_to":       mintTo,
 		"amount":        amount,
+		"token_type":    tokenType,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
