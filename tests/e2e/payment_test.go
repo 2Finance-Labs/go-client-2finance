@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	paymentV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
-    "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1"
+	paymentV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/domain"
+	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 )
 
 func TestPaymentFlow(t *testing.T) {
@@ -16,9 +17,8 @@ func TestPaymentFlow(t *testing.T) {
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
 
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE)
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", dec)
-
 
 	payer, payerPriv := createWallet(t, c)
 	payee, payeePriv := createWallet(t, c)
@@ -33,34 +33,45 @@ func TestPaymentFlow(t *testing.T) {
 	amount := "10"
 	exp := time.Now().Add(30 * time.Minute)
 
-	
 	contractState := models.ContractStateModel{}
 	deployedContract, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
-	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address
 
 	created, err := c.CreatePayment(address, tok.Address, orderID, payer.PublicKey, payee.PublicKey, amount, exp)
-	if err != nil { t.Fatalf("CreatePayment: %v", err) }
+	if err != nil {
+		t.Fatalf("CreatePayment: %v", err)
+	}
 	var pay paymentV1Domain.Payment
 	unmarshalState(t, created.States[0].Object, &pay)
-	
-	if pay.Address == "" { t.Fatalf("payment addr empty") }
+
+	if pay.Address == "" {
+		t.Fatalf("payment addr empty")
+	}
 	c.SetPrivateKey(ownerPriv)
 	_, _ = c.AllowUsers(tok.Address, map[string]bool{pay.Address: true})
-	
+
 	c.SetPrivateKey(payerPriv)
-	if _, err := c.AuthorizePayment(pay.Address); err != nil { t.Fatalf("AuthorizePayment: %v", err) }
+	if _, err := c.AuthorizePayment(pay.Address); err != nil {
+		t.Fatalf("AuthorizePayment: %v", err)
+	}
 
 	// capture and refund by payee
 	c.SetPrivateKey(payeePriv)
-	if _, err := c.CapturePayment(pay.Address); err != nil { t.Fatalf("CapturePayment warning: %v", err) }
+	if _, err := c.CapturePayment(pay.Address); err != nil {
+		t.Fatalf("CapturePayment warning: %v", err)
+	}
 	_, _ = c.RefundPayment(pay.Address, "10")
 
 	// direct pay (no auth/capture)
 	contractState = models.ContractStateModel{}
 	deployedContract, err = c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
-	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address = contractState.Address
 
@@ -69,18 +80,28 @@ func TestPaymentFlow(t *testing.T) {
 	// pause/unpause by owner/admin (if applicable)
 	c.SetPrivateKey(payerPriv)
 	_, err = c.PausePayment(pay.Address, true)
-	if err != nil { t.Fatalf("PausePayment: %v", err) }
+	if err != nil {
+		t.Fatalf("PausePayment: %v", err)
+	}
 	_, err = c.UnpausePayment(pay.Address, false)
-	if err != nil { t.Fatalf("UnpausePayment: %v", err) }
+	if err != nil {
+		t.Fatalf("UnpausePayment: %v", err)
+	}
 
 	c.SetPrivateKey(payeePriv)
 	_, err = c.PausePayment(pay.Address, true)
-	if err != nil { t.Fatalf("PausePayment: %v", err) }
+	if err != nil {
+		t.Fatalf("PausePayment: %v", err)
+	}
 	_, err = c.UnpausePayment(pay.Address, false)
-	if err != nil { t.Fatalf("UnpausePayment: %v", err) }
+	if err != nil {
+		t.Fatalf("UnpausePayment: %v", err)
+	}
 
 	// getters
-	if _, err := c.GetPayment(pay.Address); err != nil { t.Fatalf("GetPayment: %v", err) }
+	if _, err := c.GetPayment(pay.Address); err != nil {
+		t.Fatalf("GetPayment: %v", err)
+	}
 	//if _, err := c.ListPayments(payer.PublicKey, payee.PublicKey, orderID, tok.Address, []string{}, 1, 10, true); err != nil { t.Fatalf("ListPayments: %v", err) }
 }
 
@@ -92,41 +113,52 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
 
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE)
 	payer, payerPriv := createWallet(t, c)
 	payee, _ := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 	_, err := c.AllowUsers(tok.Address, map[string]bool{payer.PublicKey: true})
-	if err != nil { t.Fatalf("AllowUsers(payer): %v", err) }
+	if err != nil {
+		t.Fatalf("AllowUsers(payer): %v", err)
+	}
 	_, err = c.AllowUsers(tok.Address, map[string]bool{payee.PublicKey: true})
-	if err != nil { t.Fatalf("AllowUsers(payee): %v", err) }
+	if err != nil {
+		t.Fatalf("AllowUsers(payee): %v", err)
+	}
 	_ = createTransfer(t, c, tok, payer.PublicKey, "50", tok.Decimals)
-
 
 	orderID := fmt.Sprintf("order-%d-void", time.Now().Unix())
 	c.SetPrivateKey(payerPriv)
 	amount := "10"
 
-
 	contractState := models.ContractStateModel{}
 	deployedContract, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
-	if err != nil { t.Fatalf("DeployContract: %v", err) }
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address
 
 	created, err := c.CreatePayment(address, tok.Address, orderID, payer.PublicKey, payee.PublicKey, amount, time.Now().Add(10*time.Minute))
-	if err != nil { t.Fatalf("CreatePayment: %v", err) }
+	if err != nil {
+		t.Fatalf("CreatePayment: %v", err)
+	}
 	var pay paymentV1Domain.Payment
 	unmarshalState(t, created.States[0].Object, &pay)
 
 	c.SetPrivateKey(ownerPriv)
 	_, err = c.AllowUsers(tok.Address, map[string]bool{pay.Address: true})
-	if err != nil { t.Fatalf("AllowUsers(payment): %v", err) }
-
+	if err != nil {
+		t.Fatalf("AllowUsers(payment): %v", err)
+	}
 
 	c.SetPrivateKey(payerPriv)
-	if _, err := c.AuthorizePayment(pay.Address); err != nil { t.Fatalf("AuthorizePayment: %v", err) }
-	if _, err := c.VoidPayment(pay.Address); err != nil { t.Fatalf("VoidPayment warning: %v", err) }
+	if _, err := c.AuthorizePayment(pay.Address); err != nil {
+		t.Fatalf("AuthorizePayment: %v", err)
+	}
+	if _, err := c.VoidPayment(pay.Address); err != nil {
+		t.Fatalf("VoidPayment warning: %v", err)
+	}
 }
 
 // func TestPaymentStatusQueries(t *testing.T) {
