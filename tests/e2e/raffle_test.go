@@ -198,9 +198,9 @@ func TestRaffleFlow(t *testing.T) {
 	c.SetPrivateKey(ownerPrizePriv)
 
 	tok1 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE)
-	tok2 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.NON_FUNGIBLE)
+	tok2 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE)
 	tok3 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE)
-	tok4 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.NON_FUNGIBLE)
+	tok4 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE)
 
 	// deposit prize & prize ops
 	c.SetPrivateKey(ownerPrizePriv)
