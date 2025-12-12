@@ -6,12 +6,12 @@ import (
 
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
 
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
+	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 )
 
-func TestTokenFlow(t *testing.T) {
+func TestTokenFlowFungible(t *testing.T) {
 	c := setupClient(t)
 	owner, ownerPriv := createWallet(t, c)
 
@@ -117,6 +117,58 @@ func TestTokenFlow(t *testing.T) {
 	}
 }
 
+func TestTokenFlowNonFungible(t *testing.T) {
+	c := setupClient(t)
+	owner, ownerPriv := createWallet(t, c)
+	c.SetPrivateKey(ownerPriv)
+
+	dec := 0 // NFT não usa decimais
+	tokenType := tokenV1Domain.NON_FUNGIBLE
+
+	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType)
+
+	// ----- Mint NFT -----
+	mintOut, err := c.MintToken(tok.Address, owner.PublicKey, "35", dec, tok.TokenType)
+	if err != nil {
+		t.Fatalf("MintToken NFT: %v", err)
+	}
+
+	var mint tokenV1Domain.Mint
+	unmarshalState(t, mintOut.States[0].Object, &mint)
+	if len(mint.TokenUUIDList) != 1 {
+		t.Fatalf("expected 1 uuid, got %d", len(mint.TokenUUIDList))
+	}
+
+	// // ----- Transfer NFT -----
+	// receiver, _ := createWallet(t, c)
+	// _, err = c.AllowUsers(tok.Address, map[string]bool{receiver.PublicKey: true})
+	// if err != nil {
+	// 	t.Fatalf("AllowUsers: %v", err)
+	// }
+
+	// trOut, err := c.TransferToken(tok.Address, receiver.PublicKey, "1", dec)
+	// if err != nil {
+	// 	t.Fatalf("Transfer NFT: %v", err)
+	// }
+
+	// var tr tokenV1Domain.Transfer
+	// unmarshalState(t, trOut.States[0].Object, &tr)
+	// if tr.ToAddress != receiver.PublicKey {
+	// 	t.Fatalf("transfer mismatch: %s != %s", tr.ToAddress, receiver.PublicKey)
+	// }
+
+	// // ----- Listagens -----
+	// if _, err := c.GetTokenBalance(tok.Address, owner.PublicKey); err != nil {
+	// 	t.Fatalf("GetTokenBalance: %v", err)
+	// }
+	// if _, err := c.ListTokenBalances(tok.Address, "", 1, 10, true); err != nil {
+	// 	t.Fatalf("ListTokenBalances: %v", err)
+	// }
+	// if _, err := c.GetToken(tok.Address, "", ""); err != nil {
+	// 	t.Fatalf("GetToken: %v", err)
+	// }
+}
+
 // createBasicToken creates a minimal token owned by ownerPub.
 func createBasicToken(
 	t *testing.T,
@@ -130,7 +182,12 @@ func createBasicToken(
 
 	symbol := "2F" + randSuffix(4)
 	name := "2Finance"
-	totalSupply := amt(1_000_000, decimals)
+	var totalSupply string
+	if tokenType == tokenV1Domain.NON_FUNGIBLE {
+		totalSupply = "1"
+	} else {
+		totalSupply = amt(1_000_000, decimals)
+	}
 	description := "e2e token created by tests"
 	image := "https://example.com/image.png"
 	website := "https://example.com"
