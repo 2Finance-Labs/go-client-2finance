@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -127,16 +128,22 @@ func TestTokenFlowNonFungible(t *testing.T) {
 
 	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType)
 
+	amount := "35"
+
 	// ----- Mint NFT -----
-	mintOut, err := c.MintToken(tok.Address, owner.PublicKey, "35", dec, tok.TokenType)
+	mintOut, err := c.MintToken(tok.Address, owner.PublicKey, amount, dec, tok.TokenType)
 	if err != nil {
 		t.Fatalf("MintToken NFT: %v", err)
 	}
 
 	var mint tokenV1Domain.Mint
 	unmarshalState(t, mintOut.States[0].Object, &mint)
-	if len(mint.TokenUUIDList) != 1 {
-		t.Fatalf("expected 1 uuid, got %d", len(mint.TokenUUIDList))
+	amountInt, err := strconv.Atoi(amount)
+	if err != nil {
+		t.Fatalf("failed to convert amount to int: %v", err)
+	}
+	if len(mint.TokenUUIDList) != amountInt {
+		t.Fatalf("expected %d uuid, got %d", amountInt, len(mint.TokenUUIDList))
 	}
 
 	// // ----- Transfer NFT -----
