@@ -95,7 +95,7 @@ type Client2FinanceNetwork interface {
 		assetGLBUri string,
 		tokenType string) (types.ContractOutput, error)
 	MintToken(to, mintTo, amount string, decimals int, tokenType string) (types.ContractOutput, error)
-	BurnToken(to, amount string, decimals int) (types.ContractOutput, error)
+	BurnToken(to, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
 	TransferToken(tokenAddress, transferTo, amount string, decimals int) (types.ContractOutput, error)
 	AllowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
 	DisallowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)

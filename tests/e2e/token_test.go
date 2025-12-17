@@ -29,7 +29,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	if _, err := c.MintToken(tok.Address, owner.PublicKey, amt(35, dec), dec, tok.TokenType); err != nil {
 		t.Fatalf("MintToken: %v", err)
 	}
-	if _, err := c.BurnToken(tok.Address, amt(12, dec), dec); err != nil {
+	if _, err := c.BurnToken(tok.Address, amt(12, dec), dec, tok.TokenType, ""); err != nil {
 		t.Fatalf("BurnToken: %v", err)
 	}
 
@@ -144,6 +144,10 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	}
 	if len(mint.TokenUUIDList) != amountInt {
 		t.Fatalf("expected %d uuid, got %d", amountInt, len(mint.TokenUUIDList))
+	}
+
+	if _, err := c.BurnToken(tok.Address, amt(1, dec), dec, tok.TokenType, mint.TokenUUIDList[0]); err != nil {
+		t.Fatalf("BurnToken: %v", err)
 	}
 
 	// // ----- Transfer NFT -----
@@ -291,7 +295,7 @@ func createMint(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Dom
 
 func createBurn(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, amount string, decimals int) tokenV1Domain.Burn {
 	t.Helper()
-	out, err := c.BurnToken(token.Address, amount, decimals)
+	out, err := c.BurnToken(token.Address, amount, decimals, token.TokenType, "")
 	if err != nil {
 		t.Fatalf("BurnToken: %v", err)
 	}
