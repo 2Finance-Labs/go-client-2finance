@@ -41,7 +41,7 @@ func TestTokenFlowFungible(t *testing.T) {
 		t.Fatalf("AllowUsers: %v", err)
 	}
 
-	trOut, err := c.TransferToken(tok.Address, receiver.PublicKey, amt(1, dec), dec)
+	trOut, err := c.TransferToken(tok.Address, receiver.PublicKey, amt(1, dec), dec, tok.TokenType, "")
 	if err != nil {
 		t.Fatalf("TransferToken: %v", err)
 	}
@@ -150,23 +150,20 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("BurnToken: %v", err)
 	}
 
-	// // ----- Transfer NFT -----
-	// receiver, _ := createWallet(t, c)
-	// _, err = c.AllowUsers(tok.Address, map[string]bool{receiver.PublicKey: true})
-	// if err != nil {
-	// 	t.Fatalf("AllowUsers: %v", err)
-	// }
+	// ----- Transfer NFT -----
+	receiver, _ := createWallet(t, c)
+	c.SetPrivateKey(ownerPriv)
 
-	// trOut, err := c.TransferToken(tok.Address, receiver.PublicKey, "1", dec)
-	// if err != nil {
-	// 	t.Fatalf("Transfer NFT: %v", err)
-	// }
+	trOut, err := c.TransferToken(tok.Address, receiver.PublicKey, amt(1, dec), dec, tok.TokenType, mint.TokenUUIDList[0])
+	if err != nil {
+		t.Fatalf("Transfer NFT: %v", err)
+	}
 
-	// var tr tokenV1Domain.Transfer
-	// unmarshalState(t, trOut.States[0].Object, &tr)
-	// if tr.ToAddress != receiver.PublicKey {
-	// 	t.Fatalf("transfer mismatch: %s != %s", tr.ToAddress, receiver.PublicKey)
-	// }
+	var tr tokenV1Domain.Transfer
+	unmarshalState(t, trOut.States[0].Object, &tr)
+	if tr.ToAddress != receiver.PublicKey {
+		t.Fatalf("transfer mismatch: %s != %s", tr.ToAddress, receiver.PublicKey)
+	}
 
 	// // ----- Listagens -----
 	// if _, err := c.GetTokenBalance(tok.Address, owner.PublicKey); err != nil {
@@ -309,7 +306,7 @@ func createBurn(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Dom
 
 func createTransfer(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int) tokenV1Domain.Transfer {
 	t.Helper()
-	out, err := c.TransferToken(token.Address, to, amount, decimals)
+	out, err := c.TransferToken(token.Address, to, amount, decimals, token.TokenType, "")
 	if err != nil {
 		t.Fatalf("TransferToken: %v", err)
 	}
