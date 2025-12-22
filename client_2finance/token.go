@@ -255,7 +255,7 @@ func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType str
 	return contractOutput, nil
 }
 
-func (c *networkClient) TransferToken(tokenAddress string, transferTo string, amount string, decimals int) (types.ContractOutput, error) {
+func (c *networkClient) TransferToken(tokenAddress string, transferTo string, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error) {
 	from := c.publicKey
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
@@ -268,6 +268,14 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid not set")
+		}
 	}
 	if from == transferTo {
 		return types.ContractOutput{}, fmt.Errorf("from and to addresses are the same")
@@ -297,6 +305,8 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	data := map[string]interface{}{
 		"transfer_to": transferTo,
 		"amount":      amount,
+		"token_type":  tokenType,
+		"uuid":        uuid,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
