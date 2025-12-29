@@ -56,7 +56,7 @@ func TestFaucetFlow(t *testing.T) {
 
 	c.SetPrivateKey(merchPriv)
 	depositAmount := "569"
-	if _, err := c.DepositFunds(f.Address, tok.Address, depositAmount); err != nil {
+	if _, err := c.DepositFunds(f.Address, tok.Address, depositAmount, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("DepositFunds: %v", err)
 	}
 
@@ -71,7 +71,7 @@ func TestFaucetFlow(t *testing.T) {
 		t.Fatalf("AllowUsers: %v", err)
 	}
 	c.SetPrivateKey(userPriv)
-	if _, err := c.ClaimFunds(f.Address); err != nil {
+	if _, err := c.ClaimFunds(f.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("ClaimFunds warning: %v", err)
 	}
 

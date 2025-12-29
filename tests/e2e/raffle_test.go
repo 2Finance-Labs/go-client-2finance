@@ -138,59 +138,59 @@ func TestRaffleFlow(t *testing.T) {
 	waitUntil(t, 10*time.Second, func() bool { return time.Now().After(start) })
 
 	c.SetPrivateKey(bobPriv)
-	if _, err := c.EnterRaffle(rf.Address, 2, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 2, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
-	if _, err := c.EnterRaffle(rf.Address, 7, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 7, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
-	if _, err := c.EnterRaffle(rf.Address, 3, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 3, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
-	if _, err := c.EnterRaffle(rf.Address, 5, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 5, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
 	c.SetPrivateKey(alicePriv)
-	if _, err := c.EnterRaffle(rf.Address, 5, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 5, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle warning: %v", err)
 	}
 	c.SetPrivateKey(robertPriv)
-	if _, err := c.EnterRaffle(rf.Address, 11, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 11, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
 	c.SetPrivateKey(alfredPriv)
-	if _, err := c.EnterRaffle(rf.Address, 13, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 13, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
 	c.SetPrivateKey(luizPriv)
-	if _, err := c.EnterRaffle(rf.Address, 17, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 17, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
 	c.SetPrivateKey(jorgePriv)
-	if _, err := c.EnterRaffle(rf.Address, 19, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 19, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
 	c.SetPrivateKey(luiguiPriv)
-	if _, err := c.EnterRaffle(rf.Address, 23, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 23, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
 	c.SetPrivateKey(supermanPriv)
-	if _, err := c.EnterRaffle(rf.Address, 29, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 29, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
-	if _, err := c.EnterRaffle(rf.Address, 31, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 31, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
 	c.SetPrivateKey(spidermanPriv)
-	if _, err := c.EnterRaffle(rf.Address, 37, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 37, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
 	c.SetPrivateKey(batmanPriv)
-	if _, err := c.EnterRaffle(rf.Address, 41, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 41, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
 	c.SetPrivateKey(wonderwomanPriv)
-	if _, err := c.EnterRaffle(rf.Address, 43, tok.Address); err != nil {
+	if _, err := c.EnterRaffle(rf.Address, 43, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("EnterRaffle: %v", err)
 	}
 
@@ -204,22 +204,22 @@ func TestRaffleFlow(t *testing.T) {
 
 	// deposit prize & prize ops
 	c.SetPrivateKey(ownerPrizePriv)
-	output, err := c.AddRafflePrize(rf.Address, tok1.Address, amt(2, dec))
+	output, err := c.AddRafflePrize(rf.Address, tok1.Address, amt(2, dec), tokenV1Domain.FUNGIBLE, "")
 	if err != nil {
 		t.Fatalf("AddRafflePrize: %v", err)
 	}
 
-	output, err = c.AddRafflePrize(rf.Address, tok2.Address, amt(3, dec))
+	output, err = c.AddRafflePrize(rf.Address, tok2.Address, amt(3, dec), tokenV1Domain.FUNGIBLE, "")
 	if err != nil {
 		t.Fatalf("AddRafflePrize: %v", err)
 	}
 
-	output, err = c.AddRafflePrize(rf.Address, tok3.Address, amt(4, dec))
+	output, err = c.AddRafflePrize(rf.Address, tok3.Address, amt(4, dec), tokenV1Domain.FUNGIBLE, "")
 	if err != nil {
 		t.Fatalf("AddRafflePrize: %v", err)
 	}
 
-	output, err = c.AddRafflePrize(rf.Address, tok4.Address, amt(5, dec))
+	output, err = c.AddRafflePrize(rf.Address, tok4.Address, amt(5, dec), tokenV1Domain.FUNGIBLE, "")
 	if err != nil {
 		t.Fatalf("AddRafflePrize: %v", err)
 	}
@@ -228,7 +228,7 @@ func TestRaffleFlow(t *testing.T) {
 	unmarshalState(t, output.States[0].Object, &r)
 
 	fmt.Println("r.UUID:", r.UUID)
-	_, err = c.RemoveRafflePrize(rf.Address, r.UUID)
+	_, err = c.RemoveRafflePrize(rf.Address, tokenV1Domain.FUNGIBLE,r.UUID)
 	if err != nil {
 		t.Fatalf("RemoveRafflePrize: %v", err)
 	}
@@ -253,7 +253,7 @@ func TestRaffleFlow(t *testing.T) {
 		fmt.Printf("Prize: %+v\n", prize)
 		if prize.Winner != "" {
 			c.SetPrivateKey(mapOfPubPriv[prize.Winner])
-			claim, err := c.ClaimRaffle(rf.Address, prize.Winner)
+			claim, err := c.ClaimRaffle(rf.Address, prize.Winner, tokenV1Domain.FUNGIBLE, "")
 			if err != nil {
 				t.Fatalf("ClaimRaffle warning: %v", err)
 			}
@@ -261,7 +261,7 @@ func TestRaffleFlow(t *testing.T) {
 		}
 		if len(d) == index+1 {
 			c.SetPrivateKey(mapOfPubPriv[prize.Winner])
-			_, err := c.ClaimRaffle(rf.Address, prize.Winner)
+			_, err := c.ClaimRaffle(rf.Address, prize.Winner, tokenV1Domain.FUNGIBLE, "")
 			if err == nil {
 				t.Fatalf("A error must not be nil: %v", err)
 			}
@@ -283,7 +283,7 @@ func TestRaffleFlow(t *testing.T) {
 
 	// // withdraw leftovers
 	c.SetPrivateKey(merchPriv)
-	_, err = c.WithdrawRaffle(rf.Address, tok.Address, amt(1, dec))
+	_, err = c.WithdrawRaffle(rf.Address, tok.Address, amt(1, dec), tokenV1Domain.FUNGIBLE, "")
 	if err != nil {
 		t.Fatalf("WithdrawRaffle: %v", err)
 	}

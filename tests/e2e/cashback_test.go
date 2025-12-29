@@ -47,7 +47,7 @@ func TestCashbackFlow(t *testing.T) {
 	}
 
 	_, _ = c.AllowUsers(tok.Address, map[string]bool{cb.Address: true})
-	if _, err := c.DepositCashbackFunds(cb.Address, tok.Address, amt(1000, dec)); err != nil {
+	if _, err := c.DepositCashbackFunds(cb.Address, tok.Address, amt(1000, dec), tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("DepositCashbackFunds: %v", err)
 	}
 	if _, err := c.UpdateCashback(cb.Address, tok.Address, cashbackV1Domain.PROGRAM_TYPE_FIXED, "300", start, exp); err != nil {
@@ -66,7 +66,7 @@ func TestCashbackFlow(t *testing.T) {
 	}
 
 	c.SetPrivateKey(userPriv)
-	if _, err := c.ClaimCashback(cb.Address, amt(100, dec)); err != nil {
+	if _, err := c.ClaimCashback(cb.Address, amt(100, dec), tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("ClaimCashback warning: %v", err)
 	}
 

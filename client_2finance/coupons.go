@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
@@ -208,6 +209,8 @@ func (c *networkClient) RedeemCoupon(
 	address string,     // coupon address
 	orderAmount string, // integer string in token base units
 	passcode string,
+	tokenType string,
+	uuid string,
 ) (types.ContractOutput, error) {
 
 	if address == "" {
@@ -221,6 +224,14 @@ func (c *networkClient) RedeemCoupon(
 	}
 	if passcode == "" {
 		return types.ContractOutput{}, fmt.Errorf("passcode (preimage) not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	from := c.publicKey
@@ -238,6 +249,8 @@ func (c *networkClient) RedeemCoupon(
 		"address":       address,
 		"order_amount":  orderAmount,
 		"passcode": passcode,
+		"token_type":    tokenType,
+		"uuid":          uuid,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)

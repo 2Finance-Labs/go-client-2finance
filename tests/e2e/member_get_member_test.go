@@ -88,10 +88,10 @@ func TestMgMFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Deposit/Withdraw pool funds (owner)
 	// --------------------------------------------------------------------
-	if _, err := c.DepositMgM(mgmAddress, amt(100, dec)); err != nil {
+	if _, err := c.DepositMgM(mgmAddress, amt(100, dec), tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Logf("DepositMgM warning: %v", err) // backend may gate this; don't fail suite
 	}
-	if _, err := c.WithdrawMgM(mgmAddress, amt(1, dec)); err != nil {
+	if _, err := c.WithdrawMgM(mgmAddress, amt(1, dec), tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Logf("WithdrawMgM warning: %v", err)
 	}
 

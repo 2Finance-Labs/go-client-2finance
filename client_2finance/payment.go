@@ -1,13 +1,14 @@
 package client_2finance
 
-
 import (
 	"fmt"
 
+	"time"
+
 	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
-	"time"
 )
 
 // CreatePayment creates a new payment intent (to = DEPLOY address).
@@ -59,7 +60,7 @@ func (c *networkClient) CreatePayment(
 	if payer == payee {
 		return types.ContractOutput{}, fmt.Errorf("payee and payer cannot be the same: %s - %s", payee, payer)
 	}
-	
+
 	if orderId == "" {
 		return types.ContractOutput{}, fmt.Errorf("order_id not set")
 	}
@@ -80,7 +81,7 @@ func (c *networkClient) CreatePayment(
 		"payer":         payer,
 		"payee":         payee,
 		"amount":        amount,
-		"expired_at":   expiredAt,
+		"expired_at":    expiredAt,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -94,6 +95,8 @@ func (c *networkClient) DirectPay(
 	payer string,
 	payee string,
 	amount string,
+	tokenType string,
+	uuid string,
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
@@ -135,6 +138,14 @@ func (c *networkClient) DirectPay(
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
+	}
 
 	to := address
 	method := paymentV1.METHOD_DIRECT_PAY
@@ -146,18 +157,28 @@ func (c *networkClient) DirectPay(
 		"payer":         payer,
 		"payee":         payee,
 		"amount":        amount,
+		"token_type":    tokenType,
+		"uuid":          uuid,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // AuthorizePayment places a hold on funds (payer -> payee) for a payment address.
-func (c *networkClient) AuthorizePayment(address string) (types.ContractOutput, error) {
+func (c *networkClient) AuthorizePayment(address, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
 	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	from := c.publicKey
@@ -172,18 +193,28 @@ func (c *networkClient) AuthorizePayment(address string) (types.ContractOutput, 
 	method := paymentV1.METHOD_AUTHORIZE_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
+		"token_type": tokenType,
+		"uuid": uuid,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // CapturePayment settles funds (full/partial).
-func (c *networkClient) CapturePayment(address string) (types.ContractOutput, error) {
+func (c *networkClient) CapturePayment(address, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
 	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	from := c.publicKey
@@ -198,13 +229,15 @@ func (c *networkClient) CapturePayment(address string) (types.ContractOutput, er
 	method := paymentV1.METHOD_CAPTURE_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
+		"token_type": tokenType,
+		"uuid": uuid,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // RefundPayment returns funds (full/partial) from payee back to payer.
-func (c *networkClient) RefundPayment(address, amount string) (types.ContractOutput, error) {
+func (c *networkClient) RefundPayment(address, amount, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -213,6 +246,14 @@ func (c *networkClient) RefundPayment(address, amount string) (types.ContractOut
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	from := c.publicKey
@@ -228,18 +269,28 @@ func (c *networkClient) RefundPayment(address, amount string) (types.ContractOut
 	data := map[string]interface{}{
 		"address": address,
 		"amount":  amount,
+		"token_type": tokenType,
+		"uuid": uuid,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
 }
 
 // VoidPayment releases an authorization hold.
-func (c *networkClient) VoidPayment(address string) (types.ContractOutput, error) {
+func (c *networkClient) VoidPayment(address, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
 	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	from := c.publicKey
@@ -254,6 +305,8 @@ func (c *networkClient) VoidPayment(address string) (types.ContractOutput, error
 	method := paymentV1.METHOD_VOID_PAYMENT
 	data := map[string]interface{}{
 		"address": address,
+		"token_type": tokenType,
+		"uuid": uuid,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -341,7 +394,7 @@ func (c *networkClient) GetPayment(address string) (types.ContractOutput, error)
 	return c.GetState(address, method, nil)
 }
 
-//payer, payee, orderId, tokenAddress string, status []string, page, limit int, ascending bool
+// payer, payee, orderId, tokenAddress string, status []string, page, limit int, ascending bool
 // ListPayments queries payments with filters + pagination.
 func (c *networkClient) ListPayments(
 	payer string,
@@ -353,7 +406,7 @@ func (c *networkClient) ListPayments(
 	limit int,
 	ascending bool,
 ) (types.ContractOutput, error) {
-	
+
 	from := c.publicKey
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
@@ -386,13 +439,13 @@ func (c *networkClient) ListPayments(
 
 	method := paymentV1.METHOD_LIST_PAYMENTS
 	data := map[string]interface{}{
-		"status":        status,
-		"payer":         payer,
-		"payee":         payee,
-		"page":          page,
-		"limit":         limit,
-		"ascending":     ascending,
-		"token_address": tokenAddress,
+		"status":           status,
+		"payer":            payer,
+		"payee":            payee,
+		"page":             page,
+		"limit":            limit,
+		"ascending":        ascending,
+		"token_address":    tokenAddress,
 		"contract_version": paymentV1.PAYMENT_CONTRACT_V1,
 	}
 

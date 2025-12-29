@@ -3,7 +3,9 @@ package client_2finance
 import (
 	"fmt"
 	"time"
+
 	memberGetMemberV1 "gitlab.com/2finance/2finance-network/blockchain/contract/memberGetMemberV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
@@ -53,7 +55,7 @@ func (c *networkClient) AddMgM(
 	to := address
 	method := memberGetMemberV1.METHOD_ADD_MGM
 	data := map[string]interface{}{
-		"address":       address,
+		"address":        address,
 		"owner":          owner,
 		"token_address":  tokenAddress,
 		"faucet_address": faucetAddress,
@@ -201,6 +203,8 @@ func (c *networkClient) UnpauseMgM(mgmAddress string, pause bool) (types.Contrac
 func (c *networkClient) DepositMgM(
 	mgmAddress string,
 	amount string,
+	tokenType string,
+	uuid string,
 ) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
@@ -211,6 +215,15 @@ func (c *networkClient) DepositMgM(
 
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	from := c.publicKey
@@ -227,6 +240,8 @@ func (c *networkClient) DepositMgM(
 	data := map[string]interface{}{
 		"mgm_address": mgmAddress,
 		"amount":      amount,
+		"token_type":  tokenType,
+		"uuid":        uuid,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -245,6 +260,8 @@ func (c *networkClient) DepositMgM(
 func (c *networkClient) WithdrawMgM(
 	mgmAddress string,
 	amount string,
+	tokenType string,
+	uuid string,
 ) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
@@ -255,6 +272,15 @@ func (c *networkClient) WithdrawMgM(
 
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	from := c.publicKey
@@ -271,6 +297,8 @@ func (c *networkClient) WithdrawMgM(
 	data := map[string]interface{}{
 		"mgm_address": mgmAddress,
 		"amount":      amount,
+		"token_type":  tokenType,
+		"uuid":        uuid,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -286,7 +314,7 @@ func (c *networkClient) WithdrawMgM(
 	return contractOutput, nil
 }
 
-func (c *networkClient) AddInviterMember(mgmAddress string, inviterAddress string, password string ) (types.ContractOutput, error) {
+func (c *networkClient) AddInviterMember(mgmAddress string, inviterAddress string, password string) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -310,9 +338,9 @@ func (c *networkClient) AddInviterMember(mgmAddress string, inviterAddress strin
 	method := memberGetMemberV1.METHOD_ADD_INVITER_MEMBER
 
 	data := map[string]interface{}{
-		"mgm_address":   mgmAddress,
+		"mgm_address":     mgmAddress,
 		"inviter_address": inviterAddress,
-		"password":    password,
+		"password":        password,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -350,9 +378,9 @@ func (c *networkClient) UpdateInviterPassword(mgmAddress string, inviterAddress 
 	method := memberGetMemberV1.METHOD_UPDATE_INVITER_PASSWORD
 
 	data := map[string]interface{}{
-		"mgm_address":   mgmAddress,
+		"mgm_address":     mgmAddress,
 		"inviter_address": inviterAddress,
-		"new_password":  newPassword,
+		"new_password":    newPassword,
 	}
 
 	to := mgmAddress
@@ -389,7 +417,7 @@ func (c *networkClient) DeleteInviterMember(mgmAddress string, inviterAddress st
 	method := memberGetMemberV1.METHOD_DELETE_INVITER_MEMBER
 
 	data := map[string]interface{}{
-		"mgm_address":   mgmAddress,
+		"mgm_address":     mgmAddress,
 		"inviter_address": inviterAddress,
 	}
 

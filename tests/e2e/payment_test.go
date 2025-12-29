@@ -55,16 +55,16 @@ func TestPaymentFlow(t *testing.T) {
 	_, _ = c.AllowUsers(tok.Address, map[string]bool{pay.Address: true})
 
 	c.SetPrivateKey(payerPriv)
-	if _, err := c.AuthorizePayment(pay.Address); err != nil {
+	if _, err := c.AuthorizePayment(pay.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("AuthorizePayment: %v", err)
 	}
 
 	// capture and refund by payee
 	c.SetPrivateKey(payeePriv)
-	if _, err := c.CapturePayment(pay.Address); err != nil {
+	if _, err := c.CapturePayment(pay.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("CapturePayment warning: %v", err)
 	}
-	_, _ = c.RefundPayment(pay.Address, "10")
+	_, _ = c.RefundPayment(pay.Address, "10", tokenV1Domain.FUNGIBLE, "")
 
 	// direct pay (no auth/capture)
 	contractState = models.ContractStateModel{}
@@ -75,7 +75,7 @@ func TestPaymentFlow(t *testing.T) {
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address = contractState.Address
 
-	_, _ = c.DirectPay(address, tok.Address, orderID+"-direct", payer.PublicKey, payee.PublicKey, amt(2, dec))
+	_, _ = c.DirectPay(address, tok.Address, orderID+"-direct", payer.PublicKey, payee.PublicKey, amt(2, dec), tokenV1Domain.FUNGIBLE, "")
 
 	// pause/unpause by owner/admin (if applicable)
 	c.SetPrivateKey(payerPriv)
@@ -153,10 +153,10 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	}
 
 	c.SetPrivateKey(payerPriv)
-	if _, err := c.AuthorizePayment(pay.Address); err != nil {
+	if _, err := c.AuthorizePayment(pay.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("AuthorizePayment: %v", err)
 	}
-	if _, err := c.VoidPayment(pay.Address); err != nil {
+	if _, err := c.VoidPayment(pay.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
 		t.Fatalf("VoidPayment warning: %v", err)
 	}
 }
