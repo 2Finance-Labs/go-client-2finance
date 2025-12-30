@@ -292,3 +292,182 @@ func TestRaffleFlow(t *testing.T) {
 	// if _, err := c.GetRaffle(rf.Address); err != nil { t.Fatalf("GetRaffle: %v", err) }
 	// if _, err := c.ListRaffles(merchant.PublicKey, tok.Address, nil, nil, 1, 10, true); err != nil { t.Fatalf("ListRaffles: %v", err) }
 }
+
+func TestRaffleFlow_NonFungible(t *testing.T) {
+	c := setupClient(t)
+
+	// --------------------------------------------------------------------
+	// Owner + NFT base token (ticket)
+	// --------------------------------------------------------------------
+	owner, ownerPriv := createWallet(t, c)
+	c.SetPrivateKey(ownerPriv)
+
+	dec := 0
+	tokenType := tokenV1Domain.NON_FUNGIBLE
+	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType)
+
+	// --------------------------------------------------------------------
+	// Players
+	// --------------------------------------------------------------------
+	type player struct {
+		pub  string
+		priv string
+		uuid string
+	}
+
+	bob, bobPriv := createWallet(t, c)
+	alice, alicePriv := createWallet(t, c)
+
+	players := []player{
+		{bob.PublicKey, bobPriv, ""},
+		{alice.PublicKey, alicePriv, ""},
+	}
+
+	// --------------------------------------------------------------------
+	// Mint 1 NFT ticket per player
+	// --------------------------------------------------------------------
+	c.SetPrivateKey(ownerPriv)
+	for i := range players {
+		mintOut, err := c.MintToken(
+			tok.Address,
+			players[i].pub,
+			"1",
+			dec,
+			tokenType,
+		)
+		if err != nil {
+			t.Fatalf("MintToken NFT: %v", err)
+		}
+
+		var mint tokenV1Domain.Mint
+		unmarshalState(t, mintOut.States[0].Object, &mint)
+		players[i].uuid = mint.TokenUUIDList[0]
+	}
+
+	// --------------------------------------------------------------------
+	// Merchant runs raffle
+	// --------------------------------------------------------------------
+	merchant, merchPriv := createWallet(t, c)
+	c.SetPrivateKey(merchPriv)
+
+	start := time.Now().Add(2 * time.Second)
+	exp := time.Now().Add(24 * time.Hour)
+
+	seedPass := "e2e-seed-nft"
+	commit := seed.CommitSeed(seedPass)
+	meta := map[string]string{"campaign": "e2e-nft"}
+
+	var contractState models.ContractStateModel
+	deployedContract, err := c.DeployContract1(raffleV1.RAFFLE_CONTRACT_V1)
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
+	unmarshalState(t, deployedContract.States[0].Object, &contractState)
+
+	added, err := c.AddRaffle(
+		contractState.Address,
+		merchant.PublicKey,
+		tok.Address,
+		"1", // ticket price = 1 NFT
+		10,
+		1,
+		start,
+		exp,
+		false,
+		commit,
+		meta,
+	)
+	if err != nil {
+		t.Fatalf("AddRaffle NFT: %v", err)
+	}
+
+	var rf raffleV1Domain.Raffle
+	unmarshalState(t, added.States[0].Object, &rf)
+
+	// allow raffle
+	_, _ = c.AllowUsers(tok.Address, map[string]bool{rf.Address: true})
+
+	// --------------------------------------------------------------------
+	// Players enter raffle (UUID obrigatório)
+	// --------------------------------------------------------------------
+	waitUntil(t, 10*time.Second, func() bool { return time.Now().After(start) })
+
+	for _, p := range players {
+		c.SetPrivateKey(p.priv)
+		if _, err := c.EnterRaffle(
+			rf.Address,
+			1,
+			tok.Address,
+			tokenType,
+			p.uuid,
+		); err != nil {
+			t.Fatalf("EnterRaffle NFT: %v", err)
+		}
+	}
+
+	// --------------------------------------------------------------------
+	// CREATE PRIZES
+	// --------------------------------------------------------------------
+	prizeOwner, prizePriv := createWallet(t, c)
+	c.SetPrivateKey(prizePriv)
+
+	prizeToken := createBasicToken(t, c, prizeOwner.PublicKey, 0, false, tokenType)
+
+	mintPrize, err := c.MintToken(
+		prizeToken.Address,
+		prizeOwner.PublicKey,
+		"1",
+		0,
+		tokenType,
+	)
+	if err != nil {
+		t.Fatalf("Mint prize NFT: %v", err)
+	}
+
+	var prizeMint tokenV1Domain.Mint
+	unmarshalState(t, mintPrize.States[0].Object, &prizeMint)
+	prizeUUID := prizeMint.TokenUUIDList[0]
+
+	if _, err := c.AddRafflePrize(
+		rf.Address,
+		prizeToken.Address,
+		"1",
+		tokenType,
+		prizeUUID,
+	); err != nil {
+		t.Fatalf("AddRafflePrize NFT: %v", err)
+	}
+
+	// --------------------------------------------------------------------
+	// DRAW (agora winnerCount > 0)
+	// --------------------------------------------------------------------
+	c.SetPrivateKey(merchPriv)
+	draw, err := c.DrawRaffle(rf.Address, seedPass)
+	if err != nil {
+		t.Fatalf("DrawRaffle NFT: %v", err)
+	}
+
+	var prizes []raffleV1Models.RafflePrizeModel
+	unmarshalState(t, draw.States[0].Object, &prizes)
+
+	// --------------------------------------------------------------------
+	// Claim prize
+	// --------------------------------------------------------------------
+	for _, pz := range prizes {
+		if pz.Winner != "" {
+			for _, p := range players {
+				if p.pub == pz.Winner {
+					c.SetPrivateKey(p.priv)
+					if _, err := c.ClaimRaffle(
+						rf.Address,
+						pz.Winner,
+						tokenType,
+						pz.UUID,
+					); err != nil {
+						t.Fatalf("ClaimRaffle NFT: %v", err)
+					}
+				}
+			}
+		}
+	}
+}
