@@ -18,12 +18,12 @@ func TestCashbackFlow(t *testing.T) {
 
 	dec := 1
 	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE)
-	_ = createMint(t, c, tok, owner.PublicKey, "10000", dec)
+	_ = createMint(t, c, tok, owner.PublicKey, "10000", dec, tok.TokenType)
 
 	merchant, _ := createWallet(t, c)
 
 	c.SetPrivateKey(ownerPriv)
-	_ = createTransfer(t, c, tok, merchant.PublicKey, "50", dec)
+	_ = createTransfer(t, c, tok, merchant.PublicKey, "50", dec, tok.TokenType, "")
 
 	start := time.Now().Add(2 * time.Second)
 	exp := time.Now().Add(30 * time.Minute)

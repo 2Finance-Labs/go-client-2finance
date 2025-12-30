@@ -18,12 +18,12 @@ func TestFaucetFlow(t *testing.T) {
 	c.SetPrivateKey(ownerPriv)
 	dec := 5
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE)
-	_ = createMint(t, c, tok, owner.PublicKey, "10000", tok.Decimals)
+	_ = createMint(t, c, tok, owner.PublicKey, "10000", tok.Decimals, tok.TokenType)
 
 	merchant, merchPriv := createWallet(t, c)
 
 	c.SetPrivateKey(ownerPriv)
-	_ = createTransfer(t, c, tok, merchant.PublicKey, "50", tok.Decimals)
+	_ = createTransfer(t, c, tok, merchant.PublicKey, "50", tok.Decimals, tok.TokenType, "")
 
 	start := time.Now().Add(2 * time.Second)
 	exp := time.Now().Add(20 * time.Minute)

@@ -276,9 +276,9 @@ func createBasicToken(
 	return tok
 }
 
-func createMint(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int) tokenV1Domain.Mint {
+func createMint(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int, tokenType string) tokenV1Domain.Mint {
 	t.Helper()
-	out, err := c.MintToken(token.Address, to, amount, decimals, token.TokenType)
+	out, err := c.MintToken(token.Address, to, amount, decimals, tokenType)
 	if err != nil {
 		t.Fatalf("MintToken: %v", err)
 	}
@@ -290,9 +290,9 @@ func createMint(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Dom
 	return m
 }
 
-func createBurn(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, amount string, decimals int) tokenV1Domain.Burn {
+func createBurn(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, amount string, decimals int, tokenType, uuid string) tokenV1Domain.Burn {
 	t.Helper()
-	out, err := c.BurnToken(token.Address, amount, decimals, token.TokenType, "")
+	out, err := c.BurnToken(token.Address, amount, decimals, tokenType, uuid)
 	if err != nil {
 		t.Fatalf("BurnToken: %v", err)
 	}
@@ -304,9 +304,9 @@ func createBurn(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Dom
 	return b
 }
 
-func createTransfer(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int) tokenV1Domain.Transfer {
+func createTransfer(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int, tokenType, uuid string) tokenV1Domain.Transfer {
 	t.Helper()
-	out, err := c.TransferToken(token.Address, to, amount, decimals, token.TokenType, "")
+	out, err := c.TransferToken(token.Address, to, amount, decimals, tokenType, uuid)
 	if err != nil {
 		t.Fatalf("TransferToken: %v", err)
 	}

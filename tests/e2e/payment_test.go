@@ -18,7 +18,7 @@ func TestPaymentFlow(t *testing.T) {
 	dec := 6
 
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE)
-	_ = createMint(t, c, tok, owner.PublicKey, "10000", dec)
+	_ = createMint(t, c, tok, owner.PublicKey, "10000", dec, tok.TokenType)
 
 	payer, payerPriv := createWallet(t, c)
 	payee, payeePriv := createWallet(t, c)
@@ -26,7 +26,7 @@ func TestPaymentFlow(t *testing.T) {
 	c.SetPrivateKey(ownerPriv)
 	_, _ = c.AllowUsers(tok.Address, map[string]bool{payer.PublicKey: true})
 	_, _ = c.AllowUsers(tok.Address, map[string]bool{payee.PublicKey: true})
-	_ = createTransfer(t, c, tok, payer.PublicKey, "50", tok.Decimals)
+	_ = createTransfer(t, c, tok, payer.PublicKey, "50", tok.Decimals, tok.TokenType, "")
 
 	orderID := fmt.Sprintf("order-%d", time.Now().Unix())
 	c.SetPrivateKey(payerPriv)
@@ -125,7 +125,7 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AllowUsers(payee): %v", err)
 	}
-	_ = createTransfer(t, c, tok, payer.PublicKey, "50", tok.Decimals)
+	_ = createTransfer(t, c, tok, payer.PublicKey, "50", tok.Decimals, tok.TokenType, "")
 
 	orderID := fmt.Sprintf("order-%d-void", time.Now().Unix())
 	c.SetPrivateKey(payerPriv)
