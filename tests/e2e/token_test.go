@@ -236,6 +236,7 @@ func createBasicToken(
 	address := contractState.Address
 
 	assetGLBUri := "https://example.com/asset.glb"
+	transferable := true
 
 	out, err := c.AddToken(
 		address,
@@ -263,6 +264,7 @@ func createBasicToken(
 		expiredAt,
 		assetGLBUri,
 		tokenType,
+		transferable,
 	)
 	if err != nil {
 		t.Fatalf("AddToken: %v", err)

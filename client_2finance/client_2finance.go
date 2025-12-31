@@ -93,7 +93,8 @@ type Client2FinanceNetwork interface {
 		paused bool,
 		expired_at time.Time,
 		assetGLBUri string,
-		tokenType string) (types.ContractOutput, error)
+		tokenType string,
+		transferable bool) (types.ContractOutput, error)
 	MintToken(to, mintTo, amount string, decimals int, tokenType string) (types.ContractOutput, error)
 	BurnToken(to, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
 	TransferToken(tokenAddress, transferTo, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
@@ -112,6 +113,10 @@ type Client2FinanceNetwork interface {
 	UnpauseToken(tokenAddress string, unpause bool) (types.ContractOutput, error)
 	UpdateFeeTiers(tokenAddress string, feeTierList []map[string]interface{}) (types.ContractOutput, error)
 	UpdateFeeAddress(tokenAddress, feeAddress string) (types.ContractOutput, error)
+	// UpdateGlbFile(tokenAddress string, newAssetGLBUri string) (types.ContractOutput, error)
+	TransferableToken(tokenAddress string, transferable bool) (types.ContractOutput, error)
+	UntransferableToken(tokenAddress string, transferable bool) (types.ContractOutput, error)
+
 	GetToken(tokenAddress string, symbol string, name string) (types.ContractOutput, error)
 	ListTokens(ownerAddress, symbol, name string, page, limit int, ascending bool) (types.ContractOutput, error)
 
