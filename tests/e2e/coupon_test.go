@@ -9,6 +9,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
 	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
+	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 )
 
 func TestCouponFlow(t *testing.T) {
@@ -16,7 +17,7 @@ func TestCouponFlow(t *testing.T) {
 	owner, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE)
 
 	start := time.Now().Add(2 * time.Second)
 	exp := time.Now().Add(25 * time.Minute)

@@ -1,41 +1,43 @@
 package client_2finance
 
 import (
-	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
-	"gitlab.com/2finance/2finance-network/blockchain/types"
-	"gitlab.com/2finance/2finance-network/blockchain/utils"
 	"fmt"
 	"time"
+
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
+	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 func (c *networkClient) AddToken(
-		address string,
-		symbol string, 
-		name string, 
-		decimals int, 
-		totalSupply string, 
-		description string, 
-		owner string,
-		image string, 
-		website string, 
-		tagsSocialMedia map[string]string,
-		tagsCategory map[string]string,
-		tags map[string]string,
-		creator string, 
-		creatorWebsite string, 
-		allowUsers map[string]bool,
-		blockUsers map[string]bool,
-		feeTiersList []map[string]interface{},
-		feeAddress string,
-		freezeAuthorityRevoked bool, 
-		mintAuthorityRevoked bool, 
-		updateAuthorityRevoked bool, 
-		paused bool,
-		expired_at time.Time) (types.ContractOutput, error) {
+	address string,
+	symbol string,
+	name string,
+	decimals int,
+	totalSupply string,
+	description string,
+	owner string,
+	image string,
+	website string,
+	tagsSocialMedia map[string]string,
+	tagsCategory map[string]string,
+	tags map[string]string,
+	creator string,
+	creatorWebsite string,
+	allowUsers map[string]bool,
+	blockUsers map[string]bool,
+	feeTiersList []map[string]interface{},
+	feeAddress string,
+	freezeAuthorityRevoked bool,
+	mintAuthorityRevoked bool,
+	updateAuthorityRevoked bool,
+	paused bool,
+	expired_at time.Time,
+	assetGLBUri string,
+	tokenType string) (types.ContractOutput, error) {
 
-			
 	if symbol == "" {
 		return types.ContractOutput{}, fmt.Errorf("symbol not set")
 	}
@@ -66,7 +68,13 @@ func (c *networkClient) AddToken(
 	if err := keys.ValidateEDDSAPublicKey(feeAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid fee address: %w", err)
 	}
-	
+	if assetGLBUri == "" {
+		return types.ContractOutput{}, fmt.Errorf("asset GLB URI not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
+	}
+
 	err := domain.ValidateUserMap(allowUsers, "allow users")
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid allow users: %w", err)
@@ -88,28 +96,30 @@ func (c *networkClient) AddToken(
 	to := address
 	method := tokenV1.METHOD_ADD_TOKEN
 	data := map[string]interface{}{
-		"symbol":                symbol,
-		"name":                  name,
-		"decimals":              decimals,
-		"total_supply":           totalSupply,
-		"description":           description,
-		"owner":                 owner,
-		"fee_tiers_list":          feeTiersList,
-		"fee_address":            feeAddress, // Fee address is the from address
-		"image":                 image,
-		"website":               website,
-		"tags_social_media":       tagsSocialMedia,
-		"tags_category":          tagsCategory,
-		"tags":                  tags,
-		"creator":               creator,
-		"creator_website":        creatorWebsite,
-		"allow_users":        allowUsers,
-		"block_users":        blockUsers,
+		"symbol":                   symbol,
+		"name":                     name,
+		"decimals":                 decimals,
+		"total_supply":             totalSupply,
+		"description":              description,
+		"owner":                    owner,
+		"fee_tiers_list":           feeTiersList,
+		"fee_address":              feeAddress, // Fee address is the from address
+		"image":                    image,
+		"website":                  website,
+		"tags_social_media":        tagsSocialMedia,
+		"tags_category":            tagsCategory,
+		"tags":                     tags,
+		"creator":                  creator,
+		"creator_website":          creatorWebsite,
+		"allow_users":              allowUsers,
+		"block_users":              blockUsers,
 		"freeze_authority_revoked": freezeAuthorityRevoked,
 		"mint_authority_revoked":   mintAuthorityRevoked,
 		"update_authority_revoked": updateAuthorityRevoked,
-		"paused":                paused,
-		"expired_at":           expired_at,
+		"paused":                   paused,
+		"expired_at":               expired_at,
+		"asset_glb_uri":            assetGLBUri,
+		"token_type":               tokenType,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -123,12 +133,13 @@ func (c *networkClient) AddToken(
 
 	return contractOutput, nil
 }
-//from signer
-//to is the token address, we are sending transaction to the token contract
-//mintTo is the address that will receive the minted tokens
-//amount is the amount of tokens to mint, it should be in the smallest unit (e.g. wei for ETH)
-func (c *networkClient) MintToken(to, mintTo, amount string, decimals int) (types.ContractOutput, error) {
-	
+
+// from signer
+// to is the token address, we are sending transaction to the token contract
+// mintTo is the address that will receive the minted tokens
+// amount is the amount of tokens to mint, it should be in the smallest unit (e.g. wei for ETH)
+func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, tokenType string) (types.ContractOutput, error) {
+
 	from := c.publicKey
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
@@ -141,6 +152,9 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int) (type
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 
 	if err := keys.ValidateEDDSAPublicKey(mintTo); err != nil {
@@ -169,8 +183,9 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int) (type
 
 	method := tokenV1.METHOD_MINT_TOKEN
 	data := map[string]interface{}{
-		"mint_to":       mintTo,
-		"amount":        amount,
+		"mint_to":    mintTo,
+		"amount":     amount,
+		"token_type": tokenType,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -184,9 +199,8 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int) (type
 
 	return contractOutput, nil
 }
-		
 
-func (c *networkClient) BurnToken(to, amount string, decimals int) (types.ContractOutput, error) {
+func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error) {
 	from := c.publicKey
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
@@ -196,6 +210,14 @@ func (c *networkClient) BurnToken(to, amount string, decimals int) (types.Contra
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid not set")
+		}
 	}
 
 	if decimals != 0 {
@@ -216,7 +238,9 @@ func (c *networkClient) BurnToken(to, amount string, decimals int) (types.Contra
 
 	method := tokenV1.METHOD_BURN_TOKEN
 	data := map[string]interface{}{
-		"amount":        amount,
+		"amount": amount,
+		"token_type": tokenType,
+		"uuid": uuid,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -231,7 +255,7 @@ func (c *networkClient) BurnToken(to, amount string, decimals int) (types.Contra
 	return contractOutput, nil
 }
 
-func (c *networkClient) TransferToken(tokenAddress string, transferTo string, amount string, decimals int) (types.ContractOutput, error) {
+func (c *networkClient) TransferToken(tokenAddress string, transferTo string, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error) {
 	from := c.publicKey
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
@@ -244,6 +268,14 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid not set")
+		}
 	}
 	if from == transferTo {
 		return types.ContractOutput{}, fmt.Errorf("from and to addresses are the same")
@@ -268,11 +300,13 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
-	
+
 	method := tokenV1.METHOD_TRANSFER_TOKEN
 	data := map[string]interface{}{
-		"transfer_to":   transferTo,
-		"amount":        amount,
+		"transfer_to": transferTo,
+		"amount":      amount,
+		"token_type":  tokenType,
+		"uuid":        uuid,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -286,7 +320,6 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 
 	return contractOutput, nil
 }
-
 
 func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
@@ -330,7 +363,6 @@ func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (
 	return contractOutput, nil
 
 }
-
 
 func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
@@ -480,7 +512,7 @@ func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 
 	method := tokenV1.METHOD_REVOKE_FREEZE_AUTHORITY
 	data := map[string]interface{}{
-		"freeze_authority_revoked":  revoke,
+		"freeze_authority_revoked": revoke,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -514,7 +546,7 @@ func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 
 	method := tokenV1.METHOD_REVOKE_MINT_AUTHORITY
 	data := map[string]interface{}{
-		"mint_authority_revoked":  revoke,
+		"mint_authority_revoked": revoke,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -548,7 +580,7 @@ func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 
 	method := tokenV1.METHOD_REVOKE_UPDATE_AUTHORITY
 	data := map[string]interface{}{
-		"update_authority_revoked":  revoke,
+		"update_authority_revoked": revoke,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -564,8 +596,8 @@ func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 }
 
 func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decimals int, description, image, website string,
-		tagsSocialMedia, tagsCategory, tags map[string]string,
-		creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error) {
+	tagsSocialMedia, tagsCategory, tags map[string]string,
+	creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error) {
 	from := c.publicKey
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
@@ -594,7 +626,7 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 	if creatorWebsite == "" {
 		return types.ContractOutput{}, fmt.Errorf("creator website not set")
 	}
-	
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -603,20 +635,20 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 	}
 	method := tokenV1.METHOD_UPDATE_METADATA
 	data := map[string]interface{}{
-		"symbol":                symbol,
-		"name":                  name,
-		"decimals":              decimals,
-		"description":           description,
-		"image":                 image,
-		"website":               website,
-		"tags_social_media":       tagsSocialMedia,
-		"tags_category":          tagsCategory,
-		"tags":                  tags,
-		"creator":               creator,
-		"creator_website":        creatorWebsite,
-		"expired_at":           expired_at,
+		"symbol":            symbol,
+		"name":              name,
+		"decimals":          decimals,
+		"description":       description,
+		"image":             image,
+		"website":           website,
+		"tags_social_media": tagsSocialMedia,
+		"tags_category":     tagsCategory,
+		"tags":              tags,
+		"creator":           creator,
+		"creator_website":   creatorWebsite,
+		"expired_at":        expired_at,
 	}
-	
+
 	contractOutput, err := c.SignAndSendTransaction(
 		from,
 		tokenAddress,
@@ -625,7 +657,6 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
-	
 
 	return contractOutput, nil
 }
@@ -653,7 +684,7 @@ func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.Cont
 
 	method := tokenV1.METHOD_PAUSE_TOKEN
 	data := map[string]interface{}{
-		"paused":  paused,
+		"paused": paused,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -690,7 +721,7 @@ func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.Co
 
 	method := tokenV1.METHOD_UNPAUSE_TOKEN
 	data := map[string]interface{}{
-		"paused":  paused,
+		"paused": paused,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -764,7 +795,7 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 
 	method := tokenV1.METHOD_UPDATE_FEE_ADDRESS
 	data := map[string]interface{}{
-		"fee_address":   feeAddress,
+		"fee_address": feeAddress,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -784,7 +815,7 @@ func (c *networkClient) GetToken(tokenAddress string, symbol string, name string
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	
+
 	if tokenAddress == "" && symbol == "" && name == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address, symbol or name must be set")
 	}
@@ -799,8 +830,8 @@ func (c *networkClient) GetToken(tokenAddress string, symbol string, name string
 
 	method := tokenV1.METHOD_GET_TOKEN
 	data := map[string]interface{}{
-		"symbol":  symbol,
-		"name":    name,
+		"symbol": symbol,
+		"name":   name,
 	}
 
 	contractOutput, err := c.GetState(tokenAddress, method, data)
@@ -829,12 +860,12 @@ func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limi
 
 	method := tokenV1.METHOD_LIST_TOKENS
 	data := map[string]interface{}{
-		"owner":   ownerAddress,
-		"symbol":  symbol,
-		"name":    name,
-		"page":    page,
-		"limit":   limit,
-		"ascending": ascending,
+		"owner":            ownerAddress,
+		"symbol":           symbol,
+		"name":             name,
+		"page":             page,
+		"limit":            limit,
+		"ascending":        ascending,
 		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
 	}
 
@@ -907,11 +938,11 @@ func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress string, pag
 
 	method := tokenV1.METHOD_LIST_TOKEN_BALANCES
 	data := map[string]interface{}{
-		"owner_address": ownerAddress,
-		"page":          page,
-		"limit":         limit,
-		"ascending":     ascending,
-		"token_address":  tokenAddress,
+		"owner_address":    ownerAddress,
+		"page":             page,
+		"limit":            limit,
+		"ascending":        ascending,
+		"token_address":    tokenAddress,
 		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
 	}
 
