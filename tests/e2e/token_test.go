@@ -72,7 +72,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	// Metadata / Authorities / Pause
-	if _, err := c.UpdateMetadata(
+	mdOut, err := c.UpdateMetadata(
 		tok.Address,
 		"2F-NEW"+randSuffix(4),
 		"2Finance New",
@@ -86,9 +86,17 @@ func TestTokenFlowFungible(t *testing.T) {
 		"creator",
 		"https://creator",
 		time.Now().Add(30*24*time.Hour),
-	); err != nil {
+	)
+	if err != nil {
 		t.Fatalf("UpdateMetadata: %v", err)
 	}
+
+	unmarshalState(t, mdOut.States[0].Object, &tok)
+
+	//TODO - implement GLB update test
+	// if _, err := c.UpdateGlbFile(tok.Address, "https://example.com/asset.glb2"); err != nil {
+	// 	t.Fatalf("UpdateGlbFile: %v", err)
+	// }
 
 	if _, err := c.RevokeMintAuthority(tok.Address, true); err != nil {
 		t.Fatalf("RevokeMintAuthority: %v", err)
@@ -236,6 +244,7 @@ func createBasicToken(
 	address := contractState.Address
 
 	assetGLBUri := "https://example.com/asset.glb"
+	transferable := true
 
 	out, err := c.AddToken(
 		address,
@@ -263,6 +272,7 @@ func createBasicToken(
 		expiredAt,
 		assetGLBUri,
 		tokenType,
+		transferable,
 	)
 	if err != nil {
 		t.Fatalf("AddToken: %v", err)
