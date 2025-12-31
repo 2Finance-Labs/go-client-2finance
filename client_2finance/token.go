@@ -812,42 +812,42 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 	return contractOutput, nil
 }
 
-// func (c *networkClient) UpdateGlbFile(tokenAddress string, newAssetGLBUri string) (types.ContractOutput, error) {
-// 	from := c.publicKey
-// 	if from == "" {
-// 		return types.ContractOutput{}, fmt.Errorf("from address not set")
-// 	}
-// 	if tokenAddress == "" {
-// 		return types.ContractOutput{}, fmt.Errorf("token address not set")
-// 	}
-// 	if newAssetGLBUri == "" {
-// 		return types.ContractOutput{}, fmt.Errorf("new asset GLB URI not set")
-// 	}
+func (c *networkClient) UpdateGlbFile(tokenAddress string, newAssetGLBUri string) (types.ContractOutput, error) {
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if newAssetGLBUri == "" {
+		return types.ContractOutput{}, fmt.Errorf("new asset GLB URI not set")
+	}
 
-// 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
-// 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
-// 	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
 
-// 	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
-// 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
-// 	}
+	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
 
-// 	method := tokenV1.METHOD_UPDATE_GLB_FILE
-// 	data := map[string]interface{}{
-// 		"asset_glb_uri": newAssetGLBUri,
-// 	}
+	method := tokenV1.METHOD_UPDATE_GLB_FILE
+	data := map[string]interface{}{
+		"asset_glb_uri": newAssetGLBUri,
+	}
 
-// 	contractOutput, err := c.SignAndSendTransaction(
-// 		from,
-// 		tokenAddress,
-// 		method,
-// 		data)
-// 	if err != nil {
-// 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
-// 	}
+	contractOutput, err := c.SignAndSendTransaction(
+		from,
+		tokenAddress,
+		method,
+		data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
 
-// 	return contractOutput, nil
-// }
+	return contractOutput, nil
+}
 
 func (c *networkClient) TransferableToken(tokenAddress string, transferable bool) (types.ContractOutput, error) {
 	from := c.publicKey

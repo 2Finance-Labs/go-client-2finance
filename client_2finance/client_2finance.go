@@ -113,7 +113,7 @@ type Client2FinanceNetwork interface {
 	UnpauseToken(tokenAddress string, unpause bool) (types.ContractOutput, error)
 	UpdateFeeTiers(tokenAddress string, feeTierList []map[string]interface{}) (types.ContractOutput, error)
 	UpdateFeeAddress(tokenAddress, feeAddress string) (types.ContractOutput, error)
-	// UpdateGlbFile(tokenAddress string, newAssetGLBUri string) (types.ContractOutput, error)
+	UpdateGlbFile(tokenAddress string, newAssetGLBUri string) (types.ContractOutput, error)
 	TransferableToken(tokenAddress string, transferable bool) (types.ContractOutput, error)
 	UntransferableToken(tokenAddress string, transferable bool) (types.ContractOutput, error)
 
