@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
@@ -217,7 +218,7 @@ func (c *networkClient) UnpauseFaucet(
 	return contractOutput, nil
 }
 
-func (c *networkClient) DepositFunds(address, tokenAddress, amount string) (types.ContractOutput, error) {
+func (c *networkClient) DepositFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -230,6 +231,14 @@ func (c *networkClient) DepositFunds(address, tokenAddress, amount string) (type
 	}
 	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	from := c.publicKey
@@ -247,6 +256,8 @@ func (c *networkClient) DepositFunds(address, tokenAddress, amount string) (type
 		"address":       address,
 		"token_address": tokenAddress,
 		"amount":        amount,
+		"token_type":    tokenType,
+		"uuid":          uuid,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -262,7 +273,7 @@ func (c *networkClient) DepositFunds(address, tokenAddress, amount string) (type
 	return contractOutput, nil
 }
 
-func (c *networkClient) WithdrawFunds(address, tokenAddress, amount string) (types.ContractOutput, error) {
+func (c *networkClient) WithdrawFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -275,6 +286,14 @@ func (c *networkClient) WithdrawFunds(address, tokenAddress, amount string) (typ
 	}
 	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	from := c.publicKey
@@ -292,6 +311,8 @@ func (c *networkClient) WithdrawFunds(address, tokenAddress, amount string) (typ
 		"address":       address,
 		"token_address": tokenAddress,
 		"amount":        amount,
+		"token_type":    tokenType,
+		"uuid":          uuid,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -348,12 +369,20 @@ func (c *networkClient) UpdateRequestLimitPerUser(address string, requestLimit i
 	return contractOutput, nil
 }
 
-func (c *networkClient) ClaimFunds(address string) (types.ContractOutput, error) {
+func (c *networkClient) ClaimFunds(address, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
 	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	from := c.publicKey
@@ -367,6 +396,8 @@ func (c *networkClient) ClaimFunds(address string) (types.ContractOutput, error)
 	to := address
 	data := map[string]interface{}{
 		"address": address,
+		"token_type": tokenType,
+		"uuid": uuid,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
@@ -440,10 +471,10 @@ func (c *networkClient) ListFaucets(
 	method := faucetV1.METHOD_LIST_FAUCETS
 
 	data := map[string]interface{}{
-		"owner":         ownerAddress,
-		"page":          page,
-		"limit":         limit,
-		"ascending":     ascending,
+		"owner":            ownerAddress,
+		"page":             page,
+		"limit":            limit,
+		"ascending":        ascending,
 		"contract_version": faucetV1.FAUCET_CONTRACT_V1,
 	}
 

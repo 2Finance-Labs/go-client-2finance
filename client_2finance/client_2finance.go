@@ -140,12 +140,12 @@ type Client2FinanceNetwork interface {
 		claimIntervalDuration time.Duration,
 		lastClaimByUser map[string]time.Time,
 	) (types.ContractOutput, error)
-	DepositFunds(address, tokenAddress, amount string) (types.ContractOutput, error)
-	WithdrawFunds(address, tokenAddress, amount string) (types.ContractOutput, error)
+	DepositFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error)
+	WithdrawFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error)
 	PauseFaucet(address string, pause bool) (types.ContractOutput, error)
 	UnpauseFaucet(address string, pause bool) (types.ContractOutput, error)
 	UpdateRequestLimitPerUser(address string, requestLimit int) (types.ContractOutput, error)
-	ClaimFunds(address string) (types.ContractOutput, error)
+	ClaimFunds(address, tokenType, uuid string) (types.ContractOutput, error)
 
 	GetFaucet(faucetAddress string) (types.ContractOutput, error)
 	ListFaucets(
@@ -179,17 +179,21 @@ type Client2FinanceNetwork interface {
         address string,
 		tokenAddress string,
         amount string,
+		tokenType string,
+		uuid string,
     ) (types.ContractOutput, error)
 
     WithdrawCashbackFunds(
         address string,
         tokenAddress string,
         amount string,
+		tokenType string,
+		uuid string,
     ) (types.ContractOutput, error)
 
     PauseCashback(address string, paused bool) (types.ContractOutput, error)
     UnpauseCashback(address string, paused bool) (types.ContractOutput, error)
-	ClaimCashback(address, amount string) (types.ContractOutput, error)
+	ClaimCashback(address, amount, tokenType, uuid string) (types.ContractOutput, error)
 	// getters
 	GetCashback(address string) (types.ContractOutput, error)
 	//TODO fix to ListCashbacks
@@ -236,6 +240,8 @@ type Client2FinanceNetwork interface {
 		address string,     // coupon address
 		orderAmount string, // integer string
 		passcode string,
+		tokenType string,
+		uuid string,
 	) (types.ContractOutput, error)
 
 	// getters
@@ -259,19 +265,23 @@ type Client2FinanceNetwork interface {
 		payer string,
 		payee string,
 		amount string,
+		tokenType string,
+		uuid string,
 	) (types.ContractOutput, error)
 
-	AuthorizePayment(address string)(types.ContractOutput, error)
+	AuthorizePayment(address, tokenType, uuid string)(types.ContractOutput, error)
 
 	CapturePayment(
-		address string) (types.ContractOutput, error)
+		address, tokenType, uuid string) (types.ContractOutput, error)
 
 	VoidPayment(
-		address string) (types.ContractOutput, error)
+		address, tokenType, uuid string) (types.ContractOutput, error)
 
 	RefundPayment(
 		address string,
-		amount string) (types.ContractOutput, error)
+		amount string,
+		tokenType string,
+		uuid string) (types.ContractOutput, error)
 
 	UnpausePayment(address string, paused bool) (types.ContractOutput, error)
 	PausePayment(address string, paused bool) (types.ContractOutput, error)
@@ -300,10 +310,14 @@ type Client2FinanceNetwork interface {
 	DepositMgM(
 		mgmAddress string,
 		amount string,
+		tokenType string,
+		uuid string,
 	) (types.ContractOutput, error)
 	WithdrawMgM(
 		mgmAddress string,
 		amount string,
+		tokenType string,
+		uuid string,
 	) (types.ContractOutput, error)
 
 	AddInviterMember(mgmAddress, inviterAddress, password string) (types.ContractOutput, error)
@@ -338,12 +352,12 @@ type Client2FinanceNetwork interface {
 	UpdateRaffle(address, tokenAddress, ticketPrice string, maxEntries, maxEntriesPerUser int, startAt, expiredAt *time.Time, seedCommitHex string, metadata map[string]string) (types.ContractOutput, error)
 	PauseRaffle(address string, paused bool) (types.ContractOutput, error)
 	UnpauseRaffle(address string, paused bool) (types.ContractOutput, error)
-	EnterRaffle(address string, tickets int, payTokenAddress string) (types.ContractOutput, error)
+	EnterRaffle(address string, tickets int, payTokenAddress, tokenType, uuid string) (types.ContractOutput, error)
 	DrawRaffle(address, revealSeed string) (types.ContractOutput, error)
-	ClaimRaffle(address, winner string) (types.ContractOutput, error)
-	WithdrawRaffle(address, tokenAddress, amount string) (types.ContractOutput, error)
-	AddRafflePrize(raffleAddress string, tokenAddress string, amount string) (types.ContractOutput, error)
-	RemoveRafflePrize(raffleAddress string, uuid string) (types.ContractOutput, error)
+	ClaimRaffle(address, winner, tokenType, uuid string) (types.ContractOutput, error)
+	WithdrawRaffle(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error)
+	AddRafflePrize(raffleAddress string, tokenAddress string, amount, tokenType, uuid string) (types.ContractOutput, error)
+	RemoveRafflePrize(raffleAddress string, tokenType, uuid string) (types.ContractOutput, error)
 
 	// GetRaffle(address string) (types.ContractOutput, error)
 	// ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
