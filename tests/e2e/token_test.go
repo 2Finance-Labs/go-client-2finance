@@ -93,6 +93,7 @@ func TestTokenFlowFungible(t *testing.T) {
 
 	unmarshalState(t, mdOut.States[0].Object, &tok)
 
+	//TODO - implement GLB update test
 	// if _, err := c.UpdateGlbFile(tok.Address, "https://example.com/asset.glb2"); err != nil {
 	// 	t.Fatalf("UpdateGlbFile: %v", err)
 	// }
