@@ -159,6 +159,98 @@ type Client2FinanceNetwork interface {
 		ascending bool,
 	) (types.ContractOutput, error)
 
+	// AIRDROP
+	NewAirdrop(
+		address string,
+		owner string,
+		tokenAddress string,
+		startTime time.Time,
+		expireTime time.Time,
+		paused bool,
+		requestLimit int,
+		claimAmount string,
+		claimIntervalSeconds int64,
+		title string,
+		description string,
+		shortDescription string,
+		imageURL string,
+		bannerURL string,
+		category string,
+		socialRequirements map[string]bool,
+		postLinks []string,
+		verificationType string,
+		verifierPublicKey string,
+		manualReviewRequired bool,
+		eligibleWallets map[string]bool,
+		nonce uint64,
+	) (types.ContractOutput, error)
+
+	UpdateAirdropMetadata(
+		address string,
+		title string,
+		description string,
+		shortDescription string,
+		imageURL string,
+		bannerURL string,
+		category string,
+		socialRequirements map[string]bool,
+		postLinks []string,
+		verificationType string,
+		verifierPublicKey string,
+		manualReviewRequired bool,
+		eligibleWallets map[string]bool,
+	) (types.ContractOutput, error)
+
+	AllowOracles(
+		address string,
+		oracles map[string]bool,
+	) (types.ContractOutput, error)
+
+	DisallowOracles(
+		address string,
+		oracles map[string]bool,
+	) (types.ContractOutput, error)
+
+	DepositAirdrop(
+		address string,
+		amount string,
+		tokenType string,
+		uuid string,
+	) (types.ContractOutput, error)
+
+	ClaimAirdrop(
+		address string,
+	) (types.ContractOutput, error)
+
+	WithdrawAirdropFunds(
+		address string,
+		amount string,
+		tokenType string,
+		uuid string,
+	) (types.ContractOutput, error)
+
+	PauseAirdrop(
+		address string,
+	) (types.ContractOutput, error)
+
+	UnpauseAirdrop(
+		address string,
+	) (types.ContractOutput, error)
+
+	AttestParticipantEligibility(
+		address string,
+		wallet string,
+		approved bool,
+	) (types.ContractOutput, error)
+
+	// GetAirdrop(address string) (types.ContractOutput, error)
+	// ListAirdrops(
+	// 	owner string,
+	// 	page int,
+	// 	limit int,
+	// 	ascending bool,
+	// ) (types.ContractOutput, error)
+
 	// CASHBACK
 	AddCashback(
 		address string,
