@@ -198,7 +198,6 @@ type Client2FinanceNetwork interface {
 		verificationType string,
 		verifierPublicKey string,
 		manualReviewRequired bool,
-		eligibleWallets map[string]bool,
 	) (types.ContractOutput, error)
 
 	AllowOracles(

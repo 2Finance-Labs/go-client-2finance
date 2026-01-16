@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"gitlab.com/2finance/2finance-network/blockchain/contract/airdropV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/airdropV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
@@ -76,27 +75,27 @@ func (c *networkClient) NewAirdrop(
 
 	method := airdropV1.METHOD_NEW_AIRDROP
 	data := map[string]interface{}{
-		"owner":                    owner,
-		"token_address":            tokenAddress,
-		"start_time":               startTime,
-		"expire_time":              expireTime,
-		"paused":                   paused,
-		"request_limit":            requestLimit,
-		"claim_amount":             claimAmount,
-		"claim_interval_seconds":   claimIntervalSeconds,
-		"title":                    title,
-		"description":              description,
-		"short_description":        shortDescription,
-		"image_url":                imageURL,
-		"banner_url":               bannerURL,
-		"category":                 category,
-		"social_requirements":      socialRequirements,
-		"post_links":               postLinks,
-		"verification_type":        verificationType,
-		"verifier_public_key":      verifierPublicKey,
-		"manual_review_required":   manualReviewRequired,
-		"eligible_wallets":         eligibleWallets,
-		"nonce":                    nonce,
+		"owner":                  owner,
+		"token_address":          tokenAddress,
+		"start_time":             startTime,
+		"expire_time":            expireTime,
+		"paused":                 paused,
+		"request_limit":          requestLimit,
+		"claim_amount":           claimAmount,
+		"claim_interval_seconds": claimIntervalSeconds,
+		"title":                  title,
+		"description":            description,
+		"short_description":      shortDescription,
+		"image_url":              imageURL,
+		"banner_url":             bannerURL,
+		"category":               category,
+		"social_requirements":    socialRequirements,
+		"post_links":             postLinks,
+		"verification_type":      verificationType,
+		"verifier_public_key":    verifierPublicKey,
+		"manual_review_required": manualReviewRequired,
+		"eligible_wallets":       eligibleWallets,
+		"nonce":                  nonce,
 	}
 
 	return c.SignAndSendTransaction(from, address, method, data)
@@ -115,7 +114,6 @@ func (c *networkClient) UpdateAirdropMetadata(
 	verificationType string,
 	verifierPublicKey string,
 	manualReviewRequired bool,
-	eligibleWallets map[string]bool,
 ) (types.ContractOutput, error) {
 
 	if address == "" {
@@ -140,7 +138,6 @@ func (c *networkClient) UpdateAirdropMetadata(
 		"verification_type":      verificationType,
 		"verifier_public_key":    verifierPublicKey,
 		"manual_review_required": manualReviewRequired,
-		"eligible_wallets":       eligibleWallets,
 	}
 
 	return c.SignAndSendTransaction(from, address, method, data)
