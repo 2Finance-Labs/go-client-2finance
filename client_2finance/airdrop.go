@@ -30,7 +30,6 @@ func (c *networkClient) NewAirdrop(
 	verificationType string,
 	verifierPublicKey string,
 	manualReviewRequired bool,
-	eligibleWallets map[string]bool,
 	nonce uint64,
 ) (types.ContractOutput, error) {
 
@@ -94,7 +93,6 @@ func (c *networkClient) NewAirdrop(
 		"verification_type":      verificationType,
 		"verifier_public_key":    verifierPublicKey,
 		"manual_review_required": manualReviewRequired,
-		"eligible_wallets":       eligibleWallets,
 		"nonce":                  nonce,
 	}
 

@@ -73,7 +73,6 @@ func TestAirdropFlow(t *testing.T) {
 		"MANUAL",
 		"",
 		true,
-		map[string]bool{},
 		1,
 	)
 	if err != nil {
