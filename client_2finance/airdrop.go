@@ -286,7 +286,7 @@ func (c *networkClient) AttestParticipantEligibility(
 	})
 }
 
-func (c *networkClient) AttestAirdropEligibilityManual(
+func (c *networkClient) ManuallyAttestParticipantEligibility(
 	airdropAddress string,
 	wallet string,
 	approved bool,

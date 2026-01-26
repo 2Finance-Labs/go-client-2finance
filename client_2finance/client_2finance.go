@@ -241,7 +241,7 @@ type Client2FinanceNetwork interface {
 		approved bool,
 	) (types.ContractOutput, error)
 
-	AttestAirdropEligibilityManual(
+	ManuallyAttestParticipantEligibility(
 		airdropAddress string,
 		wallet string,
 		approved bool,

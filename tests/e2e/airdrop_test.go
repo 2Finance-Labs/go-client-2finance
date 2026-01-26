@@ -132,6 +132,20 @@ func TestAirdropFlow(t *testing.T) {
 	// }
 
 	// ─────────────────────────────
+	// Manually Attest Participant Eligibility
+	// ─────────────────────────────
+	// c.SetPrivateKey(ownerPriv)
+
+	// _, err = c.ManuallyAttestParticipantEligibility(
+	// 	ad.Address,
+	// 	user.PublicKey,
+	// 	true,
+	// )
+	// if err != nil {
+	// 	t.Fatalf("ManuallyAttestParticipantEligibility: %v", err)
+	// }
+
+	// ─────────────────────────────
 	// Claim Airdrop
 	// ─────────────────────────────
 	// time.Sleep(3 * time.Second)
