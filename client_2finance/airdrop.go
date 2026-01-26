@@ -286,6 +286,49 @@ func (c *networkClient) AttestParticipantEligibility(
 	})
 }
 
+func (c *networkClient) AttestAirdropEligibilityManual(
+	airdropAddress string,
+	wallet string,
+	approved bool,
+) (types.ContractOutput, error) {
+
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if airdropAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+	}
+	if wallet == "" {
+		return types.ContractOutput{}, fmt.Errorf("wallet not set")
+	}
+
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+	if err := keys.ValidateEDDSAPublicKey(wallet); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid wallet address: %w", err)
+	}
+
+	method := airdropV1.METHOD_MANUAL_ATTEST_ELIGIBILITY
+	data := map[string]interface{}{
+		"wallet":   wallet,
+		"approved": approved,
+	}
+
+	out, err := c.SignAndSendTransaction(
+		from,
+		airdropAddress,
+		method,
+		data,
+	)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return out, nil
+}
+
 // func (c *networkClient) GetAirdrop(address string) (types.ContractOutput, error) {
 // 	if address == "" {
 // 		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
