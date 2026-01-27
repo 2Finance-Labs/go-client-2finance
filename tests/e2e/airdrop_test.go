@@ -15,7 +15,7 @@ func TestAirdropFlow(t *testing.T) {
 	c := setupClient(t)
 
 	owner, ownerPriv := createWallet(t, c)
-	user, _ := createWallet(t, c)
+	user, userPriv := createWallet(t, c)
 	verifier, _ := createWallet(t, c)
 
 	// --------------------------------------------------------------------
@@ -78,7 +78,7 @@ func TestAirdropFlow(t *testing.T) {
 	out, err := c.NewAirdrop(
 		airdropAddress,
 		owner.PublicKey,
-		faucetAddress, // <-- NOVO parâmetro obrigatório
+		faucetAddress,
 		tok.Address,
 		start,
 		expire,
@@ -147,17 +147,26 @@ func TestAirdropFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Claim (user)
 	// --------------------------------------------------------------------
-	// c.SetPrivateKey(userPriv)
+	c.SetPrivateKey(userPriv)
 
 	// // Observação: se o seu backend rejeita "data nil" em tx write,
 	// // o seu client ClaimAirdrop precisa enviar um payload dummy.
 	// // (Se você já corrigiu isso no client, ok.)
-	// if _, err := c.ClaimAirdrop(ad.Address); err != nil {
-	// 	t.Fatalf("ClaimAirdrop: %v", err)
-	// }
+	if _, err := c.ClaimAirdrop(ad.Address, tok.TokenType); err != nil {
+		t.Fatalf("ClaimAirdrop: %v", err)
+	}
 
 	// (Opcional) Double-claim deve falhar
-	// if _, err := c.ClaimAirdrop(ad.Address); err == nil {
-	// 	t.Fatalf("ClaimAirdrop: expected error on double-claim, got nil")
+	if _, err := c.ClaimAirdrop(ad.Address, tok.TokenType); err == nil {
+		t.Fatalf("ClaimAirdrop: expected error on double-claim, got nil")
+	}
+
+	// --------------------------------------------------------------------
+	// Withdraw remaining funds (owner)
+	// --------------------------------------------------------------------
+	// time.Sleep(2 * time.Second) // wait a bit before withdraw
+
+	// if _, err := c.WithdrawAirdropFunds(ad.Address, amt(50, dec), tokenType, ""); err != nil {
+	// 	t.Fatalf("WithdrawAirdropFunds: %v", err)
 	// }
 }

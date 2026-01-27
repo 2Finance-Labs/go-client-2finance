@@ -218,6 +218,7 @@ type Client2FinanceNetwork interface {
 
 	ClaimAirdrop(
 		address string,
+		tokenType string,
 	) (types.ContractOutput, error)
 
 	WithdrawAirdropFunds(

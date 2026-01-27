@@ -203,9 +203,12 @@ func (c *networkClient) DepositAirdrop(
 	})
 }
 
-func (c *networkClient) ClaimAirdrop(address string) (types.ContractOutput, error) {
+func (c *networkClient) ClaimAirdrop(address, tokenType string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 
 	from := c.publicKey
@@ -213,6 +216,7 @@ func (c *networkClient) ClaimAirdrop(address string) (types.ContractOutput, erro
 
 	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{
 		"address": address,
+		"token_type": tokenType,
 	})
 }
 
