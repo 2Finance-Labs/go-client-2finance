@@ -4,38 +4,36 @@ import (
 	"testing"
 	"time"
 
-	// client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
-
 	"gitlab.com/2finance/2finance-network/blockchain/contract/airdropV1"
-	airdropDomain "gitlab.com/2finance/2finance-network/blockchain/contract/airdropV1/domain"
+	airdropModels "gitlab.com/2finance/2finance-network/blockchain/contract/airdropV1/models"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 	tokenDomain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 )
+
+func nonceSafe() uint64 {
+	// 28 bits => nunca perde precisão se virar float64 no caminho
+	return uint64(time.Now().UnixNano() & 0x0FFFFFFF)
+}
 
 func TestAirdropFlow(t *testing.T) {
 	c := setupClient(t)
 
 	owner, ownerPriv := createWallet(t, c)
-	// user, userPriv := createWallet(t, c)
-	// oracle, oraclePriv := createWallet(t, c)
+	user, _ := createWallet(t, c)
 
-	// ─────────────────────────────
-	// Token setup
-	// ─────────────────────────────
+	// Verifier (obrigatório quando manualReviewRequired=true)
+	verifier, _ := createWallet(t, c)
+
 	c.SetPrivateKey(ownerPriv)
 
 	dec := 6
 	tokenType := tokenDomain.FUNGIBLE
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType)
 
-	_, err := c.MintToken(tok.Address, owner.PublicKey, amt(10_000, dec), dec, tok.TokenType)
-	if err != nil {
+	if _, err := c.MintToken(tok.Address, owner.PublicKey, amt(10_000, dec), dec, tok.TokenType); err != nil {
 		t.Fatalf("MintToken: %v", err)
 	}
 
-	// ─────────────────────────────
-	// Deploy Airdrop contract
-	// ─────────────────────────────
 	contractState := models.ContractStateModel{}
 	deployed, err := c.DeployContract1(airdropV1.AIRDROP_CONTRACT_V1)
 	if err != nil {
@@ -44,9 +42,6 @@ func TestAirdropFlow(t *testing.T) {
 	unmarshalState(t, deployed.States[0].Object, &contractState)
 	airdropAddress := contractState.Address
 
-	// ─────────────────────────────
-	// Create Airdrop
-	// ─────────────────────────────
 	start := time.Now().Add(2 * time.Second)
 	expire := time.Now().Add(30 * time.Minute)
 
@@ -57,111 +52,69 @@ func TestAirdropFlow(t *testing.T) {
 		start,
 		expire,
 		false,
-		1,
+		3,
 		amt(10, dec),
-		5,
+		2,
 		"Airdrop E2E",
 		"E2E description",
 		"Short desc",
 		"https://img.png",
 		"https://banner.png",
 		"airdrop",
-		map[string]bool{
-			"FOLLOW_X": true,
-		},
+		map[string]bool{"FOLLOW_X": true},
 		[]string{"https://x.com/post"},
 		"MANUAL",
-		"",
-		true,
-		1,
+		verifier.PublicKey, // <<< CORREÇÃO: obrigatório
+		true,               // manualReviewRequired=true
+		nonceSafe(),
 	)
 	if err != nil {
 		t.Fatalf("NewAirdrop: %v", err)
 	}
 
-	var ad airdropDomain.Airdrop
+	var ad airdropModels.AirdropStateModel
 	unmarshalState(t, out.States[0].Object, &ad)
-	if ad.Address == "" {
-		t.Fatalf("airdrop address empty")
+
+	// allowlist token: owner + faucet + user
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{
+		owner.PublicKey:  true,
+		ad.FaucetAddress: true,
+		user.PublicKey:   true,
+	}); err != nil {
+		t.Fatalf("AllowUsers(token): %v", err)
+	} 
+
+	// deposit
+	if _, err := c.DepositAirdrop(ad.Address, amt(200, dec), tokenType, ""); err != nil {
+		t.Fatalf("DepositAirdrop: %v", err)
 	}
 
-	// ─────────────────────────────
-	// Allow faucet to receive tokens
-	// ─────────────────────────────
-	// _, err = c.AllowUsers(tok.Address, map[string]bool{ad.FaucetAddress: true})
-	// if err != nil {
-	// 	t.Fatalf("AllowUsers faucet: %v", err)
-	// }
+	// // manual attest (owner é quem pode no seu contract)
+	if _, err := c.ManuallyAttestParticipantEligibility(ad.Address, user.PublicKey, true); err != nil {
+		t.Fatalf("ManuallyAttestParticipantEligibility: %v", err)
+	}
 
-	// ─────────────────────────────
-	// Deposit funds
-	// ─────────────────────────────
-	// _, err = c.DepositAirdrop(
-	// 	ad.Address,
-	// 	amt(100, dec),
-	// 	tokenType,
-	// 	"",
-	// )
-	// if err != nil {
-	// 	t.Fatalf("DepositAirdrop: %v", err)
-	// }
+	// // wait start
+	waitUntil(t, 15*time.Second, func() bool {
+		return time.Now().After(start)
+	}) 
+	// * Até aqui tudo ok *
 
-	// ─────────────────────────────
-	// Allow oracle
-	// ─────────────────────────────
-	// _, err = c.AllowOracles(
-	// 	ad.Address,
-	// 	map[string]bool{oracle.PublicKey: true},
-	// )
-	// if err != nil {
-	// 	t.Fatalf("AllowOracles: %v", err)
-	// }
-
-	// ─────────────────────────────
-	// Oracle attests eligibility
-	// ─────────────────────────────
-	// c.SetPrivateKey(oraclePriv)
-
-	// _, err = c.AttestParticipantEligibility(
-	// 	ad.Address,
-	// 	user.PublicKey,
-	// 	true,
-	// )
-	// if err != nil {
-	// 	t.Fatalf("AttestParticipantEligibility: %v", err)
-	// }
-
-	// ─────────────────────────────
-	// Manually Attest Participant Eligibility
-	// ─────────────────────────────
-	// c.SetPrivateKey(ownerPriv)
-
-	// _, err = c.ManuallyAttestParticipantEligibility(
-	// 	ad.Address,
-	// 	user.PublicKey,
-	// 	true,
-	// )
-	// if err != nil {
-	// 	t.Fatalf("ManuallyAttestParticipantEligibility: %v", err)
-	// }
-
-	// ─────────────────────────────
-	// Claim Airdrop
-	// ─────────────────────────────
-	// time.Sleep(3 * time.Second)
-
+	// // claim (user)
 	// c.SetPrivateKey(userPriv)
-
-	// _, err = c.ClaimAirdrop(ad.Address)
-	// if err != nil {
+	// if _, err := c.ClaimAirdrop(ad.Address); err != nil {
 	// 	t.Fatalf("ClaimAirdrop: %v", err)
 	// }
 
-	// ─────────────────────────────
-	// Pause / Unpause
-	// ─────────────────────────────
-	// c.SetPrivateKey(ownerPriv)
+	// // double-claim deve falhar
+	// if _, err := c.ClaimAirdrop(ad.Address); err == nil {
+	// 	t.Fatalf("ClaimAirdrop: expected error on double-claim, got nil")
+	// }
 
+	// --------------------------------------------------------------------
+	// Pause / Unpause (owner)
+	// --------------------------------------------------------------------
+	// c.SetPrivateKey(ownerPriv)
 	// if _, err := c.PauseAirdrop(ad.Address); err != nil {
 	// 	t.Fatalf("PauseAirdrop: %v", err)
 	// }
@@ -169,13 +122,10 @@ func TestAirdropFlow(t *testing.T) {
 	// 	t.Fatalf("UnpauseAirdrop: %v", err)
 	// }
 
-	// ─────────────────────────────
-	// Get / List
-	// ─────────────────────────────
-	// if _, err := c.GetAirdrop(ad.Address); err != nil {
-	// 	t.Fatalf("GetAirdrop: %v", err)
-	// }
+	// --------------------------------------------------------------------
+	// List (sanity)
+	// --------------------------------------------------------------------
 	// if _, err := c.ListAirdrops(owner.PublicKey, 1, 10, true); err != nil {
 	// 	t.Fatalf("ListAirdrops: %v", err)
-	//}
+	// }
 }

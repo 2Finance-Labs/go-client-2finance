@@ -208,7 +208,7 @@ func (c *networkClient) ClaimAirdrop(address string) (types.ContractOutput, erro
 	from := c.publicKey
 	method := airdropV1.METHOD_CLAIM_AIRDROP
 
-	return c.SignAndSendTransaction(from, address, method, nil)
+	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{})
 }
 
 func (c *networkClient) WithdrawAirdropFunds(
