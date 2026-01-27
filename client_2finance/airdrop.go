@@ -12,6 +12,7 @@ import (
 func (c *networkClient) NewAirdrop(
 	address string,
 	owner string,
+	faucetAddress string,
 	tokenAddress string,
 	startTime time.Time,
 	expireTime time.Time,
@@ -30,7 +31,6 @@ func (c *networkClient) NewAirdrop(
 	verificationType string,
 	verifierPublicKey string,
 	manualReviewRequired bool,
-	nonce uint64,
 ) (types.ContractOutput, error) {
 
 	if address == "" {
@@ -38,6 +38,9 @@ func (c *networkClient) NewAirdrop(
 	}
 	if owner == "" {
 		return types.ContractOutput{}, fmt.Errorf("owner not set")
+	}
+	if faucetAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("faucet address not set")
 	}
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -75,6 +78,7 @@ func (c *networkClient) NewAirdrop(
 	method := airdropV1.METHOD_NEW_AIRDROP
 	data := map[string]interface{}{
 		"owner":                  owner,
+		"faucet_address":         faucetAddress,
 		"token_address":          tokenAddress,
 		"start_time":             startTime,
 		"expire_time":            expireTime,
@@ -93,7 +97,6 @@ func (c *networkClient) NewAirdrop(
 		"verification_type":      verificationType,
 		"verifier_public_key":    verifierPublicKey,
 		"manual_review_required": manualReviewRequired,
-		"nonce":                  nonce,
 	}
 
 	return c.SignAndSendTransaction(from, address, method, data)
@@ -208,7 +211,9 @@ func (c *networkClient) ClaimAirdrop(address string) (types.ContractOutput, erro
 	from := c.publicKey
 	method := airdropV1.METHOD_CLAIM_AIRDROP
 
-	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{})
+	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{
+		"address": address,
+	})
 }
 
 func (c *networkClient) WithdrawAirdropFunds(

@@ -163,6 +163,7 @@ type Client2FinanceNetwork interface {
 	NewAirdrop(
 		address string,
 		owner string,
+		faucetAddress string,
 		tokenAddress string,
 		startTime time.Time,
 		expireTime time.Time,
@@ -181,7 +182,6 @@ type Client2FinanceNetwork interface {
 		verificationType string,
 		verifierPublicKey string,
 		manualReviewRequired bool,
-		nonce uint64,
 	) (types.ContractOutput, error)
 
 	UpdateAirdropMetadata(
