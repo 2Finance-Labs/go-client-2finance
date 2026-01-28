@@ -215,7 +215,7 @@ func (c *networkClient) ClaimAirdrop(address, tokenType string) (types.ContractO
 	method := airdropV1.METHOD_CLAIM_AIRDROP
 
 	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{
-		"address": address,
+		"address":    address,
 		"token_type": tokenType,
 	})
 }
@@ -244,30 +244,56 @@ func (c *networkClient) WithdrawAirdropFunds(
 	})
 }
 
-func (c *networkClient) PauseAirdrop(address string) (types.ContractOutput, error) {
-	if address == "" {
+func (c *networkClient) PauseAirdrop(airdropAddress string) (types.ContractOutput, error) {
+	if airdropAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
 	}
 
 	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+	if err := keys.ValidateEDDSAPublicKey(airdropAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid airdrop address: %w", err)
+	}
+
 	method := airdropV1.METHOD_PAUSE_AIRDROP
 
-	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{
-		"paused": true,
-	})
+	// Evite "data nil" — seu backend já reclamou disso em outros métodos.
+	data := map[string]interface{}{
+		"address": airdropAddress,
+		"paused":  true,
+	}
+
+	return c.SignAndSendTransaction(from, airdropAddress, method, data)
 }
 
-func (c *networkClient) UnpauseAirdrop(address string) (types.ContractOutput, error) {
-	if address == "" {
+func (c *networkClient) UnpauseAirdrop(airdropAddress string) (types.ContractOutput, error) {
+	if airdropAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
 	}
 
 	from := c.publicKey
-	method := airdropV1.METHOD_UNPAUSE_AIRDROP
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+	if err := keys.ValidateEDDSAPublicKey(airdropAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid airdrop address: %w", err)
+	}
 
-	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{
-		"paused": false,
-	})
+	method := airdropV1.METHOD_UNPAUSE_AIRDROP
+	data := map[string]interface{}{
+		"address": airdropAddress,
+		"paused":  false,
+	}
+
+	return c.SignAndSendTransaction(from, airdropAddress, method, data)
 }
 
 func (c *networkClient) AttestParticipantEligibility(

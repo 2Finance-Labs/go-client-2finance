@@ -124,6 +124,16 @@ func TestAirdropFlow(t *testing.T) {
 	}
 
 	// --------------------------------------------------------------------
+	// Pause / Unpause (owner)
+	// --------------------------------------------------------------------
+	if _, err := c.PauseAirdrop(ad.Address); err != nil {
+		t.Fatalf("PauseAirdrop: %v", err)
+	}
+	if _, err := c.UnpauseAirdrop(ad.Address); err != nil {
+		t.Fatalf("UnpauseAirdrop: %v", err)
+	}
+
+	// --------------------------------------------------------------------
 	// Deposit funds (owner)
 	// --------------------------------------------------------------------
 	if _, err := c.DepositAirdrop(ad.Address, amt(200, dec), tokenType, ""); err != nil {
@@ -164,9 +174,12 @@ func TestAirdropFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Withdraw remaining funds (owner)
 	// --------------------------------------------------------------------
-	// time.Sleep(2 * time.Second) // wait a bit before withdraw
+	time.Sleep(2 * time.Second)
 
-	// if _, err := c.WithdrawAirdropFunds(ad.Address, amt(50, dec), tokenType, ""); err != nil {
-	// 	t.Fatalf("WithdrawAirdropFunds: %v", err)
-	// }
+	// IMPORTANTE: voltar para o OWNER antes do withdraw
+	c.SetPrivateKey(ownerPriv)
+
+	if _, err := c.WithdrawAirdropFunds(ad.Address, amt(50, dec), tokenType, ""); err != nil {
+		t.Fatalf("WithdrawAirdropFunds: %v", err)
+	}
 }
