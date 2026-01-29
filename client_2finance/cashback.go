@@ -1,15 +1,16 @@
 package client_2finance
 
-
 import (
 	"time"
+
 	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+
+	"fmt"
 
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
-	"fmt"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 )
-
 
 // AddCashBack deploys a new cashback program (to = DEPLOY address).
 func (c *networkClient) AddCashback(
@@ -191,7 +192,7 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 }
 
 // DepositCashBack funds the cashback pool (token inferred from state).
-func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount string) (types.ContractOutput, error) {
+func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -200,6 +201,14 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount strin
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	if tokenAddress == "" {
@@ -223,6 +232,8 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount strin
 		"address": address,
 		"token_address": tokenAddress, // token address inferred from state
 		"amount":  amount,
+		"token_type": tokenType,
+		"uuid":    uuid,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(from, to, method, data)
@@ -233,7 +244,7 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount strin
 }
 
 // WithdrawCashback withdraws funds from the cashback pool. OnlyOwner.
-func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount string) (types.ContractOutput, error) {
+func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -242,6 +253,14 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount stri
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	if tokenAddress == "" {
@@ -266,6 +285,8 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount stri
 		"address": address,
 		"amount":  amount,
 		"token_address": tokenAddress, // token address inferred from state
+		"token_type": tokenType,
+		"uuid":    uuid,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
@@ -345,7 +366,7 @@ func (c *networkClient) ListCashbacks(
 	return c.GetState("", method, data)
 }
 
-func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOutput, error) {
+func (c *networkClient) ClaimCashback(address, amount, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -354,6 +375,14 @@ func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOut
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
 	}
 
 	from := c.publicKey
@@ -370,6 +399,8 @@ func (c *networkClient) ClaimCashback(address, amount string) (types.ContractOut
 	data := map[string]interface{}{
 		"address": address,
 		"amount":  amount,
+		"token_type": tokenType,
+		"uuid":    uuid,
 	}
 
 	return c.SignAndSendTransaction(from, to, method, data)
