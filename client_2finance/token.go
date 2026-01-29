@@ -87,9 +87,7 @@ func (c *networkClient) AddToken(
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -125,6 +123,7 @@ func (c *networkClient) AddToken(
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -143,9 +142,7 @@ func (c *networkClient) AddToken(
 func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, tokenType string) (types.ContractOutput, error) {
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if to == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -191,6 +188,7 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, token
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -204,9 +202,7 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, token
 
 func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if to == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -246,6 +242,7 @@ func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType str
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -259,9 +256,7 @@ func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType str
 
 func (c *networkClient) TransferToken(tokenAddress string, transferTo string, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if transferTo == "" {
 		return types.ContractOutput{}, fmt.Errorf("to address not set")
 	}
@@ -312,6 +307,7 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -325,9 +321,7 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 
 func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -354,6 +348,7 @@ func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -368,9 +363,7 @@ func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (
 
 func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -397,6 +390,7 @@ func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -411,9 +405,7 @@ func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool
 
 func (c *networkClient) BlockUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -440,6 +432,7 @@ func (c *networkClient) BlockUsers(tokenAddress string, users map[string]bool) (
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -454,9 +447,7 @@ func (c *networkClient) BlockUsers(tokenAddress string, users map[string]bool) (
 
 func (c *networkClient) UnblockUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -483,6 +474,7 @@ func (c *networkClient) UnblockUsers(tokenAddress string, users map[string]bool)
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -497,9 +489,7 @@ func (c *networkClient) UnblockUsers(tokenAddress string, users map[string]bool)
 
 func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -518,6 +508,7 @@ func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -531,9 +522,7 @@ func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 
 func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -552,6 +541,7 @@ func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -565,9 +555,7 @@ func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 
 func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -586,6 +574,7 @@ func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -601,9 +590,7 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 	tagsSocialMedia, tagsCategory, tags map[string]string,
 	creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -652,6 +639,7 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -665,9 +653,7 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 
 func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -690,6 +676,7 @@ func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.Cont
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -702,9 +689,7 @@ func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.Cont
 }
 func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -727,6 +712,7 @@ func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.Co
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -740,9 +726,7 @@ func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.Co
 
 func (c *networkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[string]interface{}) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -764,6 +748,7 @@ func (c *networkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[s
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -777,9 +762,7 @@ func (c *networkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[s
 
 func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -906,6 +889,7 @@ func (c *networkClient) UntransferableToken(tokenAddress string, transferable bo
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -919,10 +903,8 @@ func (c *networkClient) UntransferableToken(tokenAddress string, transferable bo
 
 func (c *networkClient) GetToken(tokenAddress string, symbol string, name string) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
 
+	
 	if tokenAddress == "" && symbol == "" && name == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address, symbol or name must be set")
 	}
@@ -951,9 +933,7 @@ func (c *networkClient) GetToken(tokenAddress string, symbol string, name string
 
 func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limit int, ascending bool) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 
 	if ownerAddress != "" {
 		if err := keys.ValidateEDDSAPublicKey(ownerAddress); err != nil {
@@ -986,9 +966,7 @@ func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limi
 
 func (c *networkClient) GetTokenBalance(tokenAddress, ownerAddress string) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
@@ -1023,9 +1001,7 @@ func (c *networkClient) GetTokenBalance(tokenAddress, ownerAddress string) (type
 
 func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress string, page, limit int, ascending bool) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)

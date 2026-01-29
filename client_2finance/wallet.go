@@ -32,9 +32,6 @@ func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput,
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
 
 	to := address
 	method := walletV1.METHOD_ADD_WALLET
@@ -46,6 +43,7 @@ func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -105,16 +103,17 @@ func (c *networkClient) TransferWallet(to, amount string, decimals int) (types.C
 		}
 		amount = amountConverted
 	}
-
+	from := c.publicKey
 	method := walletV1.METHOD_TRANSFER_WALLET
 	data := map[string]interface{}{
-		"from":    c.publicKey,
+		"from":    from,
 		"to":      to,
 		"amount":  amount,
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
-		c.publicKey,
+		c.chainId,
+		from,
 		to,
 		method,
 		data)

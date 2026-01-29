@@ -6,16 +6,30 @@ module github.com/2Finance-Labs/go-client-2finance
 go 1.24.7
 
 // replace gitlab.com/2finance/2finance-network => /home/lmenniti/myrepo/2finance-network
-replace gitlab.com/2finance/2finance-network => /home/ghausmann/Trabalho/2finance-network
+//replace gitlab.com/2finance/2finance-network => /home/gabriel-hausmann/Work/2finance-network
 
 require (
 	github.com/google/uuid v1.6.0
-	gitlab.com/2finance/2finance-network v0.0.0-00010101000000-000000000000
-//gitlab.com/2finance/2finance-network v0.0.0-20250915015647-c50e3520b4f1
+	gitlab.com/2finance/2finance-network v0.0.0-20260129182527-0d69f6a54c6e
+
 )
 
 require (
 	github.com/apache/rocketmq-client-go/v2 v2.1.2 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.39.2 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.31.12 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.18.16 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.9 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.9 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.9 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.9 // indirect
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.29.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.29.6 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.38.6 // indirect
+	github.com/aws/smithy-go v1.23.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.5.0 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
@@ -34,15 +48,17 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/smarty/assertions v1.16.0 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
-	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/crypto v0.41.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	github.com/ucarion/jcs v0.1.2 // indirect
+	go.uber.org/atomic v1.10.0 // indirect
+	golang.org/x/crypto v0.43.0 // indirect
+	golang.org/x/net v0.46.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
 	gorm.io/gorm v1.30.0 // indirect

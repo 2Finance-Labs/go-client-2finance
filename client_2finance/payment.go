@@ -24,9 +24,7 @@ func (c *networkClient) CreatePayment(
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -84,7 +82,7 @@ func (c *networkClient) CreatePayment(
 		"expired_at":    expiredAt,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // DirectPay is a one-step convenience: create + immediate capture.
@@ -100,9 +98,7 @@ func (c *networkClient) DirectPay(
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -161,7 +157,7 @@ func (c *networkClient) DirectPay(
 		"uuid":          uuid,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // AuthorizePayment places a hold on funds (payer -> payee) for a payment address.
@@ -182,9 +178,7 @@ func (c *networkClient) AuthorizePayment(address, tokenType, uuid string) (types
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -197,7 +191,7 @@ func (c *networkClient) AuthorizePayment(address, tokenType, uuid string) (types
 		"uuid": uuid,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // CapturePayment settles funds (full/partial).
@@ -218,9 +212,7 @@ func (c *networkClient) CapturePayment(address, tokenType, uuid string) (types.C
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -233,7 +225,7 @@ func (c *networkClient) CapturePayment(address, tokenType, uuid string) (types.C
 		"uuid": uuid,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // RefundPayment returns funds (full/partial) from payee back to payer.
@@ -257,9 +249,7 @@ func (c *networkClient) RefundPayment(address, amount, tokenType, uuid string) (
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -273,7 +263,7 @@ func (c *networkClient) RefundPayment(address, amount, tokenType, uuid string) (
 		"uuid": uuid,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // VoidPayment releases an authorization hold.
@@ -294,9 +284,7 @@ func (c *networkClient) VoidPayment(address, tokenType, uuid string) (types.Cont
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -309,7 +297,7 @@ func (c *networkClient) VoidPayment(address, tokenType, uuid string) (types.Cont
 		"uuid": uuid,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // PausePayment toggles the paused state to true. OnlyOwner.
@@ -325,9 +313,7 @@ func (c *networkClient) PausePayment(address string, paused bool) (types.Contrac
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -339,7 +325,7 @@ func (c *networkClient) PausePayment(address string, paused bool) (types.Contrac
 		"paused":  paused,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // UnpausePayment toggles the paused state to false. OnlyOwner.
@@ -355,9 +341,7 @@ func (c *networkClient) UnpausePayment(address string, paused bool) (types.Contr
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -369,15 +353,13 @@ func (c *networkClient) UnpausePayment(address string, paused bool) (types.Contr
 		"paused":  paused,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // GetPayment reads a single payment state.
 func (c *networkClient) GetPayment(address string) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -408,9 +390,7 @@ func (c *networkClient) ListPayments(
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}

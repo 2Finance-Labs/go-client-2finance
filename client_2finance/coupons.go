@@ -33,9 +33,7 @@ func (c *networkClient) AddCoupon(
 
 	// Sender validations
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -80,7 +78,7 @@ func (c *networkClient) AddCoupon(
 		"passcode_hash":    passcodeHash, // sha256(preimage) hex
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 func (c *networkClient) UpdateCoupon(
@@ -114,9 +112,7 @@ func (c *networkClient) UpdateCoupon(
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -139,7 +135,7 @@ func (c *networkClient) UpdateCoupon(
 		"passcode_hash":   passcodeHash,   // "" => keep prior hash
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractOutput, error) {
@@ -154,9 +150,7 @@ func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractO
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -169,7 +163,7 @@ func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractO
 		"paused":  pause,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.ContractOutput, error) {
@@ -184,9 +178,7 @@ func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -199,7 +191,7 @@ func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 		"paused":  pause,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // Redeem a coupon for an order amount using a passcode preimage.
@@ -235,9 +227,7 @@ func (c *networkClient) RedeemCoupon(
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -253,7 +243,7 @@ func (c *networkClient) RedeemCoupon(
 		"uuid":          uuid,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // ---------------------------------------------
@@ -262,9 +252,7 @@ func (c *networkClient) RedeemCoupon(
 
 func (c *networkClient) GetCoupon(address string) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -291,9 +279,7 @@ func (c *networkClient) ListCoupons(
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}

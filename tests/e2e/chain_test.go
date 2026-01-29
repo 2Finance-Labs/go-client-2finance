@@ -130,12 +130,12 @@ func Test_SignTransaction(t *testing.T) {
 	fromPub, fromPriv := genKey(t, c)
 	toPub, _ := genKey(t, c)
 	c.SetPrivateKey(fromPriv)
-
+	chainId := uint64(1)
 	jb, err := utils.MapToJSONB(map[string]interface{}{"hello": "world"})
 	if err != nil {
 		t.Fatalf("MapToJSONB: %v", err)
 	}
-	signed, err := c.SignTransaction(fromPub, toPub, "noop_method", jb, 42)
+	signed, err := c.SignTransaction(chainId, fromPub, toPub, "noop_method", jb, 42)
 	if err != nil {
 		t.Fatalf("SignTransaction: %v", err)
 	}
@@ -221,6 +221,7 @@ func Test_EndToEnd_MinimalFlow(t *testing.T) {
 // (Optional) tiny compile-time/proto sanity check for Transaction serialization
 func Test_TransactionRoundtrip_Sanity(t *testing.T) {
 	pub, _ := genKey(t, setupClient(t))
-	tx := transaction.NewTransaction(pub, pub, "echo", utils.JSONB(map[string]interface{}{"contract_version": "walletV1", "k": "v"}), 7)
+	chainId := uint64(1)
+	tx := transaction.NewTransaction(chainId, pub, pub, "echo", utils.JSONB(map[string]interface{}{"contract_version": "walletV1", "k": "v"}), 7)
 	_ = tx.Get() // ensure .Get() is accessible
 }

@@ -22,9 +22,6 @@ func (c *networkClient) AddReview(
 	hidden bool,
 ) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -87,7 +84,7 @@ func (c *networkClient) AddReview(
 		"hidden":        hidden,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // UpdateReview modifies fields of an existing review.
@@ -107,9 +104,7 @@ func (c *networkClient) UpdateReview(
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -143,7 +138,7 @@ func (c *networkClient) UpdateReview(
 		data["expired_at"] = *expiredAt
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // HideReview toggles the hidden state. OnlyOwner.
@@ -156,9 +151,7 @@ func (c *networkClient) HideReview(address string, hidden bool) (types.ContractO
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -170,7 +163,7 @@ func (c *networkClient) HideReview(address string, hidden bool) (types.ContractO
 		"hidden":  hidden,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // VoteHelpful registers an up/down helpful vote for a review.
@@ -189,9 +182,7 @@ func (c *networkClient) VoteHelpful(address, voter string, isHelpful bool) (type
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -204,7 +195,7 @@ func (c *networkClient) VoteHelpful(address, voter string, isHelpful bool) (type
 		"is_helpful": isHelpful,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // ReportReview flags a review with a reason string by a reporter.
@@ -226,9 +217,7 @@ func (c *networkClient) ReportReview(address, reporter, reason string) (types.Co
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -241,7 +230,7 @@ func (c *networkClient) ReportReview(address, reporter, reason string) (types.Co
 		"reason":   reason,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // ModerateReview applies a moderation action (e.g., approve/reject/remove) with an optional note. OnlyModerator/Owner per contract rules.
@@ -257,9 +246,7 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -272,15 +259,13 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 		"note":    note,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // GetReview retrieves a single review state.
 func (c *networkClient) GetReview(address string) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -305,9 +290,7 @@ func (c *networkClient) ListReviews(
 	asc bool,
 ) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}

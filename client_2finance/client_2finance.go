@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gitlab.com/2finance/2finance-network/blockchain/block"
+	"gitlab.com/2finance/2finance-network/blockchain/virtualmachine"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/handler"
@@ -46,9 +47,10 @@ type Client2FinanceNetwork interface {
 	DeployContract2(
 		contractVersion string,
 		contractAddress string,
-	) (types.ContractOutput, error)
-	SignTransaction(from, to, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error)
+		) (types.ContractOutput, error)
+	SignTransaction(chainId uint64, from, to, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error)
 	SignAndSendTransaction(
+		chainId uint64,
 		from string,
 		to string,
 		method string,
@@ -469,6 +471,7 @@ type networkClient struct {
 	privateKey string
 	publicKey  string
 	replyTo    string
+	chainId	uint64
 }
 
 // New creates a new client
@@ -496,12 +499,23 @@ func (c *networkClient) SetPrivateKey(privateKey string) {
 	c.publicKey = hex
 }
 
+func (c *networkClient) SetChainID(chainId uint64) {
+	if chainId < 0 || chainId > 1 {
+		log.Fatalf("invalid chainId: %d, available values are 0 testnet or 1 mainnet", chainId)
+	}
+	c.chainId = chainId
+}
+
 func (c *networkClient) GetPrivateKey() string {
 	return c.privateKey
 }
 
 func (c *networkClient) GetPublicKey() string {
 	return c.publicKey
+}
+
+func (c *networkClient) GetChainID() uint64 {
+	return c.chainId
 }
 
 // SendRequest publishes the payload to the MQTT broker
@@ -538,7 +552,7 @@ func (c *networkClient) GetNonce(publicKey string) (uint64, error) {
 	transactionInput := transaction.TransactionInput{
 		From: publicKey,
 	}
-	nonceBytes, err := c.SendTransaction(handler.REQUEST_METHOD_GET_NONCE, transactionInput, c.replyTo)
+	nonceBytes, err := c.SendTransaction(virtualmachine.REQUEST_METHOD_GET_NONCE, transactionInput, c.replyTo)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get nonce: %w", err)
 	}
@@ -581,7 +595,7 @@ func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[s
 		Limit:     limit,
 		Ascending: ascending,
 	}
-	transactionBytes, err := c.SendTransaction(handler.REQUEST_METHOD_GET_TRANSACTIONS, transactionInput, c.replyTo)
+	transactionBytes, err := c.SendTransaction(virtualmachine.REQUEST_METHOD_GET_TRANSACTIONS, transactionInput, c.replyTo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send transaction - List Transactions: %w", err)
 	}
@@ -612,7 +626,7 @@ func (c *networkClient) ListLogs(logType []string, logIndex uint, transactionHas
 		Ascending:       ascending,
 	}
 
-	logsBytes, err := c.SendTransaction(handler.REQUEST_METHOD_GET_LOGS, logInput, c.replyTo)
+	logsBytes, err := c.SendTransaction(virtualmachine.REQUEST_METHOD_GET_LOGS, logInput, c.replyTo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send transaction: - List Logs %w", err)
 	}
@@ -690,6 +704,7 @@ func (c *networkClient) SendTransaction(method string, tx interface{}, replyTo s
 
 // SendTransaction builds, signs, and sends a transaction to the blockchain.
 func (c *networkClient) SignAndSendTransaction(
+	chainId uint64,
 	from string,
 	to string,
 	method string,
@@ -714,11 +729,11 @@ func (c *networkClient) SignAndSendTransaction(
 
 	nonce++
 
-	txSigned, err := c.SignTransaction(from, to, method, data, nonce)
+	txSigned, err := c.SignTransaction(chainId, from, to, method, data, nonce)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}
-	contractOutputBytes, err := c.SendTransaction(handler.REQUEST_METHOD_SEND, txSigned, c.replyTo)
+	contractOutputBytes, err := c.SendTransaction(virtualmachine.REQUEST_METHOD_SEND, txSigned, c.replyTo)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -750,7 +765,7 @@ func (c *networkClient) GetState(
 	}
 
 	// Use a unique reply topic
-	contractOutputBytes, err := c.SendTransaction(handler.REQUEST_METHOD_GET_STATE, txInput, c.replyTo)
+	contractOutputBytes, err := c.SendTransaction(virtualmachine.REQUEST_METHOD_GET_STATE, txInput, c.replyTo)
 	if err != nil {
 		return types.ContractOutput{}, err
 	}
@@ -778,7 +793,7 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 		Ascending:      ascending,
 	}
 
-	blockBytes, err := c.SendTransaction(handler.REQUEST_METHOD_GET_BLOCKS, blockParams, c.replyTo)
+	blockBytes, err := c.SendTransaction(virtualmachine.REQUEST_METHOD_GET_BLOCKS, blockParams, c.replyTo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send transaction - List Blocks %w", err)
 	}
@@ -791,9 +806,10 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 	return blocks, nil
 }
 
-func (c *networkClient) SignTransaction(from, to, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error) {
+
+func (c *networkClient) SignTransaction(chainId uint64, from, to, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error) {
 	// 1. create new tx
-	newTx := transaction.NewTransaction(from, to, method, data, nonce)
+	newTx := transaction.NewTransaction(chainId, from, to, method, data, nonce)
 
 	// 2. get serialized form (here it's just the object)
 	tx := newTx.Get()
@@ -826,7 +842,7 @@ func (c *networkClient) DeployContract1(contractVersion string) (types.ContractO
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
 	}
-	contractOutput, err := c.SignAndSendTransaction(from, to, method, data)
+	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deploy contract: %w", err)
 	}
@@ -854,7 +870,7 @@ func (c *networkClient) DeployContract2(contractVersion, contractAddress string)
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
 	}
-	contractOutput, err := c.SignAndSendTransaction(from, to, method, data)
+	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deploy contract: %w", err)
 	}

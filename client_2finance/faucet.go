@@ -23,9 +23,7 @@ func (c *networkClient) AddFaucet(
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -67,6 +65,7 @@ func (c *networkClient) AddFaucet(
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -91,9 +90,7 @@ func (c *networkClient) UpdateFaucet(
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -116,6 +113,7 @@ func (c *networkClient) UpdateFaucet(
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -145,9 +143,7 @@ func (c *networkClient) PauseFaucet(
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -161,6 +157,7 @@ func (c *networkClient) PauseFaucet(
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -190,9 +187,7 @@ func (c *networkClient) UnpauseFaucet(
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -206,6 +201,7 @@ func (c *networkClient) UnpauseFaucet(
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -242,9 +238,7 @@ func (c *networkClient) DepositFunds(address, tokenAddress, amount, tokenType, u
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -261,6 +255,7 @@ func (c *networkClient) DepositFunds(address, tokenAddress, amount, tokenType, u
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -297,9 +292,7 @@ func (c *networkClient) WithdrawFunds(address, tokenAddress, amount, tokenType, 
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -316,6 +309,7 @@ func (c *networkClient) WithdrawFunds(address, tokenAddress, amount, tokenType, 
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -341,9 +335,7 @@ func (c *networkClient) UpdateRequestLimitPerUser(address string, requestLimit i
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -357,6 +349,7 @@ func (c *networkClient) UpdateRequestLimitPerUser(address string, requestLimit i
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -386,9 +379,7 @@ func (c *networkClient) ClaimFunds(address, tokenType, uuid string) (types.Contr
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -401,6 +392,7 @@ func (c *networkClient) ClaimFunds(address, tokenType, uuid string) (types.Contr
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		to,
 		method,
@@ -415,9 +407,7 @@ func (c *networkClient) ClaimFunds(address, tokenType, uuid string) (types.Contr
 
 func (c *networkClient) GetFaucet(faucetAddress string) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 
 	if faucetAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("faucet address must be set")
@@ -447,9 +437,7 @@ func (c *networkClient) ListFaucets(
 	ascending bool,
 ) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)

@@ -25,9 +25,7 @@ func (c *networkClient) AddCashback(
 ) (types.ContractOutput, error) {
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -71,7 +69,7 @@ func (c *networkClient) AddCashback(
 		"paused":        paused,
 	}
 
-	cashback, err := c.SignAndSendTransaction(from, to, method, data)
+	cashback, err := c.SignAndSendTransaction(c.chainId, from, to, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to add cashback: %w", err)
 	}
@@ -107,9 +105,7 @@ func (c *networkClient) UpdateCashback(
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -126,7 +122,7 @@ func (c *networkClient) UpdateCashback(
 		"expired_at":    expiredAt,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // PauseCashBack pauses a cashback program. OnlyOwner.
@@ -142,9 +138,7 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -157,7 +151,7 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 		"paused":  pause,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // UnpauseCashback unpauses a cashback program. OnlyOwner.
@@ -173,9 +167,7 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -188,7 +180,7 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 		"paused":  pause,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // DepositCashBack funds the cashback pool (token inferred from state).
@@ -218,9 +210,7 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount, toke
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -236,7 +226,7 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount, toke
 		"uuid":    uuid,
 	}
 
-	contractOutput, err := c.SignAndSendTransaction(from, to, method, data)
+	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deposit cashback: %w", err)
 	}
@@ -271,9 +261,7 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tok
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -289,15 +277,13 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tok
 		"uuid":    uuid,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
 // GetCashBack reads a single cashback state.
 func (c *networkClient) GetCashback(address string) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("cashback address must be set")
 	}
@@ -324,9 +310,7 @@ func (c *networkClient) ListCashbacks(
 	ascending bool,
 ) (types.ContractOutput, error) {
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -386,9 +370,7 @@ func (c *networkClient) ClaimCashback(address, amount, tokenType, uuid string) (
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -403,5 +385,5 @@ func (c *networkClient) ClaimCashback(address, amount, tokenType, uuid string) (
 		"uuid":    uuid,
 	}
 
-	return c.SignAndSendTransaction(from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
