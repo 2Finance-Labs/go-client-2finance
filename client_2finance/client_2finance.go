@@ -10,7 +10,6 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/virtualmachine"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
-	"gitlab.com/2finance/2finance-network/blockchain/handler"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/types"

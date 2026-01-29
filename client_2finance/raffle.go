@@ -190,7 +190,7 @@ func (c *networkClient) UnpauseRaffle(address string, paused bool) (types.Contra
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
-func (c *networkClient) EnterRaffle(address string, tickets int, payTokenAddress string) (types.ContractOutput, error) {
+func (c *networkClient) EnterRaffle(address string, tickets int, payTokenAddress, tokenType, uuid string) (types.ContractOutput, error) {
     // Pre-check client state
     from := c.publicKey
 	if from == "" { return types.ContractOutput{}, fmt.Errorf("from address not set") }
@@ -304,7 +304,7 @@ func (c *networkClient) ClaimRaffle(address, winner, tokenType, uuid string) (ty
 
 	to := address
 	method := raffleV1.METHOD_CLAIM_RAFFLE
-	data := map[string]interface{}{"address": address, "winner": winner}
+	data := map[string]interface{}{"address": address, "winner": winner, "token_type": tokenType, "uuid": uuid}
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
@@ -344,7 +344,7 @@ func (c *networkClient) WithdrawRaffle(address, tokenAddress, amount, tokenType,
 
 	to := address
 	method := raffleV1.METHOD_WITHDRAW_RAFFLE
-	data := map[string]interface{}{"address": address, "token_address": tokenAddress, "amount": amount}
+	data := map[string]interface{}{"address": address, "token_address": tokenAddress, "amount": amount, "token_type": tokenType, "uuid": uuid}
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
@@ -383,7 +383,7 @@ func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string
 
 	to := raffleAddress
 	method := raffleV1.METHOD_ADD_RAFFLE_PRIZE
-	data := map[string]interface{}{"amount": amount, "raffle_address": raffleAddress, "token_address": tokenAddress}
+	data := map[string]interface{}{"amount": amount, "raffle_address": raffleAddress, "token_address": tokenAddress, "token_type": tokenType, "uuid": uuid}
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 
@@ -411,7 +411,7 @@ func (c *networkClient) RemoveRafflePrize(raffleAddress string, tokenType string
 
 	to := raffleAddress
 	method := raffleV1.METHOD_REMOVE_RAFFLE_PRIZE
-	data := map[string]interface{}{"raffle_address": raffleAddress, "uuid": uuid}
+	data := map[string]interface{}{"raffle_address": raffleAddress, "uuid": uuid, "token_type": tokenType}
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
 }
 

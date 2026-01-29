@@ -68,9 +68,6 @@ func (c *networkClient) NewAirdrop(
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -99,7 +96,7 @@ func (c *networkClient) NewAirdrop(
 		"manual_review_required": manualReviewRequired,
 	}
 
-	return c.SignAndSendTransaction(from, address, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, address, method, data)
 }
 
 func (c *networkClient) UpdateAirdropMetadata(
@@ -122,9 +119,6 @@ func (c *networkClient) UpdateAirdropMetadata(
 	}
 
 	from := c.publicKey
-	if from == "" {
-		return types.ContractOutput{}, fmt.Errorf("from address not set")
-	}
 
 	method := airdropV1.METHOD_UPDATE_AIRDROP_METADATA
 	data := map[string]interface{}{
@@ -141,7 +135,7 @@ func (c *networkClient) UpdateAirdropMetadata(
 		"manual_review_required": manualReviewRequired,
 	}
 
-	return c.SignAndSendTransaction(from, address, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, address, method, data)
 }
 
 func (c *networkClient) AllowOracles(address string, oracles map[string]bool) (types.ContractOutput, error) {
@@ -155,7 +149,7 @@ func (c *networkClient) AllowOracles(address string, oracles map[string]bool) (t
 	from := c.publicKey
 	method := airdropV1.METHOD_ALLOW_ORACLES
 
-	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{
+	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"oracles": oracles,
 	})
 }
@@ -171,7 +165,7 @@ func (c *networkClient) DisallowOracles(address string, oracles map[string]bool)
 	from := c.publicKey
 	method := airdropV1.METHOD_DISALLOW_ORACLES
 
-	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{
+	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"oracles": oracles,
 	})
 }
@@ -196,7 +190,7 @@ func (c *networkClient) DepositAirdrop(
 	from := c.publicKey
 	method := airdropV1.METHOD_DEPOSIT_AIRDROP
 
-	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{
+	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"amount":     amount,
 		"token_type": tokenType,
 		"uuid":       uuid,
@@ -214,7 +208,7 @@ func (c *networkClient) ClaimAirdrop(address, tokenType string) (types.ContractO
 	from := c.publicKey
 	method := airdropV1.METHOD_CLAIM_AIRDROP
 
-	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{
+	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"address":    address,
 		"token_type": tokenType,
 	})
@@ -237,7 +231,7 @@ func (c *networkClient) WithdrawAirdropFunds(
 	from := c.publicKey
 	method := airdropV1.METHOD_WITHDRAW_AIRDROP
 
-	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{
+	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"amount":     amount,
 		"token_type": tokenType,
 		"uuid":       uuid,
@@ -268,7 +262,7 @@ func (c *networkClient) PauseAirdrop(airdropAddress string) (types.ContractOutpu
 		"paused":  true,
 	}
 
-	return c.SignAndSendTransaction(from, airdropAddress, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, airdropAddress, method, data)
 }
 
 func (c *networkClient) UnpauseAirdrop(airdropAddress string) (types.ContractOutput, error) {
@@ -293,7 +287,7 @@ func (c *networkClient) UnpauseAirdrop(airdropAddress string) (types.ContractOut
 		"paused":  false,
 	}
 
-	return c.SignAndSendTransaction(from, airdropAddress, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, airdropAddress, method, data)
 }
 
 func (c *networkClient) AttestParticipantEligibility(
@@ -315,7 +309,7 @@ func (c *networkClient) AttestParticipantEligibility(
 	from := c.publicKey
 	method := airdropV1.METHOD_ATTEST_ELIGIBILITY
 
-	return c.SignAndSendTransaction(from, address, method, map[string]interface{}{
+	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"wallet":   wallet,
 		"approved": approved,
 	})
@@ -352,6 +346,7 @@ func (c *networkClient) ManuallyAttestParticipantEligibility(
 	}
 
 	out, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		airdropAddress,
 		method,

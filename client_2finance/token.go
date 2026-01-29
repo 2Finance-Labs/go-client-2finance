@@ -784,6 +784,7 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -821,6 +822,7 @@ func (c *networkClient) UpdateGlbFile(tokenAddress string, newAssetGLBUri string
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
@@ -855,6 +857,7 @@ func (c *networkClient) TransferableToken(tokenAddress string, transferable bool
 	}
 
 	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
 		from,
 		tokenAddress,
 		method,
