@@ -103,11 +103,44 @@ func TestAirdropFlow(t *testing.T) {
 	var ad airdropModels.AirdropStateModel
 	unmarshalState(t, out.States[0].Object, &ad)
 
-	if ad.Address == "" {
-		t.Fatalf("airdrop address empty")
+	// --------------------------------------------------------------------
+	// GET Airdrop (reader) - cobre METHOD_GET_AIRDROP
+	// --------------------------------------------------------------------
+	gotOut, err := c.GetAirdrop(ad.Address)
+	if err != nil {
+		t.Fatalf("GetAirdrop: %v", err)
 	}
-	if ad.FaucetAddress == "" {
-		t.Fatalf("faucet address empty in airdrop state")
+
+	var adGet airdropModels.AirdropStateModel
+	unmarshalState(t, gotOut.States[0].Object, &adGet)
+
+	if adGet.Address != ad.Address {
+		t.Fatalf("GetAirdrop mismatch: address=%q want=%q", adGet.Address, ad.Address)
+	}
+	if adGet.FaucetAddress != ad.FaucetAddress {
+		t.Fatalf("GetAirdrop mismatch: faucet_address=%q want=%q", adGet.FaucetAddress, ad.FaucetAddress)
+	}
+
+	// --------------------------------------------------------------------
+	// LIST Airdrops (reader) - cobre METHOD_LIST_AIRDROPS
+	// --------------------------------------------------------------------
+	listOut, err := c.ListAirdrops(owner.PublicKey, 1, 50, false)
+	if err != nil {
+		t.Fatalf("ListAirdrops: %v", err)
+	}
+
+	var list []airdropModels.AirdropStateModel
+	unmarshalState(t, listOut.States[0].Object, &list)
+
+	found := false
+	for _, it := range list {
+		if it.Address == ad.Address {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("ListAirdrops: created airdrop %s not found in list", ad.Address)
 	}
 
 	// --------------------------------------------------------------------
@@ -181,7 +214,7 @@ func TestAirdropFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Update metadata (owner) - cobre METHOD_UPDATE_AIRDROP_METADATA
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(ownerPriv) 
+	c.SetPrivateKey(ownerPriv)
 
 	newTitle := "Airdrop E2E (UPDATED)"
 	newDesc := "Updated description"
@@ -219,14 +252,25 @@ func TestAirdropFlow(t *testing.T) {
 	var adUpdated airdropModels.AirdropStateModel
 	unmarshalState(t, outMeta.States[0].Object, &adUpdated)
 
-	if adUpdated.Title != newTitle {
-		t.Fatalf("metadata not updated: title=%q want=%q", adUpdated.Title, newTitle)
+	// --------------------------------------------------------------------
+	// GET pós-update - garante consistência de leitura
+	// --------------------------------------------------------------------
+	gotOut2, err := c.GetAirdrop(ad.Address)
+	if err != nil {
+		t.Fatalf("GetAirdrop(post-update): %v", err)
 	}
-	if adUpdated.ShortDescription != newShort {
-		t.Fatalf("metadata not updated: short=%q want=%q", adUpdated.ShortDescription, newShort)
+
+	var adGet2 airdropModels.AirdropStateModel
+	unmarshalState(t, gotOut2.States[0].Object, &adGet2)
+
+	if adGet2.Title != newTitle {
+		t.Fatalf("GetAirdrop(post-update) mismatch: title=%q want=%q", adGet2.Title, newTitle)
 	}
-	if adUpdated.VerificationType != newVerificationType {
-		t.Fatalf("metadata not updated: verification_type=%q want=%q", adUpdated.VerificationType, newVerificationType)
+	if adGet2.ShortDescription != newShort {
+		t.Fatalf("GetAirdrop(post-update) mismatch: short=%q want=%q", adGet2.ShortDescription, newShort)
+	}
+	if adGet2.VerificationType != newVerificationType {
+		t.Fatalf("GetAirdrop(post-update) mismatch: verification_type=%q want=%q", adGet2.VerificationType, newVerificationType)
 	}
 
 	// --------------------------------------------------------------------

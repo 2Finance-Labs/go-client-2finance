@@ -248,13 +248,12 @@ type Client2FinanceNetwork interface {
 		approved bool,
 	) (types.ContractOutput, error)
 
-	// GetAirdrop(address string) (types.ContractOutput, error)
-	// ListAirdrops(
-	// 	owner string,
-	// 	page int,
-	// 	limit int,
-	// 	ascending bool,
-	// ) (types.ContractOutput, error)
+	GetAirdrop(address string) (types.ContractOutput, error)
+	ListAirdrops(
+		owner string,
+		page, limit int,
+		ascending bool,
+	) (types.ContractOutput, error)
 
 	// CASHBACK
 	AddCashback(
