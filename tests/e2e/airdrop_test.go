@@ -45,8 +45,6 @@ func TestAirdropFlow(t *testing.T) {
 	start := time.Now().Add(2 * time.Second)
 	expire := time.Now().Add(30 * time.Minute)
 
-	// IMPORTANTe: agora o faucet precisa existir antes do airdrop
-	// Ajuste o nome/assinatura se no seu client for diferente.
 	if _, err := c.AddFaucet(
 		faucetAddress,
 		owner.PublicKey,
@@ -56,7 +54,7 @@ func TestAirdropFlow(t *testing.T) {
 		false,
 		3,
 		amt(10, dec),
-		2, // claim_interval_seconds
+		2,
 	); err != nil {
 		t.Fatalf("NewFaucet: %v", err)
 	}
@@ -95,7 +93,7 @@ func TestAirdropFlow(t *testing.T) {
 		map[string]bool{"FOLLOW_X": true},
 		[]string{"https://x.com/post"},
 		"MANUAL",
-		verifier.PublicKey, // obrigatório quando manual_review_required = true
+		verifier.PublicKey,
 		true,
 	)
 	if err != nil {
@@ -117,7 +115,7 @@ func TestAirdropFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	if _, err := c.AllowUsers(tok.Address, map[string]bool{
 		owner.PublicKey:  true,
-		ad.FaucetAddress: true, // deve ser o faucetAddress
+		ad.FaucetAddress: true,
 		user.PublicKey:   true,
 	}); err != nil {
 		t.Fatalf("AllowUsers(token): %v", err)
@@ -126,6 +124,7 @@ func TestAirdropFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Pause / Unpause (owner)
 	// --------------------------------------------------------------------
+	c.SetPrivateKey(ownerPriv)
 	if _, err := c.PauseAirdrop(ad.Address); err != nil {
 		t.Fatalf("PauseAirdrop: %v", err)
 	}
@@ -159,14 +158,11 @@ func TestAirdropFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	c.SetPrivateKey(userPriv)
 
-	// // Observação: se o seu backend rejeita "data nil" em tx write,
-	// // o seu client ClaimAirdrop precisa enviar um payload dummy.
-	// // (Se você já corrigiu isso no client, ok.)
 	if _, err := c.ClaimAirdrop(ad.Address, tok.TokenType); err != nil {
 		t.Fatalf("ClaimAirdrop: %v", err)
 	}
 
-	// (Opcional) Double-claim deve falhar
+	// Double-claim deve falhar
 	if _, err := c.ClaimAirdrop(ad.Address, tok.TokenType); err == nil {
 		t.Fatalf("ClaimAirdrop: expected error on double-claim, got nil")
 	}
@@ -176,7 +172,109 @@ func TestAirdropFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	time.Sleep(2 * time.Second)
 
-	// IMPORTANTE: voltar para o OWNER antes do withdraw
+	c.SetPrivateKey(ownerPriv)
+
+	if _, err := c.WithdrawAirdropFunds(ad.Address, amt(50, dec), tokenType, ""); err != nil {
+		t.Fatalf("WithdrawAirdropFunds: %v", err)
+	}
+
+	// --------------------------------------------------------------------
+	// Update metadata (owner) - cobre METHOD_UPDATE_AIRDROP_METADATA
+	// --------------------------------------------------------------------
+	c.SetPrivateKey(ownerPriv) 
+
+	newTitle := "Airdrop E2E (UPDATED)"
+	newDesc := "Updated description"
+	newShort := "Updated short"
+	newImg := "https://img-updated.png"
+	newBanner := "https://banner-updated.png"
+	newCategory := "airdrop"
+
+	newReq := map[string]bool{"FOLLOW_X": true, "LIKE_X": true}
+	newLinks := []string{"https://x.com/post/updated"}
+
+	newVerificationType := "ORACLE"
+
+	newManualReviewRequired := true
+	newVerifier := verifier.PublicKey
+
+	outMeta, err := c.UpdateAirdropMetadata(
+		ad.Address,
+		newTitle,
+		newDesc,
+		newShort,
+		newImg,
+		newBanner,
+		newCategory,
+		newReq,
+		newLinks,
+		newVerificationType,
+		newVerifier,
+		newManualReviewRequired,
+	)
+	if err != nil {
+		t.Fatalf("UpdateAirdropMetadata: %v", err)
+	}
+
+	var adUpdated airdropModels.AirdropStateModel
+	unmarshalState(t, outMeta.States[0].Object, &adUpdated)
+
+	if adUpdated.Title != newTitle {
+		t.Fatalf("metadata not updated: title=%q want=%q", adUpdated.Title, newTitle)
+	}
+	if adUpdated.ShortDescription != newShort {
+		t.Fatalf("metadata not updated: short=%q want=%q", adUpdated.ShortDescription, newShort)
+	}
+	if adUpdated.VerificationType != newVerificationType {
+		t.Fatalf("metadata not updated: verification_type=%q want=%q", adUpdated.VerificationType, newVerificationType)
+	}
+
+	// --------------------------------------------------------------------
+	// Allow oracle (owner)
+	// --------------------------------------------------------------------
+	oracle, oraclePriv := createWallet(t, c)
+	userOracle, userOraclePriv := createWallet(t, c)
+
+	c.SetPrivateKey(ownerPriv)
+	if _, err := c.AllowOracles(ad.Address, map[string]bool{
+		oracle.PublicKey: true,
+	}); err != nil {
+		t.Fatalf("AllowOracles: %v", err)
+	}
+
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{
+		userOracle.PublicKey: true,
+	}); err != nil {
+		t.Fatalf("AllowUsers(token userOracle): %v", err)
+	}
+
+	// --------------------------------------------------------------------
+	// Attest eligibility (oracle)
+	// --------------------------------------------------------------------
+	c.SetPrivateKey(oraclePriv)
+	if _, err := c.AttestParticipantEligibility(ad.Address, userOracle.PublicKey, true); err != nil {
+		t.Fatalf("AttestParticipantEligibility: %v", err)
+	}
+
+	// --------------------------------------------------------------------
+	// Claim (user)
+	// --------------------------------------------------------------------
+	c.SetPrivateKey(userOraclePriv)
+
+	if _, err := c.ClaimAirdrop(ad.Address, tok.TokenType); err != nil {
+		t.Fatalf("ClaimAirdrop: %v", err)
+	}
+
+	// Double-claim deve falhar
+	if _, err := c.ClaimAirdrop(ad.Address, tok.TokenType); err == nil {
+		t.Fatalf("ClaimAirdrop: expected error on double-claim, got nil")
+	}
+
+	// --------------------------------------------------------------------
+	// Withdraw remaining funds (owner)
+	// --------------------------------------------------------------------
+	time.Sleep(2 * time.Second)
+
 	c.SetPrivateKey(ownerPriv)
 
 	if _, err := c.WithdrawAirdropFunds(ad.Address, amt(50, dec), tokenType, ""); err != nil {
