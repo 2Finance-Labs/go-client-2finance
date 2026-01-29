@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"gitlab.com/2finance/2finance-network/blockchain/block"
-	"gitlab.com/2finance/2finance-network/blockchain/handler"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
+	"gitlab.com/2finance/2finance-network/blockchain/handler"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
@@ -44,9 +44,9 @@ type Client2FinanceNetwork interface {
 		contractVersion string,
 	) (types.ContractOutput, error)
 	DeployContract2(
-		contractVersion string, 
+		contractVersion string,
 		contractAddress string,
-		) (types.ContractOutput, error)
+	) (types.ContractOutput, error)
 	SignTransaction(from, to, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error)
 	SignAndSendTransaction(
 		from string,
@@ -109,7 +109,7 @@ type Client2FinanceNetwork interface {
 		tagsSocialMedia, tagsCategory, tags map[string]string,
 		creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error)
 	PauseToken(tokenAddress string, pause bool) (types.ContractOutput, error)
-	
+
 	UnpauseToken(tokenAddress string, unpause bool) (types.ContractOutput, error)
 	UpdateFeeTiers(tokenAddress string, feeTierList []map[string]interface{}) (types.ContractOutput, error)
 	UpdateFeeAddress(tokenAddress, feeAddress string) (types.ContractOutput, error)
@@ -159,59 +159,155 @@ type Client2FinanceNetwork interface {
 		ascending bool,
 	) (types.ContractOutput, error)
 
+	// AIRDROP
+	NewAirdrop(
+		address string,
+		owner string,
+		faucetAddress string,
+		tokenAddress string,
+		startTime time.Time,
+		expireTime time.Time,
+		paused bool,
+		requestLimit int,
+		claimAmount string,
+		claimIntervalSeconds int64,
+		title string,
+		description string,
+		shortDescription string,
+		imageURL string,
+		bannerURL string,
+		category string,
+		socialRequirements map[string]bool,
+		postLinks []string,
+		verificationType string,
+		verifierPublicKey string,
+		manualReviewRequired bool,
+	) (types.ContractOutput, error)
+
+	UpdateAirdropMetadata(
+		address string,
+		title string,
+		description string,
+		shortDescription string,
+		imageURL string,
+		bannerURL string,
+		category string,
+		socialRequirements map[string]bool,
+		postLinks []string,
+		verificationType string,
+		verifierPublicKey string,
+		manualReviewRequired bool,
+	) (types.ContractOutput, error)
+
+	AllowOracles(
+		address string,
+		oracles map[string]bool,
+	) (types.ContractOutput, error)
+
+	DisallowOracles(
+		address string,
+		oracles map[string]bool,
+	) (types.ContractOutput, error)
+
+	DepositAirdrop(
+		address string,
+		amount string,
+		tokenType string,
+		uuid string,
+	) (types.ContractOutput, error)
+
+	ClaimAirdrop(
+		address string,
+		tokenType string,
+	) (types.ContractOutput, error)
+
+	WithdrawAirdropFunds(
+		address string,
+		amount string,
+		tokenType string,
+		uuid string,
+	) (types.ContractOutput, error)
+
+	PauseAirdrop(
+		address string,
+	) (types.ContractOutput, error)
+
+	UnpauseAirdrop(
+		address string,
+	) (types.ContractOutput, error)
+
+	AttestParticipantEligibility(
+		address string,
+		wallet string,
+		approved bool,
+	) (types.ContractOutput, error)
+
+	ManuallyAttestParticipantEligibility(
+		airdropAddress string,
+		wallet string,
+		approved bool,
+	) (types.ContractOutput, error)
+
+	// GetAirdrop(address string) (types.ContractOutput, error)
+	// ListAirdrops(
+	// 	owner string,
+	// 	page int,
+	// 	limit int,
+	// 	ascending bool,
+	// ) (types.ContractOutput, error)
+
 	// CASHBACK
 	AddCashback(
 		address string,
-        owner string,
-        tokenAddress string,
-        programType string,
-        percentage string, // basis points, e.g. "250" = 2.50%
-        startAt time.Time,
-        expiredAt time.Time,
-		paused bool,
-    ) (types.ContractOutput, error)
-
-    UpdateCashback(
-        address string,
-        tokenAddress string,
-        programType string,
-        percentage string,
-        startAt time.Time,
-        expiredAt time.Time,
-    ) (types.ContractOutput, error)
-
-    DepositCashbackFunds(
-        address string,
+		owner string,
 		tokenAddress string,
-        amount string,
+		programType string,
+		percentage string, // basis points, e.g. "250" = 2.50%
+		startAt time.Time,
+		expiredAt time.Time,
+		paused bool,
+	) (types.ContractOutput, error)
+
+	UpdateCashback(
+		address string,
+		tokenAddress string,
+		programType string,
+		percentage string,
+		startAt time.Time,
+		expiredAt time.Time,
+	) (types.ContractOutput, error)
+
+	DepositCashbackFunds(
+		address string,
+		tokenAddress string,
+		amount string,
 		tokenType string,
 		uuid string,
-    ) (types.ContractOutput, error)
+	) (types.ContractOutput, error)
 
-    WithdrawCashbackFunds(
-        address string,
-        tokenAddress string,
-        amount string,
+	WithdrawCashbackFunds(
+		address string,
+		tokenAddress string,
+		amount string,
 		tokenType string,
 		uuid string,
-    ) (types.ContractOutput, error)
+	) (types.ContractOutput, error)
 
-    PauseCashback(address string, paused bool) (types.ContractOutput, error)
-    UnpauseCashback(address string, paused bool) (types.ContractOutput, error)
+	PauseCashback(address string, paused bool) (types.ContractOutput, error)
+	UnpauseCashback(address string, paused bool) (types.ContractOutput, error)
 	ClaimCashback(address, amount, tokenType, uuid string) (types.ContractOutput, error)
 	// getters
 	GetCashback(address string) (types.ContractOutput, error)
 	//TODO fix to ListCashbacks
 	ListCashbacks(owner string, tokenAddress string, programType string, paused bool, page int, limit int, ascending bool) (types.ContractOutput, error)
 
-
 	AddCoupon(
 		address string, // optional, depends on your infra
 		tokenAddress string,
-		programType string,   // "percentage" | "fixed-amount"
+		programType string, // "percentage" | "fixed-amount"
 		percentageBPS string, // required if percentage
-		fixedAmount string,   // required if fixed-amount
-		minOrder string,      // optional, "" means none
+		fixedAmount string, // required if fixed-amount
+		minOrder string, // optional, "" means none
 		startAt time.Time,
 		expiredAt time.Time,
 		paused bool,
@@ -238,11 +334,11 @@ type Client2FinanceNetwork interface {
 
 	PauseCoupon(address string, paused bool) (types.ContractOutput, error)
 	UnpauseCoupon(address string, paused bool) (types.ContractOutput, error)
-	
-	// Redeem coupon, 
+
+	// Redeem coupon,
 	//TODO change this to Redeem Manual, because is possible to add orderAmount
 	RedeemCoupon(
-		address string,     // coupon address
+		address string, // coupon address
 		orderAmount string, // integer string
 		passcode string,
 		tokenType string,
@@ -274,7 +370,7 @@ type Client2FinanceNetwork interface {
 		uuid string,
 	) (types.ContractOutput, error)
 
-	AuthorizePayment(address, tokenType, uuid string)(types.ContractOutput, error)
+	AuthorizePayment(address, tokenType, uuid string) (types.ContractOutput, error)
 
 	CapturePayment(
 		address, tokenType, uuid string) (types.ContractOutput, error)
@@ -335,7 +431,6 @@ type Client2FinanceNetwork interface {
 	GetClaimInviter(mgmAddress string, inviterAddress string) (types.ContractOutput, error)
 	GetClaimInvited(mgmAddress string, invitedAddress string) (types.ContractOutput, error)
 
-
 	AddReview(address, reviewer, reviewee, subjectType, subjectID string, rating int, comment string,
 		tags map[string]string, mediaHashes []string, startAt, expiredAt time.Time, hidden bool,
 	) (types.ContractOutput, error)
@@ -345,7 +440,7 @@ type Client2FinanceNetwork interface {
 	) (types.ContractOutput, error)
 
 	HideReview(address string, hidden bool) (types.ContractOutput, error)
-	
+
 	VoteHelpful(address, voter string, isHelpful bool) (types.ContractOutput, error)
 	ReportReview(address, reporter, reason string) (types.ContractOutput, error)
 	ModerateReview(address, action, note string) (types.ContractOutput, error)
@@ -368,8 +463,6 @@ type Client2FinanceNetwork interface {
 	// ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
 
 	ListPrizes(raffleAddress string, page, limit int, asc bool) (types.ContractOutput, error)
-
-
 }
 
 type networkClient struct {
@@ -652,9 +745,9 @@ func (c *networkClient) GetState(
 
 	// Build a transaction input without signature and hash for query
 	txInput := transaction.TransactionInput{
-		To:              to,
-		Method:          method,
-		Data:            jsonData,
+		To:     to,
+		Method: method,
+		Data:   jsonData,
 	}
 
 	// Use a unique reply topic
@@ -699,7 +792,6 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 	return blocks, nil
 }
 
-
 func (c *networkClient) SignTransaction(from, to, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error) {
 	// 1. create new tx
 	newTx := transaction.NewTransaction(from, to, method, data, nonce)
@@ -720,7 +812,7 @@ func (c *networkClient) DeployContract1(contractVersion string) (types.ContractO
 		return types.ContractOutput{}, fmt.Errorf("from address is required")
 	}
 	from := c.publicKey
-	
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -730,7 +822,7 @@ func (c *networkClient) DeployContract1(contractVersion string) (types.ContractO
 	}
 
 	to := types.DEPLOY_CONTRACT_ADDRESS
-	
+
 	method := contractV1.METHOD_DEPLOY_CONTRACT
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
@@ -747,7 +839,7 @@ func (c *networkClient) DeployContract2(contractVersion, contractAddress string)
 		return types.ContractOutput{}, fmt.Errorf("from address is required")
 	}
 	from := c.publicKey
-	
+
 	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
