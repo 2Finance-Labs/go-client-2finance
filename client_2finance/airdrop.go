@@ -364,39 +364,78 @@ func (c *networkClient) ManuallyAttestParticipantEligibility(
 	return out, nil
 }
 
-// func (c *networkClient) GetAirdrop(address string) (types.ContractOutput, error) {
-// 	if address == "" {
-// 		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
-// 	}
+func (c *networkClient) GetAirdrop(address string) (types.ContractOutput, error) {
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
 
-// 	from := c.publicKey
-// 	method := airdropV1.METHOD_GET_AIRDROP
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("airdrop address must be set")
+	}
 
-// 	return c.GetState(address, method, nil)
-// }
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
 
-// func (c *networkClient) ListAirdrops(
-// 	owner string,
-// 	page int,
-// 	limit int,
-// 	ascending bool,
-// ) (types.ContractOutput, error) {
+	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid airdrop address: %w", err)
+	}
 
-// 	if owner != "" {
-// 		if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
-// 			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
-// 		}
-// 	}
+	method := airdropV1.METHOD_GET_AIRDROP
 
-// 	from := c.publicKey
-// 	method := airdropV1.METHOD_LIST_AIRDROPS
+	contractOutput, err := c.GetState(address, method, nil)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
+	}
 
-// 	data := map[string]interface{}{
-// 		"owner":     owner,
-// 		"page":      page,
-// 		"limit":     limit,
-// 		"ascending": ascending,
-// 	}
+	return contractOutput, nil
+}
 
-// 	return c.GetState("", method, data)
-// }
+
+func (c *networkClient) ListAirdrops(
+	owner string,
+	page, limit int,
+	ascending bool,
+) (types.ContractOutput, error) {
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+
+	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if owner != "" {
+		if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
+			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
+		}
+	}
+
+	if page < 1 {
+		return types.ContractOutput{}, fmt.Errorf("page must be greater than 0")
+	}
+	if limit < 1 {
+		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
+	}
+
+	method := airdropV1.METHOD_LIST_AIRDROPS
+
+	data := map[string]interface{}{
+		"owner":            owner,
+		"page":             page,
+		"limit":            limit,
+		"ascending":        ascending,
+		"contract_version": airdropV1.AIRDROP_CONTRACT_V1,
+	}
+
+	contractOutput, err := c.GetState("", method, data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to list airdrop states: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
+
