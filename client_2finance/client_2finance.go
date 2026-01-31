@@ -32,8 +32,7 @@ type Client2FinanceNetwork interface {
 	SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error)
 
 	// CHAIN
-	GetNonce(address string) (uint64, error)
-	ListTransactions(from, to, hash string, dataFilter map[string]interface{}, nonce uint64,
+	ListTransactions(from, to, hash string, dataFilter map[string]interface{}, version uint8,
 		page, limit int,
 		ascending bool) ([]transaction.Transaction, error)
 	ListLogs(logType []string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
@@ -46,9 +45,9 @@ type Client2FinanceNetwork interface {
 		contractVersion string,
 		contractAddress string,
 		) (types.ContractOutput, error)
-	SignTransaction(chainId uint64, from, to, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error)
+	SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8) (*transaction.Transaction, error)
 	SignAndSendTransaction(
-		chainId uint64,
+		chainId uint8,
 		from string,
 		to string,
 		method string,
@@ -469,7 +468,7 @@ type networkClient struct {
 	privateKey string
 	publicKey  string
 	replyTo    string
-	chainId	uint64
+	chainId	uint8
 }
 
 // New creates a new client
@@ -497,9 +496,9 @@ func (c *networkClient) SetPrivateKey(privateKey string) {
 	c.publicKey = hex
 }
 
-func (c *networkClient) SetChainID(chainId uint64) {
-	if chainId < 0 || chainId > 1 {
-		log.Fatalf("invalid chainId: %d, available values are 0 testnet or 1 mainnet", chainId)
+func (c *networkClient) SetChainID(chainId uint8) {
+	if chainId < 1 || chainId > 2 {
+		log.Fatalf("invalid chainId: %d, available values are 2 testnet or 1 mainnet", chainId)
 	}
 	c.chainId = chainId
 }
@@ -512,7 +511,7 @@ func (c *networkClient) GetPublicKey() string {
 	return c.publicKey
 }
 
-func (c *networkClient) GetChainID() uint64 {
+func (c *networkClient) GetChainID() uint8 {
 	return c.chainId
 }
 
@@ -542,31 +541,7 @@ func (c *networkClient) GenerateEd25519KeyPairHex() (string, string, error) {
 	return publicKeyHex, privateKeyHex, nil
 }
 
-func (c *networkClient) GetNonce(address string) (uint64, error) {
-	if address == "" {
-		return 0, fmt.Errorf("address not set")
-	}
-	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
-		return 0, fmt.Errorf("invalid address: %w", err)
-	}
-
-	transactionInput := transaction.TransactionInput{
-		From: address,
-	}
-	nonceBytes, err := c.SendTransaction(virtualmachine.REQUEST_METHOD_GET_NONCE, transactionInput, c.replyTo)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get nonce: %w", err)
-	}
-
-	var nonce uint64
-	if err := json.Unmarshal(nonceBytes, &nonce); err != nil {
-		return 0, fmt.Errorf("failed to unmarshal nonce: %w", err)
-	}
-
-	return nonce, nil
-}
-
-func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[string]interface{}, nonce uint64,
+func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[string]interface{}, version uint8,
 	page, limit int,
 	ascending bool) ([]transaction.Transaction, error) {
 
@@ -596,7 +571,7 @@ func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[s
 		To:        to,
 		Hash:      hash,
 		Data:      dataFilterRawMessage,
-		Nonce:     nonce,
+		Version:   version,
 		Page:      page,
 		Limit:     limit,
 		Ascending: ascending,
@@ -710,7 +685,7 @@ func (c *networkClient) SendTransaction(method string, tx interface{}, replyTo s
 
 // SendTransaction builds, signs, and sends a transaction to the blockchain.
 func (c *networkClient) SignAndSendTransaction(
-	chainId uint64,
+	chainId uint8,
 	from string,
 	to string,
 	method string,
@@ -720,22 +695,8 @@ func (c *networkClient) SignAndSendTransaction(
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-
-	// Get current nonce and increment
-	nonce, err := c.GetNonce(from)
-	if err != nil {
-		if strings.Contains(err.Error(), "record not found") {
-			// If nonce not found, start from 0
-			nonce = 0
-		} else {
-			// If any other error, return it
-			return types.ContractOutput{}, fmt.Errorf("failed to get nonce: %w", err)
-		}
-	}
-
-	nonce++
-
-	txSigned, err := c.SignTransaction(chainId, from, to, method, data, nonce)
+	version := uint8(1)
+	txSigned, err := c.SignTransaction(chainId, from, to, method, data, version)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}
@@ -813,7 +774,7 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 }
 
 
-func (c *networkClient) SignTransaction(chainId uint64, from, to, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error) {
+func (c *networkClient) SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8) (*transaction.Transaction, error) {
 
 	dataRawMessage, err := utils.MapToRawMessage(data)
 	if err != nil {
@@ -821,7 +782,7 @@ func (c *networkClient) SignTransaction(chainId uint64, from, to, method string,
 	}
 
 	// 1. create new tx
-	newTx := transaction.NewTransaction(chainId, from, to, method, dataRawMessage, nonce)
+	newTx := transaction.NewTransaction(chainId, from, to, method, dataRawMessage, version)
 
 	// 2. get serialized form (here it's just the object)
 	tx := newTx.Get()

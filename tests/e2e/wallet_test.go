@@ -15,7 +15,6 @@ func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (walletDomain.
 	t.Helper()
 	pub, priv := genKey(t, c)
 	c.SetPrivateKey(priv)
-	fmt.Println("Creating wallet for pub:", pub)
 	contractState := models.ContractStateModel{}
 	deployedContract, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }

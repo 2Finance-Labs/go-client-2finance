@@ -30,12 +30,6 @@ func TestChainBasics(t *testing.T) {
 	if w2.PublicKey != w.PublicKey { t.Fatalf("wallet mismatch: %s != %s", w2.PublicKey, w.PublicKey) }
 	}
 
-
-	nonce, err := c.GetNonce(w.PublicKey)
-	if err != nil { t.Fatalf("GetNonce: %v", err) }
-	if nonce < 0 { t.Fatalf("invalid nonce: %d", nonce) }
-
-
 	// Transactions / Logs (best effort – may be zero depending on backend retention)
 	if txs, err := c.ListTransactions(w.PublicKey, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
 	_, _ = c.ListLogs([]string{"wallet_created"}, 0, txs[0].Hash, nil, "", 1, 10, true)
@@ -88,18 +82,6 @@ func Test_GenerateKeyEd25519(t *testing.T) {
 	}
 }
 
-// Validation guards that short-circuit before hitting the network:
-func Test_GetNonce_Validation(t *testing.T) {
-	c := setupClient(t)
-
-	if _, err := c.GetNonce(""); err == nil || err.Error() == "" {
-		t.Fatalf("expected error for empty public key")
-	}
-	if _, err := c.GetNonce("not-a-key"); err == nil || err.Error() == "" {
-		t.Fatalf("expected error for invalid public key")
-	}
-}
-
 func Test_ListTransactions_Validation(t *testing.T) {
 	c := setupClient(t)
 
@@ -130,12 +112,12 @@ func Test_SignTransaction(t *testing.T) {
 	fromPub, fromPriv := genKey(t, c)
 	toPub, _ := genKey(t, c)
 	c.SetPrivateKey(fromPriv)
-	chainId := uint64(1)
+	chainId := uint8(1)
 	jb, err := utils.MapToJSONB(map[string]interface{}{"hello": "world"})
 	if err != nil {
 		t.Fatalf("MapToJSONB: %v", err)
 	}
-	signed, err := c.SignTransaction(chainId, fromPub, toPub, "noop_method", jb, 42)
+	signed, err := c.SignTransaction(chainId, fromPub, toPub, "noop_method", jb, 1)
 	if err != nil {
 		t.Fatalf("SignTransaction: %v", err)
 	}
@@ -147,8 +129,8 @@ func Test_SignTransaction(t *testing.T) {
 	if tx.From != fromPub {
 		t.Fatalf("tx.From mismatch")
 	}
-	if tx.Nonce != 42 {
-		t.Fatalf("tx.Nonce mismatch")
+	if tx.Version != 1 {
+		t.Fatalf("tx.Version mismatch")
 	}
 	if signed.Signature == "" || signed.Hash == "" {
 		t.Fatalf("signature/hash should not be empty")
@@ -202,15 +184,6 @@ func Test_EndToEnd_MinimalFlow(t *testing.T) {
 	w, priv := createWallet(t, c)
 	c.SetPrivateKey(priv)
 
-	// Nonce should be available
-	nonce, err := c.GetNonce(w.PublicKey)
-	if err != nil {
-		t.Fatalf("GetNonce: %v", err)
-	}
-	if nonce < 0 {
-		t.Fatalf("invalid nonce: %d", nonce)
-	}
-
 	// Best-effort: transactions/logs/blocks (may be empty depending on backend retention)
 	if txs, err := c.ListTransactions(w.PublicKey, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
 		_, _ = c.ListLogs([]string{"wallet_created"}, 0, txs[0].Hash, nil, "", 1, 10, true)
@@ -221,7 +194,7 @@ func Test_EndToEnd_MinimalFlow(t *testing.T) {
 // (Optional) tiny compile-time/proto sanity check for Transaction serialization
 func Test_TransactionRoundtrip_Sanity(t *testing.T) {
 	pub, _ := genKey(t, setupClient(t))
-	chainId := uint64(1)
+	chainId := uint8(1)
 	tx := transaction.NewTransaction(chainId, pub, pub, "echo", json.RawMessage(`{"contract_version": "walletV1", "k": "v"}`), 7)
 	_ = tx.Get() // ensure .Get() is accessible
 }
