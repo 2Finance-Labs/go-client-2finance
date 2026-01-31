@@ -17,7 +17,6 @@ import (
 	"gitlab.com/2finance/2finance-network/infra/mqtt"
 
 	"strings"
-
 	"github.com/google/uuid"
 	"gitlab.com/2finance/2finance-network/infra/event"
 )
@@ -587,11 +586,16 @@ func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[s
 		}
 	}
 
+	dataFilterRawMessage, err := utils.MapToRawMessage(dataFilter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert dataFilter to RawMessage: %w", err)
+	}
+
 	transactionInput := transaction.TransactionInput{
 		From:      from,
 		To:        to,
 		Hash:      hash,
-		Data:      dataFilter,
+		Data:      dataFilterRawMessage,
 		Nonce:     nonce,
 		Page:      page,
 		Limit:     limit,
@@ -754,11 +758,11 @@ func (c *networkClient) GetState(
 	data map[string]interface{},
 ) (types.ContractOutput, error) {
 	// Convert data map to JSONB
-	jsonData, err := utils.MapToJSONB(data)
+	jsonData, err := utils.MapToRawMessage(data)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to marshal data to JSONB: %w", err)
 	}
-
+	
 	// Build a transaction input without signature and hash for query
 	txInput := transaction.TransactionInput{
 		To:     to,
@@ -810,8 +814,14 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 
 
 func (c *networkClient) SignTransaction(chainId uint64, from, to, method string, data utils.JSONB, nonce uint64) (*transaction.Transaction, error) {
+
+	dataRawMessage, err := utils.MapToRawMessage(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert data to RawMessage: %w", err)
+	}
+
 	// 1. create new tx
-	newTx := transaction.NewTransaction(chainId, from, to, method, data, nonce)
+	newTx := transaction.NewTransaction(chainId, from, to, method, dataRawMessage, nonce)
 
 	// 2. get serialized form (here it's just the object)
 	tx := newTx.Get()

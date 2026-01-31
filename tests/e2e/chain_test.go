@@ -7,8 +7,8 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
-		"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
-
+	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
+	"encoding/json"
 	"time"
 )
 
@@ -222,6 +222,6 @@ func Test_EndToEnd_MinimalFlow(t *testing.T) {
 func Test_TransactionRoundtrip_Sanity(t *testing.T) {
 	pub, _ := genKey(t, setupClient(t))
 	chainId := uint64(1)
-	tx := transaction.NewTransaction(chainId, pub, pub, "echo", utils.JSONB(map[string]interface{}{"contract_version": "walletV1", "k": "v"}), 7)
+	tx := transaction.NewTransaction(chainId, pub, pub, "echo", json.RawMessage(`{"contract_version": "walletV1", "k": "v"}`), 7)
 	_ = tx.Get() // ensure .Get() is accessible
 }
