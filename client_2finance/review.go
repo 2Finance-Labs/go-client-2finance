@@ -22,32 +22,24 @@ func (c *networkClient) AddReview(
 	hidden bool,
 ) (types.ContractOutput, error) {
 	from := c.publicKey
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	// If no address provided, generate a fresh Ed25519 address for the review item
-	if address == "" {
-		pub, _, err := keys.GenerateKeyEd25519()
-		if err != nil {
-			return types.ContractOutput{}, fmt.Errorf("failed to generate review address: %w", err)
-		}
-		address = pub
-	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid review address: %w", err)
 	}
 
 	if reviewer == "" {
 		return types.ContractOutput{}, fmt.Errorf("reviewer not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(reviewer); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(reviewer); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid reviewer address: %w", err)
 	}
 	if reviewee == "" {
 		return types.ContractOutput{}, fmt.Errorf("reviewee not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(reviewee); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(reviewee); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid reviewee address: %w", err)
 	}
 	if subjectType == "" {
@@ -99,13 +91,13 @@ func (c *networkClient) UpdateReview(
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -146,13 +138,13 @@ func (c *networkClient) HideReview(address string, hidden bool) (types.ContractO
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -171,19 +163,19 @@ func (c *networkClient) VoteHelpful(address, voter string, isHelpful bool) (type
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if voter == "" {
 		return types.ContractOutput{}, fmt.Errorf("voter not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(voter); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(voter); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid voter address: %w", err)
 	}
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -203,13 +195,13 @@ func (c *networkClient) ReportReview(address, reporter, reason string) (types.Co
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if reporter == "" {
 		return types.ContractOutput{}, fmt.Errorf("reporter not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(reporter); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(reporter); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid reporter address: %w", err)
 	}
 	if reason == "" {
@@ -218,7 +210,7 @@ func (c *networkClient) ReportReview(address, reporter, reason string) (types.Co
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -238,7 +230,7 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if action == "" {
@@ -247,7 +239,7 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -266,13 +258,13 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 func (c *networkClient) GetReview(address string) (types.ContractOutput, error) {
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("review address must be set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid review address: %w", err)
 	}
 
@@ -291,23 +283,23 @@ func (c *networkClient) ListReviews(
 ) (types.ContractOutput, error) {
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
 	// Optional address validations
 	if owner != "" {
-		if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 		}
 	}
 	if reviewer != "" {
-		if err := keys.ValidateEDDSAPublicKey(reviewer); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(reviewer); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid reviewer address: %w", err)
 		}
 	}
 	if reviewee != "" {
-		if err := keys.ValidateEDDSAPublicKey(reviewee); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(reviewee); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid reviewee address: %w", err)
 		}
 	}

@@ -66,7 +66,7 @@ func (c *networkClient) AddToken(
 	if feeAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("fee address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(feeAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(feeAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid fee address: %w", err)
 	}
 	if assetGLBUri == "" {
@@ -88,7 +88,7 @@ func (c *networkClient) AddToken(
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -156,7 +156,7 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, token
 		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(mintTo); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mintTo); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid mint to address: %w", err)
 	}
 
@@ -168,15 +168,15 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, token
 		amount = amountConverted
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(to); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(to); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(mintTo); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mintTo); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid mint to address: %w", err)
 	}
 
@@ -226,11 +226,11 @@ func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType str
 		amount = amountConverted
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(to); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(to); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -286,15 +286,15 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 		amount = amountConverted
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(transferTo); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(transferTo); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid to address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -329,11 +329,11 @@ func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (
 		return types.ContractOutput{}, fmt.Errorf("users map is empty")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -371,11 +371,11 @@ func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool
 		return types.ContractOutput{}, fmt.Errorf("users map is empty")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -413,11 +413,11 @@ func (c *networkClient) BlockUsers(tokenAddress string, users map[string]bool) (
 		return types.ContractOutput{}, fmt.Errorf("users map is empty")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -455,11 +455,11 @@ func (c *networkClient) UnblockUsers(tokenAddress string, users map[string]bool)
 		return types.ContractOutput{}, fmt.Errorf("users map is empty")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -494,11 +494,11 @@ func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -527,11 +527,11 @@ func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -560,11 +560,11 @@ func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -616,10 +616,10 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 		return types.ContractOutput{}, fmt.Errorf("creator website not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	method := tokenV1.METHOD_UPDATE_METADATA
@@ -662,11 +662,11 @@ func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.Cont
 		return types.ContractOutput{}, fmt.Errorf("paused must be true to pause token")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -698,11 +698,11 @@ func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.Co
 		return types.ContractOutput{}, fmt.Errorf("paused must be false to unpause token")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -734,11 +734,11 @@ func (c *networkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[s
 		return types.ContractOutput{}, fmt.Errorf("fee tiers list is empty")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -770,11 +770,11 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 		return types.ContractOutput{}, fmt.Errorf("fee address not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -808,11 +808,11 @@ func (c *networkClient) UpdateGlbFile(tokenAddress string, newAssetGLBUri string
 		return types.ContractOutput{}, fmt.Errorf("new asset GLB URI not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -843,11 +843,11 @@ func (c *networkClient) TransferableToken(tokenAddress string, transferable bool
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -878,11 +878,11 @@ func (c *networkClient) UntransferableToken(tokenAddress string, transferable bo
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -912,11 +912,11 @@ func (c *networkClient) GetToken(tokenAddress string, symbol string, name string
 		return types.ContractOutput{}, fmt.Errorf("token address, symbol or name must be set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
@@ -939,12 +939,12 @@ func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limi
 
 
 	if ownerAddress != "" {
-		if err := keys.ValidateEDDSAPublicKey(ownerAddress); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(ownerAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 		}
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -977,15 +977,15 @@ func (c *networkClient) GetTokenBalance(tokenAddress, ownerAddress string) (type
 		return types.ContractOutput{}, fmt.Errorf("owner address not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(ownerAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(ownerAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
 
@@ -1006,18 +1006,18 @@ func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress string, pag
 	from := c.publicKey
 
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
 	if tokenAddress != "" {
 
-		if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 		}
 	}
 	if ownerAddress != "" {
-		if err := keys.ValidateEDDSAPublicKey(ownerAddress); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(ownerAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 		}
 	}

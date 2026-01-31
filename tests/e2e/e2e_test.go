@@ -78,9 +78,8 @@ func waitUntil(t *testing.T, d time.Duration, pred func() bool) {
 }
 
 func genKey(t *testing.T, c client2f.Client2FinanceNetwork) (pub, priv string) {
-	pub, priv, err := c.GenerateKeyEd25519()
-	if err != nil { t.Fatalf("GenerateKeyEd25519: %v", err) }
+	pub, priv, err := c.GenerateEd25519KeyPairHex()
+	if err != nil { t.Fatalf("GenerateEd25519KeyPairHex: %v", err) }
 	return
 }
-
 

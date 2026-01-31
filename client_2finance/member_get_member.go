@@ -22,7 +22,7 @@ func (c *networkClient) AddMgM(
 ) (types.ContractOutput, error) {
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 	if owner == "" {
@@ -37,16 +37,16 @@ func (c *networkClient) AddMgM(
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(faucetAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(faucetAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid faucet address: %w", err)
 	}
 
@@ -85,7 +85,7 @@ func (c *networkClient) UpdateMgM(
 ) (types.ContractOutput, error) {
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 	if mgmAddress == "" {
@@ -120,7 +120,7 @@ func (c *networkClient) PauseMgM(mgmAddress string, pause bool) (types.ContractO
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
@@ -130,7 +130,7 @@ func (c *networkClient) PauseMgM(mgmAddress string, pause bool) (types.ContractO
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -160,7 +160,7 @@ func (c *networkClient) UnpauseMgM(mgmAddress string, pause bool) (types.Contrac
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
@@ -170,7 +170,7 @@ func (c *networkClient) UnpauseMgM(mgmAddress string, pause bool) (types.Contrac
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -205,7 +205,7 @@ func (c *networkClient) DepositMgM(
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
@@ -224,7 +224,7 @@ func (c *networkClient) DepositMgM(
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -261,7 +261,7 @@ func (c *networkClient) WithdrawMgM(
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
@@ -280,7 +280,7 @@ func (c *networkClient) WithdrawMgM(
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -312,7 +312,7 @@ func (c *networkClient) AddInviterMember(mgmAddress string, inviterAddress strin
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
@@ -322,7 +322,7 @@ func (c *networkClient) AddInviterMember(mgmAddress string, inviterAddress strin
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -353,7 +353,7 @@ func (c *networkClient) UpdateInviterPassword(mgmAddress string, inviterAddress 
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if newPassword == "" {
@@ -362,7 +362,7 @@ func (c *networkClient) UpdateInviterPassword(mgmAddress string, inviterAddress 
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -393,13 +393,13 @@ func (c *networkClient) DeleteInviterMember(mgmAddress string, inviterAddress st
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -429,7 +429,7 @@ func (c *networkClient) ClaimReward(mgmAddress, invitedAddress, password string)
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
@@ -439,7 +439,7 @@ func (c *networkClient) ClaimReward(mgmAddress, invitedAddress, password string)
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -470,13 +470,13 @@ func (c *networkClient) GetMgM(mgmAddress string) (types.ContractOutput, error) 
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -494,20 +494,20 @@ func (c *networkClient) GetInviterMember(mgmAddress string, inviterAddress strin
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
 	if inviterAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("inviter address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(inviterAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(inviterAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid inviter address: %w", err)
 	}
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -529,20 +529,20 @@ func (c *networkClient) GetClaimInviter(mgmAddress string, inviterAddress string
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
 	if inviterAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("inviter address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(inviterAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(inviterAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid inviter address: %w", err)
 	}
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -564,20 +564,20 @@ func (c *networkClient) GetClaimInvited(mgmAddress string, invitedAddress string
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(mgmAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(mgmAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
 	if invitedAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("invited address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(invitedAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(invitedAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid invited address: %w", err)
 	}
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 

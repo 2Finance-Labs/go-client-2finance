@@ -25,33 +25,33 @@ func (c *networkClient) CreatePayment(
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	if payer == "" {
 		return types.ContractOutput{}, fmt.Errorf("payer not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(payer); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(payer); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid payer address: %w", err)
 	}
 	if payee == "" {
 		return types.ContractOutput{}, fmt.Errorf("payee not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(payee); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(payee); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid payee address: %w", err)
 	}
 
@@ -99,33 +99,33 @@ func (c *networkClient) DirectPay(
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	if payer == "" {
 		return types.ContractOutput{}, fmt.Errorf("payer not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(payer); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(payer); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid payer address: %w", err)
 	}
 	if payee == "" {
 		return types.ContractOutput{}, fmt.Errorf("payee not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(payee); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(payee); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid payee address: %w", err)
 	}
 	if orderId == "" {
@@ -165,7 +165,7 @@ func (c *networkClient) AuthorizePayment(address, tokenType, uuid string) (types
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if tokenType == "" {
@@ -179,7 +179,7 @@ func (c *networkClient) AuthorizePayment(address, tokenType, uuid string) (types
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -199,7 +199,7 @@ func (c *networkClient) CapturePayment(address, tokenType, uuid string) (types.C
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if tokenType == "" {
@@ -213,7 +213,7 @@ func (c *networkClient) CapturePayment(address, tokenType, uuid string) (types.C
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -233,7 +233,7 @@ func (c *networkClient) RefundPayment(address, amount, tokenType, uuid string) (
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if amount == "" {
@@ -250,7 +250,7 @@ func (c *networkClient) RefundPayment(address, amount, tokenType, uuid string) (
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -271,7 +271,7 @@ func (c *networkClient) VoidPayment(address, tokenType, uuid string) (types.Cont
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if tokenType == "" {
@@ -285,7 +285,7 @@ func (c *networkClient) VoidPayment(address, tokenType, uuid string) (types.Cont
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -305,7 +305,7 @@ func (c *networkClient) PausePayment(address string, paused bool) (types.Contrac
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if !paused {
@@ -314,7 +314,7 @@ func (c *networkClient) PausePayment(address string, paused bool) (types.Contrac
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -333,7 +333,7 @@ func (c *networkClient) UnpausePayment(address string, paused bool) (types.Contr
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if paused {
@@ -342,7 +342,7 @@ func (c *networkClient) UnpausePayment(address string, paused bool) (types.Contr
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -360,14 +360,14 @@ func (c *networkClient) UnpausePayment(address string, paused bool) (types.Contr
 func (c *networkClient) GetPayment(address string) (types.ContractOutput, error) {
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("payment address must be set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid payment address: %w", err)
 	}
 
@@ -391,22 +391,22 @@ func (c *networkClient) ListPayments(
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
 	if tokenAddress != "" {
-		if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 		}
 	}
 	if payer != "" {
-		if err := keys.ValidateEDDSAPublicKey(payer); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(payer); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid payer address: %w", err)
 		}
 	}
 	if payee != "" {
-		if err := keys.ValidateEDDSAPublicKey(payee); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(payee); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid payee address: %w", err)
 		}
 	}

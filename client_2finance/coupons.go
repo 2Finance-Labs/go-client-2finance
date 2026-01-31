@@ -34,19 +34,19 @@ func (c *networkClient) AddCoupon(
 	// Sender validations
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
 	}
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	if !(programType == "percentage" || programType == "fixed-amount") {
@@ -99,11 +99,11 @@ func (c *networkClient) UpdateCoupon(
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
 	}
 	if tokenAddress != "" {
-		if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 		}
 	}
@@ -113,7 +113,7 @@ func (c *networkClient) UpdateCoupon(
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -142,7 +142,7 @@ func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractO
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
 	}
 	if !pause {
@@ -151,7 +151,7 @@ func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractO
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -170,7 +170,7 @@ func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
 	}
 	if pause {
@@ -179,7 +179,7 @@ func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -208,7 +208,7 @@ func (c *networkClient) RedeemCoupon(
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
 	}
 	if orderAmount == "" {
@@ -228,7 +228,7 @@ func (c *networkClient) RedeemCoupon(
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -253,13 +253,13 @@ func (c *networkClient) RedeemCoupon(
 func (c *networkClient) GetCoupon(address string) (types.ContractOutput, error) {
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("coupon address must be set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
 	}
 
@@ -280,16 +280,16 @@ func (c *networkClient) ListCoupons(
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 	if owner != "" {
-		if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 		}
 	}
 	if tokenAddress != "" {
-		if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 		}
 	}

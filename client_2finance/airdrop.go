@@ -55,20 +55,20 @@ func (c *networkClient) NewAirdrop(
 		return types.ContractOutput{}, fmt.Errorf("verification type not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	if verifierPublicKey != "" {
-		if err := keys.ValidateEDDSAPublicKey(verifierPublicKey); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(verifierPublicKey); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid verifier public key: %w", err)
 		}
 	}
 
 	from := c.publicKey
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -247,10 +247,10 @@ func (c *networkClient) PauseAirdrop(airdropAddress string) (types.ContractOutpu
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(airdropAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(airdropAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid airdrop address: %w", err)
 	}
 
@@ -274,10 +274,10 @@ func (c *networkClient) UnpauseAirdrop(airdropAddress string) (types.ContractOut
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(airdropAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(airdropAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid airdrop address: %w", err)
 	}
 
@@ -302,7 +302,7 @@ func (c *networkClient) AttestParticipantEligibility(
 	if wallet == "" {
 		return types.ContractOutput{}, fmt.Errorf("wallet not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(wallet); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(wallet); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid wallet address: %w", err)
 	}
 
@@ -332,10 +332,10 @@ func (c *networkClient) ManuallyAttestParticipantEligibility(
 		return types.ContractOutput{}, fmt.Errorf("wallet not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(wallet); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(wallet); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid wallet address: %w", err)
 	}
 
@@ -369,11 +369,11 @@ func (c *networkClient) GetAirdrop(address string) (types.ContractOutput, error)
 		return types.ContractOutput{}, fmt.Errorf("airdrop address must be set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid airdrop address: %w", err)
 	}
 
@@ -398,12 +398,12 @@ func (c *networkClient) ListAirdrops(
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
 	if owner != "" {
-		if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 		}
 	}

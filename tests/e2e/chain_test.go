@@ -60,7 +60,7 @@ func Test_SetPrivateKey_Getters(t *testing.T) {
 	if gotPub == "" {
 		t.Fatalf("GetPublicKey returned empty")
 	}
-	if err := keys.ValidateEDDSAPublicKey(gotPub); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(gotPub); err != nil {
 		t.Fatalf("GetPublicKey invalid: %v", err)
 	}
 
@@ -76,14 +76,14 @@ func Test_SetPrivateKey_Getters(t *testing.T) {
 
 func Test_GenerateKeyEd25519(t *testing.T) {
 	c := setupClient(t)
-	pub, priv, err := c.GenerateKeyEd25519()
+	pub, priv, err := c.GenerateEd25519KeyPairHex()
 	if err != nil {
 		t.Fatalf("GenerateKeyEd25519: %v", err)
 	}
 	if pub == "" || priv == "" {
 		t.Fatalf("empty keys")
 	}
-	if err := keys.ValidateEDDSAPublicKey(pub); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(pub); err != nil {
 		t.Fatalf("generated pub invalid: %v", err)
 	}
 }

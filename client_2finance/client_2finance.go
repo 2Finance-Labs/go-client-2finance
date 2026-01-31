@@ -28,12 +28,12 @@ type Client2FinanceNetwork interface {
 	SetPrivateKey(privateKey string)
 	GetPrivateKey() string
 	GetPublicKey() string
-	GenerateKeyEd25519() (string, string, error)
+	GenerateEd25519KeyPairHex() (string, string, error)
 
 	SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error)
 
 	// CHAIN
-	GetNonce(publicKey string) (uint64, error)
+	GetNonce(address string) (uint64, error)
 	ListTransactions(from, to, hash string, dataFilter map[string]interface{}, nonce uint64,
 		page, limit int,
 		ascending bool) ([]transaction.Transaction, error)
@@ -531,25 +531,28 @@ func (c *networkClient) sendRequest(topic string, payload interface{}) error {
 	return nil
 }
 
-func (c *networkClient) GenerateKeyEd25519() (string, string, error) {
-	publicKey, privateKey, err := keys.GenerateKeyEd25519()
+func (c *networkClient) GenerateEd25519KeyPairHex() (string, string, error) {
+	publicKey, privateKey, err := keys.GenerateEd25519KeyPair()
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate public key: %w", err)
 	}
 
-	return publicKey, privateKey, nil
+	privateKeyHex := keys.PrivateKeyToHex(privateKey)
+	publicKeyHex := keys.PublicKeyToHex(publicKey)
+
+	return publicKeyHex, privateKeyHex, nil
 }
 
-func (c *networkClient) GetNonce(publicKey string) (uint64, error) {
-	if publicKey == "" {
-		return 0, fmt.Errorf("public key not set")
+func (c *networkClient) GetNonce(address string) (uint64, error) {
+	if address == "" {
+		return 0, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(publicKey); err != nil {
-		return 0, fmt.Errorf("invalid public key: %w", err)
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+		return 0, fmt.Errorf("invalid address: %w", err)
 	}
 
 	transactionInput := transaction.TransactionInput{
-		From: publicKey,
+		From: address,
 	}
 	nonceBytes, err := c.SendTransaction(virtualmachine.REQUEST_METHOD_GET_NONCE, transactionInput, c.replyTo)
 	if err != nil {
@@ -573,13 +576,13 @@ func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[s
 	}
 
 	if from != "" {
-		if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 			return nil, fmt.Errorf("invalid from address: %w", err)
 		}
 	}
 
 	if to != "" {
-		if err := keys.ValidateEDDSAPublicKey(to); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(to); err != nil {
 			return nil, fmt.Errorf("invalid to address: %w", err)
 		}
 	}
@@ -710,7 +713,7 @@ func (c *networkClient) SignAndSendTransaction(
 	data map[string]interface{},
 ) (types.ContractOutput, error) {
 	// Validate public key (from address)
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -827,7 +830,7 @@ func (c *networkClient) DeployContract1(contractVersion string) (types.ContractO
 	}
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -854,7 +857,7 @@ func (c *networkClient) DeployContract2(contractVersion, contractAddress string)
 	}
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 

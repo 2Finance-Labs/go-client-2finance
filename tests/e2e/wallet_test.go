@@ -7,6 +7,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 	"testing"
+	"fmt"
 )
 
 // createWallet generates a keypair, registers the wallet and returns the parsed state + priv.
@@ -14,12 +15,12 @@ func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (walletDomain.
 	t.Helper()
 	pub, priv := genKey(t, c)
 	c.SetPrivateKey(priv)
-
+	fmt.Println("Creating wallet for pub:", pub)
 	contractState := models.ContractStateModel{}
 	deployedContract, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
 	if err != nil { t.Fatalf("DeployContract: %v", err) }
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)	
-
+	fmt.Println("Deployed wallet contract at:", contractState.Address)
 	wOut, err := c.AddWallet(contractState.Address, pub)
 	if err != nil { t.Fatalf("AddWallet: %v", err) }
 	var w walletDomain.Wallet

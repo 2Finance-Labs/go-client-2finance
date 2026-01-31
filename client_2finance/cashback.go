@@ -26,27 +26,27 @@ func (c *networkClient) AddCashback(
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
 	if owner == "" {
 		return types.ContractOutput{}, fmt.Errorf("owner not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	if programType != "fixed-percentage" && programType != "variable-percentage" {
@@ -89,11 +89,11 @@ func (c *networkClient) UpdateCashback(
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if tokenAddress != "" {
-		if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 		}
 	}
@@ -106,7 +106,7 @@ func (c *networkClient) UpdateCashback(
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -130,7 +130,7 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if !pause {
@@ -139,7 +139,7 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -159,7 +159,7 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if pause {
@@ -168,7 +168,7 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -188,7 +188,7 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount, toke
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if amount == "" {
@@ -206,12 +206,12 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount, toke
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -238,7 +238,7 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tok
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if amount == "" {
@@ -256,13 +256,13 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tok
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -287,10 +287,10 @@ func (c *networkClient) GetCashback(address string) (types.ContractOutput, error
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("cashback address must be set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid cashback address: %w", err)
 	}
 
@@ -311,17 +311,17 @@ func (c *networkClient) ListCashbacks(
 ) (types.ContractOutput, error) {
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
 	if owner != "" {
-		if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 		}
 	}
 	if tokenAddress != "" {
-		if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 		}
 	}
@@ -354,7 +354,7 @@ func (c *networkClient) ClaimCashback(address, amount, tokenType, uuid string) (
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if amount == "" {
@@ -371,7 +371,7 @@ func (c *networkClient) ClaimCashback(address, amount, tokenType, uuid string) (
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 

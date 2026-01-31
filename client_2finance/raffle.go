@@ -21,25 +21,25 @@ func (c *networkClient) AddRaffle(
 ) (types.ContractOutput, error) {
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid raffle address: %w", err)
 	}
 	if owner == "" {
 		return types.ContractOutput{}, fmt.Errorf("owner not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	if ticketPrice == "" {
@@ -92,18 +92,18 @@ func (c *networkClient) UpdateRaffle(
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
 	from := c.publicKey
 
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
 	if tokenAddress != "" { // optional change
-		if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 		}
 	}
@@ -143,7 +143,7 @@ func (c *networkClient) PauseRaffle(address string, paused bool) (types.Contract
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if !paused {
@@ -154,7 +154,7 @@ func (c *networkClient) PauseRaffle(address string, paused bool) (types.Contract
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -169,7 +169,7 @@ func (c *networkClient) UnpauseRaffle(address string, paused bool) (types.Contra
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if paused {
@@ -180,7 +180,7 @@ func (c *networkClient) UnpauseRaffle(address string, paused bool) (types.Contra
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -196,13 +196,13 @@ func (c *networkClient) EnterRaffle(address string, tickets int, payTokenAddress
 	if from == "" { return types.ContractOutput{}, fmt.Errorf("from address not set") }
 
 	// Validate inputs (server/domain will also validate)
-	if err := keys.ValidateEDDSAPublicKey(c.publicKey); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(c.publicKey); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid client public key: %w", err)
 	}
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address is required")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid raffle address: %w", err)
 	}
 	if tickets <= 0 {
@@ -211,7 +211,7 @@ func (c *networkClient) EnterRaffle(address string, tickets int, payTokenAddress
 	if payTokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("pay_token_address is required")
 	}
-	if err := keys.ValidateEDDSAPublicKey(payTokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(payTokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid pay_token_address: %w", err)
 	}
 	if tokenType == "" {
@@ -247,7 +247,7 @@ func (c *networkClient) DrawRaffle(address, revealSeed string) (types.ContractOu
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if revealSeed == "" {
@@ -258,7 +258,7 @@ func (c *networkClient) DrawRaffle(address, revealSeed string) (types.ContractOu
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -276,13 +276,13 @@ func (c *networkClient) ClaimRaffle(address, winner, tokenType, uuid string) (ty
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if winner == "" {
 		return types.ContractOutput{}, fmt.Errorf("winner not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(winner); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(winner); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid winner address: %w", err)
 	}
 	if tokenType == "" {
@@ -298,7 +298,7 @@ func (c *networkClient) ClaimRaffle(address, winner, tokenType, uuid string) (ty
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -313,13 +313,13 @@ func (c *networkClient) WithdrawRaffle(address, tokenAddress, amount, tokenType,
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	if amount == "" {
@@ -338,7 +338,7 @@ func (c *networkClient) WithdrawRaffle(address, tokenAddress, amount, tokenType,
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -352,13 +352,13 @@ func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string
 	if raffleAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("raffle address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(raffleAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(raffleAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid raffle address: %w", err)
 	}
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 	if amount == "" {
@@ -377,7 +377,7 @@ func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -391,7 +391,7 @@ func (c *networkClient) RemoveRafflePrize(raffleAddress string, tokenType string
 	if raffleAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("raffle address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(raffleAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(raffleAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid raffle address: %w", err)
 	}
 	if tokenType == "" {
@@ -405,7 +405,7 @@ func (c *networkClient) RemoveRafflePrize(raffleAddress string, tokenType string
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
@@ -421,13 +421,13 @@ func (c *networkClient) GetRaffle(address string) (types.ContractOutput, error) 
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("raffle address must be set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid raffle address: %w", err)
 	}
 
@@ -442,17 +442,17 @@ func (c *networkClient) ListRaffles(owner, tokenAddress string, paused *bool, ac
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
 	if owner != "" {
-		if err := keys.ValidateEDDSAPublicKey(owner); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 		}
 	}
 	if tokenAddress != "" {
-		if err := keys.ValidateEDDSAPublicKey(tokenAddress); err != nil {
+		if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 		}
 	}
@@ -487,13 +487,13 @@ func (c *networkClient) ListPrizes(raffleAddress string, page, limit int, asc bo
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(from); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 	if raffleAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("raffle address must be set")
 	}
-	if err := keys.ValidateEDDSAPublicKey(raffleAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(raffleAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid raffle address: %w", err)
 	}
 	if page < 1 {
