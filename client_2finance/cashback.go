@@ -10,6 +10,7 @@ import (
 
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 // AddCashBack deploys a new cashback program (to = DEPLOY address).
@@ -68,8 +69,13 @@ func (c *networkClient) AddCashback(
 		"expired_at":    expiredAt,
 		"paused":        paused,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	cashback, err := c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	cashback, err := c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to add cashback: %w", err)
 	}
@@ -121,8 +127,13 @@ func (c *networkClient) UpdateCashback(
 		"start_at":      startAt,
 		"expired_at":    expiredAt,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // PauseCashBack pauses a cashback program. OnlyOwner.
@@ -150,8 +161,13 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 		"address": address,
 		"paused":  pause,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // UnpauseCashback unpauses a cashback program. OnlyOwner.
@@ -179,8 +195,13 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 		"address": address,
 		"paused":  pause,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // DepositCashBack funds the cashback pool (token inferred from state).
@@ -225,8 +246,13 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount, toke
 		"token_type": tokenType,
 		"uuid":    uuid,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deposit cashback: %w", err)
 	}
@@ -276,8 +302,12 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tok
 		"token_type": tokenType,
 		"uuid":    uuid,
 	}
-
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // GetCashBack reads a single cashback state.
@@ -384,6 +414,11 @@ func (c *networkClient) ClaimCashback(address, amount, tokenType, uuid string) (
 		"token_type": tokenType,
 		"uuid":    uuid,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }

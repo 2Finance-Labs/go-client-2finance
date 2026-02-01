@@ -8,6 +8,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 func (c *networkClient) AddFaucet(
@@ -64,12 +65,20 @@ func (c *networkClient) AddFaucet(
 		"claim_interval_duration": claimIntervalDuration,
 	}
 
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -112,12 +121,20 @@ func (c *networkClient) UpdateFaucet(
 		"last_claim_by_user":      lastClaimByUser,
 	}
 
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -156,12 +173,20 @@ func (c *networkClient) PauseFaucet(
 		"paused":  pause,
 	}
 
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -199,6 +224,11 @@ func (c *networkClient) UnpauseFaucet(
 		"address": address,
 		"pause":   pause,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
@@ -206,6 +236,8 @@ func (c *networkClient) UnpauseFaucet(
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -253,6 +285,11 @@ func (c *networkClient) DepositFunds(address, tokenAddress, amount, tokenType, u
 		"token_type":    tokenType,
 		"uuid":          uuid,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
@@ -260,6 +297,8 @@ func (c *networkClient) DepositFunds(address, tokenAddress, amount, tokenType, u
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -308,12 +347,20 @@ func (c *networkClient) WithdrawFunds(address, tokenAddress, amount, tokenType, 
 		"uuid":          uuid,
 	}
 
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -348,12 +395,20 @@ func (c *networkClient) UpdateRequestLimitPerUser(address string, requestLimit i
 		"request_limit": requestLimit,
 	}
 
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -391,12 +446,20 @@ func (c *networkClient) ClaimFunds(address, tokenType, uuid string) (types.Contr
 		"uuid": uuid,
 	}
 
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)

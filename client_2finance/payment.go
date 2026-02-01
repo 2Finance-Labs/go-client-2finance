@@ -9,6 +9,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 // CreatePayment creates a new payment intent (to = DEPLOY address).
@@ -82,7 +83,12 @@ func (c *networkClient) CreatePayment(
 		"expired_at":    expiredAt,
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // DirectPay is a one-step convenience: create + immediate capture.
@@ -156,8 +162,13 @@ func (c *networkClient) DirectPay(
 		"token_type":    tokenType,
 		"uuid":          uuid,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // AuthorizePayment places a hold on funds (payer -> payee) for a payment address.
@@ -190,8 +201,13 @@ func (c *networkClient) AuthorizePayment(address, tokenType, uuid string) (types
 		"token_type": tokenType,
 		"uuid": uuid,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // CapturePayment settles funds (full/partial).
@@ -224,8 +240,13 @@ func (c *networkClient) CapturePayment(address, tokenType, uuid string) (types.C
 		"token_type": tokenType,
 		"uuid": uuid,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // RefundPayment returns funds (full/partial) from payee back to payer.
@@ -262,8 +283,13 @@ func (c *networkClient) RefundPayment(address, amount, tokenType, uuid string) (
 		"token_type": tokenType,
 		"uuid": uuid,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // VoidPayment releases an authorization hold.
@@ -296,8 +322,12 @@ func (c *networkClient) VoidPayment(address, tokenType, uuid string) (types.Cont
 		"token_type": tokenType,
 		"uuid": uuid,
 	}
-
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // PausePayment toggles the paused state to true. OnlyOwner.
@@ -324,8 +354,13 @@ func (c *networkClient) PausePayment(address string, paused bool) (types.Contrac
 		"address": address,
 		"paused":  paused,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // UnpausePayment toggles the paused state to false. OnlyOwner.
@@ -353,7 +388,12 @@ func (c *networkClient) UnpausePayment(address string, paused bool) (types.Contr
 		"paused":  paused,
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // GetPayment reads a single payment state.

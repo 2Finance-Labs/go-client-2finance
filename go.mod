@@ -5,13 +5,13 @@ module github.com/2Finance-Labs/go-client-2finance
 
 go 1.24.7
 
-replace gitlab.com/2finance/2finance-network => /home/luiz/myrepo/2finance-network
+// replace gitlab.com/2finance/2finance-network => /home/luiz/myrepo/2finance-network
 
 //replace gitlab.com/2finance/2finance-network => /home/gabriel-hausmann/Work/2finance-network
 
 require (
 	github.com/google/uuid v1.6.0
-	gitlab.com/2finance/2finance-network v0.0.0-00010101000000-000000000000
+	gitlab.com/2finance/2finance-network v0.0.0-20260201184526-c15bb9a01966
 
 )
 

@@ -8,6 +8,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 func (c *networkClient) AddMgM(
@@ -62,6 +63,11 @@ func (c *networkClient) AddMgM(
 		"expire_at":      expireAt,
 		"paused":         paused,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
@@ -69,6 +75,8 @@ func (c *networkClient) AddMgM(
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -101,6 +109,11 @@ func (c *networkClient) UpdateMgM(
 		"start_at":    startAt,
 		"expire_at":   expireAt,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
@@ -108,6 +121,8 @@ func (c *networkClient) UpdateMgM(
 		to,
 		method,
 		data,
+		version,		
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -142,12 +157,20 @@ func (c *networkClient) PauseMgM(mgmAddress string, pause bool) (types.ContractO
 		"paused":      pause,
 	}
 
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -181,13 +204,19 @@ func (c *networkClient) UnpauseMgM(mgmAddress string, pause bool) (types.Contrac
 		"mgm_address": mgmAddress,
 		"paused":      pause,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -237,6 +266,11 @@ func (c *networkClient) DepositMgM(
 		"token_type":  tokenType,
 		"uuid":        uuid,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
@@ -244,6 +278,8 @@ func (c *networkClient) DepositMgM(
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -293,6 +329,11 @@ func (c *networkClient) WithdrawMgM(
 		"token_type":  tokenType,
 		"uuid":        uuid,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
@@ -300,6 +341,8 @@ func (c *networkClient) WithdrawMgM(
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -335,12 +378,20 @@ func (c *networkClient) AddInviterMember(mgmAddress string, inviterAddress strin
 		"password":        password,
 	}
 
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -367,20 +418,26 @@ func (c *networkClient) UpdateInviterPassword(mgmAddress string, inviterAddress 
 	}
 
 	method := memberGetMemberV1.METHOD_UPDATE_INVITER_PASSWORD
+	to := mgmAddress
 
 	data := map[string]interface{}{
 		"mgm_address":     mgmAddress,
 		"inviter_address": inviterAddress,
 		"new_password":    newPassword,
 	}
-
-	to := mgmAddress
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -410,6 +467,11 @@ func (c *networkClient) DeleteInviterMember(mgmAddress string, inviterAddress st
 		"mgm_address":     mgmAddress,
 		"inviter_address": inviterAddress,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
@@ -417,6 +479,8 @@ func (c *networkClient) DeleteInviterMember(mgmAddress string, inviterAddress st
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
@@ -451,6 +515,11 @@ func (c *networkClient) ClaimReward(mgmAddress, invitedAddress, password string)
 		"password":        password,
 		"invited_address": invitedAddress,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
@@ -458,6 +527,8 @@ func (c *networkClient) ClaimReward(mgmAddress, invitedAddress, password string)
 		to,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)

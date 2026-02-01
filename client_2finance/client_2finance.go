@@ -45,13 +45,16 @@ type Client2FinanceNetwork interface {
 		contractVersion string,
 		contractAddress string,
 		) (types.ContractOutput, error)
-	SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8) (*transaction.Transaction, error)
+	SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8, uuid7 string) (*transaction.Transaction, error)
 	SignAndSendTransaction(
 		chainId uint8,
 		from string,
 		to string,
 		method string,
-		data map[string]interface{}) (types.ContractOutput, error)
+		data map[string]interface{},
+		version uint8,
+		uuid7 string,
+		) (types.ContractOutput, error)
 	GetState(
 		to string,
 		method string,
@@ -690,13 +693,14 @@ func (c *networkClient) SignAndSendTransaction(
 	to string,
 	method string,
 	data map[string]interface{},
+	version uint8,
+	uuid7 string,
 ) (types.ContractOutput, error) {
 	// Validate public key (from address)
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	version := uint8(1)
-	txSigned, err := c.SignTransaction(chainId, from, to, method, data, version)
+	txSigned, err := c.SignTransaction(chainId, from, to, method, data, version, uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}
@@ -774,7 +778,7 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 }
 
 
-func (c *networkClient) SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8) (*transaction.Transaction, error) {
+func (c *networkClient) SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8, uuid7 string) (*transaction.Transaction, error) {
 
 	dataRawMessage, err := utils.MapToRawMessage(data)
 	if err != nil {
@@ -782,7 +786,7 @@ func (c *networkClient) SignTransaction(chainId uint8, from, to, method string, 
 	}
 
 	// 1. create new tx
-	newTx := transaction.NewTransaction(chainId, from, to, method, dataRawMessage, version)
+	newTx := transaction.NewTransaction(chainId, from, to, method, dataRawMessage, version, uuid7)
 
 	// 2. get serialized form (here it's just the object)
 	tx := newTx.Get()
@@ -815,7 +819,13 @@ func (c *networkClient) DeployContract1(contractVersion string) (types.ContractO
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
 	}
-	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	fmt.Println("UUIDv7:", uuid7)
+	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deploy contract: %w", err)
 	}
@@ -843,7 +853,12 @@ func (c *networkClient) DeployContract2(contractVersion, contractAddress string)
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
 	}
-	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deploy contract: %w", err)
 	}

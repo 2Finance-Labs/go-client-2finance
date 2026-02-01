@@ -122,12 +122,20 @@ func (c *networkClient) AddToken(
 		"transferable":             transferable,
 	}
 
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -186,13 +194,20 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, token
 		"amount":     amount,
 		"token_type": tokenType,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -240,13 +255,20 @@ func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType str
 		"token_type": tokenType,
 		"uuid": uuid,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -305,13 +327,19 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 		"token_type":  tokenType,
 		"uuid":        uuid,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -346,13 +374,20 @@ func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (
 	data := map[string]interface{}{
 		"allow_users": users,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -388,13 +423,19 @@ func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool
 	data := map[string]interface{}{
 		"allow_users": users,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -430,13 +471,19 @@ func (c *networkClient) BlockUsers(tokenAddress string, users map[string]bool) (
 	data := map[string]interface{}{
 		"block_users": users,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -472,13 +519,19 @@ func (c *networkClient) UnblockUsers(tokenAddress string, users map[string]bool)
 	data := map[string]interface{}{
 		"block_users": users,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -506,13 +559,19 @@ func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 	data := map[string]interface{}{
 		"freeze_authority_revoked": revoke,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -539,13 +598,19 @@ func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 	data := map[string]interface{}{
 		"mint_authority_revoked": revoke,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -572,13 +637,19 @@ func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 	data := map[string]interface{}{
 		"update_authority_revoked": revoke,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -637,13 +708,19 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 		"creator_website":   creatorWebsite,
 		"expired_at":        expired_at,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -674,13 +751,19 @@ func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.Cont
 	data := map[string]interface{}{
 		"paused": paused,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -710,13 +793,19 @@ func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.Co
 	data := map[string]interface{}{
 		"paused": paused,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -746,13 +835,19 @@ func (c *networkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[s
 	data := map[string]interface{}{
 		"fee_tiers_list": feeTiersList,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -782,13 +877,19 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 	data := map[string]interface{}{
 		"fee_address": feeAddress,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -820,13 +921,19 @@ func (c *networkClient) UpdateGlbFile(tokenAddress string, newAssetGLBUri string
 	data := map[string]interface{}{
 		"asset_glb_uri": newAssetGLBUri,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -855,13 +962,19 @@ func (c *networkClient) TransferableToken(tokenAddress string, transferable bool
 	data := map[string]interface{}{
 		"transferable": transferable,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -890,13 +1003,20 @@ func (c *networkClient) UntransferableToken(tokenAddress string, transferable bo
 	data := map[string]interface{}{
 		"transferable": transferable,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		tokenAddress,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}

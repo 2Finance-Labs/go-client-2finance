@@ -9,6 +9,7 @@ import (
 
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 // ---------------------------------------------
@@ -77,8 +78,13 @@ func (c *networkClient) AddCoupon(
 		"per_user_limit":   perUserLimit,
 		"passcode_hash":    passcodeHash, // sha256(preimage) hex
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 func (c *networkClient) UpdateCoupon(
@@ -134,8 +140,13 @@ func (c *networkClient) UpdateCoupon(
 		"per_user_limit":  perUserLimit,
 		"passcode_hash":   passcodeHash,   // "" => keep prior hash
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractOutput, error) {
@@ -162,8 +173,13 @@ func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractO
 		"address": address,
 		"paused":  pause,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.ContractOutput, error) {
@@ -191,7 +207,12 @@ func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 		"paused":  pause,
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // Redeem a coupon for an order amount using a passcode preimage.
@@ -243,7 +264,12 @@ func (c *networkClient) RedeemCoupon(
 		"uuid":          uuid,
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // ---------------------------------------------

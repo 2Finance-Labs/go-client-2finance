@@ -42,13 +42,19 @@ func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput,
 		//TODO REMOVER
 		"amount":     "0",
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -111,13 +117,19 @@ func (c *networkClient) TransferWallet(to, amount string, decimals int) (types.C
 		"to":      to,
 		"amount":  amount,
 	}
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	contractOutput, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
 		to,
 		method,
-		data)
+		data,
+		version,
+		uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}

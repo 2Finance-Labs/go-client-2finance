@@ -8,6 +8,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 // AddRaffle creates a new raffle instance (to = DEPLOY address). The tx sender becomes the owner, but an explicit owner is also recorded.
@@ -78,7 +79,13 @@ func (c *networkClient) AddRaffle(
 		"metadata":             metadata,
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // UpdateRaffle updates mutable fields of an existing raffle.
@@ -135,7 +142,13 @@ func (c *networkClient) UpdateRaffle(
 		data["expired_at"] = *expiredAt
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // PauseRaffle sets paused=true. OnlyOwner.
@@ -161,7 +174,12 @@ func (c *networkClient) PauseRaffle(address string, paused bool) (types.Contract
 	to := address
 	method := raffleV1.METHOD_PAUSE_RAFFLE
 	data := map[string]interface{}{"address": address, "paused": paused}
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // UnpauseRaffle sets paused=false. OnlyOwner.
@@ -187,7 +205,12 @@ func (c *networkClient) UnpauseRaffle(address string, paused bool) (types.Contra
 	to := address
 	method := raffleV1.METHOD_UNPAUSE_RAFFLE
 	data := map[string]interface{}{"address": address, "paused": paused}
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 func (c *networkClient) EnterRaffle(address string, tickets int, payTokenAddress, tokenType, uuid string) (types.ContractOutput, error) {
@@ -231,14 +254,19 @@ func (c *networkClient) EnterRaffle(address string, tickets int, payTokenAddress
 		"token_type":        tokenType,
 		"uuid":              uuid,
 	}
-
-    // Send: from = caller (client public key), to = raffle instance address
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
     return c.SignAndSendTransaction(
         c.chainId,
         from,
         address,
         raffleV1.METHOD_ENTER_RAFFLE,    // method constant
         data,
+        version,
+        uuid7,
     )
 }
 
@@ -268,7 +296,13 @@ func (c *networkClient) DrawRaffle(address, revealSeed string) (types.ContractOu
 		"address":     address,
 		"reveal_seed": revealSeed,
 	}
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // ClaimRaffle allows a winner to claim their prize.
@@ -305,7 +339,12 @@ func (c *networkClient) ClaimRaffle(address, winner, tokenType, uuid string) (ty
 	to := address
 	method := raffleV1.METHOD_CLAIM_RAFFLE
 	data := map[string]interface{}{"address": address, "winner": winner, "token_type": tokenType, "uuid": uuid}
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // WithdrawRaffle withdraws unused/prize funds from the raffle pool.
@@ -345,7 +384,12 @@ func (c *networkClient) WithdrawRaffle(address, tokenAddress, amount, tokenType,
 	to := address
 	method := raffleV1.METHOD_WITHDRAW_RAFFLE
 	data := map[string]interface{}{"address": address, "token_address": tokenAddress, "amount": amount, "token_type": tokenType, "uuid": uuid}
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string, amount string, tokenType string, uuid string) (types.ContractOutput, error) {
@@ -384,7 +428,12 @@ func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string
 	to := raffleAddress
 	method := raffleV1.METHOD_ADD_RAFFLE_PRIZE
 	data := map[string]interface{}{"amount": amount, "raffle_address": raffleAddress, "token_address": tokenAddress, "token_type": tokenType, "uuid": uuid}
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 func (c *networkClient) RemoveRafflePrize(raffleAddress string, tokenType string, uuid string) (types.ContractOutput, error) {
@@ -412,7 +461,12 @@ func (c *networkClient) RemoveRafflePrize(raffleAddress string, tokenType string
 	to := raffleAddress
 	method := raffleV1.METHOD_REMOVE_RAFFLE_PRIZE
 	data := map[string]interface{}{"raffle_address": raffleAddress, "uuid": uuid, "token_type": tokenType}
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // GetRaffle reads a single raffle state.

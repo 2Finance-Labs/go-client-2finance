@@ -7,6 +7,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/airdropV1"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 func (c *networkClient) NewAirdrop(
@@ -95,8 +96,13 @@ func (c *networkClient) NewAirdrop(
 		"verifier_public_key":    verifierPublicKey,
 		"manual_review_required": manualReviewRequired,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, address, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, address, method, data, version, uuid7)
 }
 
 func (c *networkClient) UpdateAirdropMetadata(
@@ -134,8 +140,13 @@ func (c *networkClient) UpdateAirdropMetadata(
 		"verifier_public_key":    verifierPublicKey,
 		"manual_review_required": manualReviewRequired,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, address, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, address, method, data, version, uuid7)
 }
 
 func (c *networkClient) AllowOracles(address string, oracles map[string]bool) (types.ContractOutput, error) {
@@ -148,10 +159,15 @@ func (c *networkClient) AllowOracles(address string, oracles map[string]bool) (t
 
 	from := c.publicKey
 	method := airdropV1.METHOD_ALLOW_ORACLES
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"oracles": oracles,
-	})
+	}, version, uuid7)
 }
 
 func (c *networkClient) DisallowOracles(address string, oracles map[string]bool) (types.ContractOutput, error) {
@@ -164,10 +180,15 @@ func (c *networkClient) DisallowOracles(address string, oracles map[string]bool)
 
 	from := c.publicKey
 	method := airdropV1.METHOD_DISALLOW_ORACLES
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"oracles": oracles,
-	})
+	}, version, uuid7)
 }
 
 func (c *networkClient) DepositAirdrop(
@@ -189,12 +210,18 @@ func (c *networkClient) DepositAirdrop(
 
 	from := c.publicKey
 	method := airdropV1.METHOD_DEPOSIT_AIRDROP
+	version := uint8(1)
+	
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"amount":     amount,
 		"token_type": tokenType,
 		"uuid":       uuid,
-	})
+	}, version, uuid7)
 }
 
 func (c *networkClient) ClaimAirdrop(address, tokenType string) (types.ContractOutput, error) {
@@ -207,11 +234,17 @@ func (c *networkClient) ClaimAirdrop(address, tokenType string) (types.ContractO
 
 	from := c.publicKey
 	method := airdropV1.METHOD_CLAIM_AIRDROP
+	version := uint8(1)
+
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"address":    address,
 		"token_type": tokenType,
-	})
+	}, version, uuid7)
 }
 
 func (c *networkClient) WithdrawAirdropFunds(
@@ -230,12 +263,16 @@ func (c *networkClient) WithdrawAirdropFunds(
 
 	from := c.publicKey
 	method := airdropV1.METHOD_WITHDRAW_AIRDROP
-
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"amount":     amount,
 		"token_type": tokenType,
 		"uuid":       uuid,
-	})
+	}, version, uuid7)
 }
 
 func (c *networkClient) PauseAirdrop(airdropAddress string) (types.ContractOutput, error) {
@@ -255,14 +292,18 @@ func (c *networkClient) PauseAirdrop(airdropAddress string) (types.ContractOutpu
 	}
 
 	method := airdropV1.METHOD_PAUSE_AIRDROP
-
 	// Evite "data nil" — seu backend já reclamou disso em outros métodos.
 	data := map[string]interface{}{
 		"address": airdropAddress,
 		"paused":  true,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
-	return c.SignAndSendTransaction(c.chainId, from, airdropAddress, method, data)
+	return c.SignAndSendTransaction(c.chainId, from, airdropAddress, method, data, version, uuid7)
 }
 
 func (c *networkClient) UnpauseAirdrop(airdropAddress string) (types.ContractOutput, error) {
@@ -286,8 +327,14 @@ func (c *networkClient) UnpauseAirdrop(airdropAddress string) (types.ContractOut
 		"address": airdropAddress,
 		"paused":  false,
 	}
+	version := uint8(1)
 
-	return c.SignAndSendTransaction(c.chainId, from, airdropAddress, method, data)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	return c.SignAndSendTransaction(c.chainId, from, airdropAddress, method, data, version, uuid7)
 }
 
 func (c *networkClient) AttestParticipantEligibility(
@@ -308,11 +355,17 @@ func (c *networkClient) AttestParticipantEligibility(
 
 	from := c.publicKey
 	method := airdropV1.METHOD_ATTEST_ELIGIBILITY
+	version := uint8(1)
+
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"wallet":   wallet,
 		"approved": approved,
-	})
+	}, version, uuid7)
 }
 
 func (c *networkClient) ManuallyAttestParticipantEligibility(
@@ -344,6 +397,11 @@ func (c *networkClient) ManuallyAttestParticipantEligibility(
 		"wallet":   wallet,
 		"approved": approved,
 	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
 
 	out, err := c.SignAndSendTransaction(
 		c.chainId,
@@ -351,6 +409,8 @@ func (c *networkClient) ManuallyAttestParticipantEligibility(
 		airdropAddress,
 		method,
 		data,
+		version,
+		uuid7,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)

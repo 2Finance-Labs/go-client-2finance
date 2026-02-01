@@ -8,6 +8,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 
@@ -75,8 +76,12 @@ func (c *networkClient) AddReview(
 		"expired_at":    expiredAt,
 		"hidden":        hidden,
 	}
-
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // UpdateReview modifies fields of an existing review.
@@ -129,8 +134,12 @@ func (c *networkClient) UpdateReview(
 	if expiredAt != nil {
 		data["expired_at"] = *expiredAt
 	}
-
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // HideReview toggles the hidden state. OnlyOwner.
@@ -154,8 +163,12 @@ func (c *networkClient) HideReview(address string, hidden bool) (types.ContractO
 		"address": address,
 		"hidden":  hidden,
 	}
-
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // VoteHelpful registers an up/down helpful vote for a review.
@@ -186,8 +199,12 @@ func (c *networkClient) VoteHelpful(address, voter string, isHelpful bool) (type
 		"voter":      voter,
 		"is_helpful": isHelpful,
 	}
-
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // ReportReview flags a review with a reason string by a reporter.
@@ -221,8 +238,12 @@ func (c *networkClient) ReportReview(address, reporter, reason string) (types.Co
 		"reporter": reporter,
 		"reason":   reason,
 	}
-
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // ModerateReview applies a moderation action (e.g., approve/reject/remove) with an optional note. OnlyModerator/Owner per contract rules.
@@ -250,8 +271,12 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 		"action":  action,
 		"note":    note,
 	}
-
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data)
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 // GetReview retrieves a single review state.
