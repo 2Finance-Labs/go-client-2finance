@@ -11,7 +11,7 @@ go 1.24.7
 
 require (
 	github.com/google/uuid v1.6.0
-	gitlab.com/2finance/2finance-network v0.0.0-20260201184526-c15bb9a01966
+	gitlab.com/2finance/2finance-network v0.0.0-20260201191645-4801344a0461
 
 )
 

@@ -27,6 +27,7 @@ type Client2FinanceNetwork interface {
 	SetPrivateKey(privateKey string)
 	GetPrivateKey() string
 	GetPublicKey() string
+	SetChainID(chainId uint8)
 	GenerateEd25519KeyPairHex() (string, string, error)
 
 	SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error)
@@ -824,7 +825,6 @@ func (c *networkClient) DeployContract1(contractVersion string) (types.ContractO
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
-	fmt.Println("UUIDv7:", uuid7)
 	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deploy contract: %w", err)

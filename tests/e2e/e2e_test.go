@@ -33,6 +33,7 @@ func setupClient(t *testing.T) client2f.Client2FinanceNetwork {
 	id := fmt.Sprintf("%s-%s", base, randSuffix(8))
 
 	c := client2f.New(emqxHost, id, false)
+	c.SetChainID(config.CHAIN_ID)
 	return c
 }
 
