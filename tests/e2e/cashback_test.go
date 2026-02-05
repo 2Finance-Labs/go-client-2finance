@@ -9,7 +9,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 )
-
+// FAILING TESTS
 func TestCashbackFlow(t *testing.T) {
 	c := setupClient(t)
 

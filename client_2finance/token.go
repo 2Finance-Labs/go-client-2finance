@@ -75,7 +75,7 @@ func (c *networkClient) AddToken(
 		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 
-	err := domain.ValidateAccessPolicy(accessPolicy.List, "access policy")
+	err := domain.ValidateUserMap(accessPolicy.List, "access policy")
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid access policy: %w", err)
 	}
@@ -104,7 +104,7 @@ func (c *networkClient) AddToken(
 		"tags":                     tags,
 		"creator":                  creator,
 		"creator_website":          creatorWebsite,
-		"access_policy_list":       accessPolicy,
+		"access_policy":            accessPolicy,
 		"freeze_authority_revoked": freezeAuthorityRevoked,
 		"mint_authority_revoked":   mintAuthorityRevoked,
 		"update_authority_revoked": updateAuthorityRevoked,
@@ -365,7 +365,7 @@ func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (
 
 	method := tokenV1.METHOD_ALLOW_USERS
 	data := map[string]interface{}{
-		"access_policy_list": users,
+		"users": users,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -414,7 +414,7 @@ func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool
 
 	method := tokenV1.METHOD_DISALLOW_USERS
 	data := map[string]interface{}{
-		"access_policy_list": users,
+		"users": users,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -462,7 +462,7 @@ func (c *networkClient) BlockUsers(tokenAddress string, users map[string]bool) (
 
 	method := tokenV1.METHOD_BLOCK_USERS
 	data := map[string]interface{}{
-		"access_policy_list": users,
+		"users": users,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -510,7 +510,7 @@ func (c *networkClient) UnblockUsers(tokenAddress string, users map[string]bool)
 
 	method := tokenV1.METHOD_UNBLOCK_USERS
 	data := map[string]interface{}{
-		"access_policy_list": users,
+		"users": users,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()

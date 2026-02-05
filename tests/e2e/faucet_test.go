@@ -10,6 +10,7 @@ import (
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 )
 
+// FAILING TESTS
 func TestFaucetFlow(t *testing.T) {
 
 	c := setupClient(t)

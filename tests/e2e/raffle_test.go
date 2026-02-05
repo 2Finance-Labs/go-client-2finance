@@ -14,6 +14,7 @@ import (
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 )
 
+// FAILING TESTS
 func TestRaffleFlow(t *testing.T) {
 	c := setupClient(t)
 	owner, ownerPriv := createWallet(t, c)
