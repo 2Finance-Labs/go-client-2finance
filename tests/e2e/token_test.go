@@ -9,23 +9,21 @@ import (
 
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 )
 
 func TestTokenFlowFungible(t *testing.T) {
 	c := setupClient(t)
 	owner, ownerPriv := createWallet(t, c)
-
 	c.SetPrivateKey(ownerPriv)
 
 	dec := 6
-	// Para este fluxo, usamos um token FUNGIBLE.
 	tokenType := tokenV1Domain.FUNGIBLE
 
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType)
 
 	// Mint & Burn
-	// Usa o TokenType retornado pelo contrato (deve bater com o que passamos).
 	if _, err := c.MintToken(tok.Address, owner.PublicKey, amt(35, dec), dec, tok.TokenType); err != nil {
 		t.Fatalf("MintToken: %v", err)
 	}
@@ -33,15 +31,24 @@ func TestTokenFlowFungible(t *testing.T) {
 		t.Fatalf("BurnToken: %v", err)
 	}
 
-	// Transfer to a new allowed wallet
+	// Transfer to allowed wallet
 	receiver, _ := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 
-	if _, err := c.AllowUsers(tok.Address, map[string]bool{receiver.PublicKey: true}); err != nil {
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{
+		receiver.PublicKey: true,
+	}); err != nil {
 		t.Fatalf("AllowUsers: %v", err)
 	}
 
-	trOut, err := c.TransferToken(tok.Address, receiver.PublicKey, amt(1, dec), dec, tok.TokenType, "")
+	trOut, err := c.TransferToken(
+		tok.Address,
+		receiver.PublicKey,
+		amt(1, dec),
+		dec,
+		tok.TokenType,
+		"",
+	)
 	if err != nil {
 		t.Fatalf("TransferToken: %v", err)
 	}
@@ -49,10 +56,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	var tr tokenV1Domain.Transfer
 	unmarshalState(t, trOut.States[0].Object, &tr)
 	if tr.ToAddress != receiver.PublicKey {
-		t.Fatalf("transfer to mismatch: %s != %s", tr.ToAddress, receiver.PublicKey)
+		t.Fatalf("transfer mismatch: %s != %s", tr.ToAddress, receiver.PublicKey)
 	}
-
-	c.SetPrivateKey(ownerPriv)
 
 	// Fee tiers & address
 	if _, err := c.UpdateFeeTiers(tok.Address, []map[string]interface{}{
@@ -72,7 +77,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	// Metadata / Authorities / Pause
-	mdOut, err := c.UpdateMetadata(
+	if _, err := c.UpdateMetadata(
 		tok.Address,
 		"2F-NEW"+randSuffix(4),
 		"2Finance New",
@@ -86,17 +91,9 @@ func TestTokenFlowFungible(t *testing.T) {
 		"creator",
 		"https://creator",
 		time.Now().Add(30*24*time.Hour),
-	)
-	if err != nil {
+	); err != nil {
 		t.Fatalf("UpdateMetadata: %v", err)
 	}
-
-	unmarshalState(t, mdOut.States[0].Object, &tok)
-
-	//TODO - implement GLB update test
-	// if _, err := c.UpdateGlbFile(tok.Address, "https://example.com/asset.glb2"); err != nil {
-	// 	t.Fatalf("UpdateGlbFile: %v", err)
-	// }
 
 	if _, err := c.RevokeMintAuthority(tok.Address, true); err != nil {
 		t.Fatalf("RevokeMintAuthority: %v", err)
@@ -131,14 +128,14 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	owner, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 
-	dec := 0 // NFT não usa decimais
+	dec := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
 
 	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType)
 
 	amount := "35"
 
-	// ----- Mint NFT -----
+	// Mint NFT
 	mintOut, err := c.MintToken(tok.Address, owner.PublicKey, amount, dec, tok.TokenType)
 	if err != nil {
 		t.Fatalf("MintToken NFT: %v", err)
@@ -146,23 +143,41 @@ func TestTokenFlowNonFungible(t *testing.T) {
 
 	var mint tokenV1Domain.Mint
 	unmarshalState(t, mintOut.States[0].Object, &mint)
-	amountInt, err := strconv.Atoi(amount)
-	if err != nil {
-		t.Fatalf("failed to convert amount to int: %v", err)
-	}
+
+	amountInt, _ := strconv.Atoi(amount)
 	if len(mint.TokenUUIDList) != amountInt {
 		t.Fatalf("expected %d uuid, got %d", amountInt, len(mint.TokenUUIDList))
 	}
 
-	if _, err := c.BurnToken(tok.Address, amt(1, dec), dec, tok.TokenType, mint.TokenUUIDList[0]); err != nil {
+	if _, err := c.BurnToken(
+		tok.Address,
+		amt(1, dec),
+		dec,
+		tok.TokenType,
+		mint.TokenUUIDList[0],
+	); err != nil {
 		t.Fatalf("BurnToken: %v", err)
 	}
 
-	// ----- Transfer NFT -----
+	// Transfer NFT
 	receiver, _ := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 
-	trOut, err := c.TransferToken(tok.Address, receiver.PublicKey, amt(1, dec), dec, tok.TokenType, mint.TokenUUIDList[0])
+	// ✅ NECESSÁRIO em ALLOW
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{
+		receiver.PublicKey: true,
+	}); err != nil {
+		t.Fatalf("AllowUsers: %v", err)
+	}
+
+	trOut, err := c.TransferToken(
+		tok.Address,
+		receiver.PublicKey,
+		amt(1, dec),
+		dec,
+		tok.TokenType,
+		mint.TokenUUIDList[0],
+	)
 	if err != nil {
 		t.Fatalf("Transfer NFT: %v", err)
 	}
@@ -172,17 +187,6 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if tr.ToAddress != receiver.PublicKey {
 		t.Fatalf("transfer mismatch: %s != %s", tr.ToAddress, receiver.PublicKey)
 	}
-
-	// // ----- Listagens -----
-	// if _, err := c.GetTokenBalance(tok.Address, owner.PublicKey); err != nil {
-	// 	t.Fatalf("GetTokenBalance: %v", err)
-	// }
-	// if _, err := c.ListTokenBalances(tok.Address, "", 1, 10, true); err != nil {
-	// 	t.Fatalf("ListTokenBalances: %v", err)
-	// }
-	// if _, err := c.GetToken(tok.Address, "", ""); err != nil {
-	// 	t.Fatalf("GetToken: %v", err)
-	// }
 }
 
 // createBasicToken creates a minimal token owned by ownerPub.
@@ -212,8 +216,12 @@ func createBasicToken(
 	tags := map[string]string{"tag1": "DeFi", "tag2": "Blockchain"}
 	creator := "2Finance Test"
 	creatorWebsite := "https://creator.example"
-	allowUsers := map[string]bool{}
-	blockUsers := map[string]bool{}
+	accessPolicy := domain.AccessPolicy{
+		Mode: domain.ALLOW,
+		Users: map[string]bool{
+			ownerPub: true,
+		},
+	}
 	feeTiers := []map[string]interface{}{}
 
 	if requireFee {
@@ -261,8 +269,7 @@ func createBasicToken(
 		tags,
 		creator,
 		creatorWebsite,
-		allowUsers,
-		blockUsers,
+		accessPolicy,
 		feeTiers,
 		feeAddress,
 		freezeAuthorityRevoked,
