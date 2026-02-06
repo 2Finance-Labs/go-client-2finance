@@ -10,7 +10,6 @@ import (
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 )
 
-// FAILING TESTS
 func TestFaucetFlow(t *testing.T) {
 
 	c := setupClient(t)
@@ -22,8 +21,14 @@ func TestFaucetFlow(t *testing.T) {
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", tok.Decimals, tok.TokenType)
 
 	merchant, merchPriv := createWallet(t, c)
-
 	c.SetPrivateKey(ownerPriv)
+
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{
+		merchant.PublicKey: true,
+	}); err != nil {
+		t.Fatalf("AllowUsers: %v", err)
+	}
+
 	_ = createTransfer(t, c, tok, merchant.PublicKey, "50", tok.Decimals, tok.TokenType, "")
 
 	start := time.Now().Add(2 * time.Second)
@@ -144,6 +149,10 @@ func TestFaucetFlow_NonFungible(t *testing.T) {
 	// Transfer NFT OWNER → MERCHANT
 	// =========================
 	c.SetPrivateKey(ownerPriv)
+
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{merchant.PublicKey: true}); err != nil {
+		t.Fatalf("AllowUsers: %v", err)
+	}
 
 	if _, err := c.TransferToken(
 		tok.Address,

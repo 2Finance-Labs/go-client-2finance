@@ -9,7 +9,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 )
-// FAILING TESTS
+
 func TestCashbackFlow(t *testing.T) {
 	c := setupClient(t)
 
@@ -21,6 +21,13 @@ func TestCashbackFlow(t *testing.T) {
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", dec, tok.TokenType)
 
 	merchant, _ := createWallet(t, c)
+	c.SetPrivateKey(ownerPriv)
+
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{
+		merchant.PublicKey: true,
+	}); err != nil {
+		t.Fatalf("AllowUsers: %v", err)
+	}
 
 	c.SetPrivateKey(ownerPriv)
 	_ = createTransfer(t, c, tok, merchant.PublicKey, "50", dec, tok.TokenType, "")
@@ -82,62 +89,41 @@ func TestCashbackFlow(t *testing.T) {
 func TestCashbackFlow_NonFungible(t *testing.T) {
 	c := setupClient(t)
 
-	// --- Owner / Token ---
 	owner, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 
 	dec := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
 
-	tok := createBasicToken(
-		t,
-		c,
-		owner.PublicKey,
-		dec,
-		false,
-		tokenType,
-	)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType)
 
-	// ----- Mint NFT -----
 	amount := "1"
 
-	mintOut, err := c.MintToken(
-		tok.Address,
-		owner.PublicKey,
-		amount,
-		dec,
-		tok.TokenType,
-	)
+	// Mint NFT
+	mintOut, err := c.MintToken(tok.Address, owner.PublicKey, amount, dec, tok.TokenType)
 	if err != nil {
 		t.Fatalf("MintToken NFT: %v", err)
 	}
 
 	var mint tokenV1Domain.Mint
 	unmarshalState(t, mintOut.States[0].Object, &mint)
-
 	if len(mint.TokenUUIDList) != 1 {
 		t.Fatalf("expected 1 NFT uuid, got %d", len(mint.TokenUUIDList))
 	}
-
 	nftUUID := mint.TokenUUIDList[0]
 
-	// ----- Merchant -----
 	merchant, merchantPriv := createWallet(t, c)
 
-	// ----- Transfer NFT (OWNER → MERCHANT) -----
 	c.SetPrivateKey(ownerPriv)
-	if _, err := c.TransferToken(
-		tok.Address,
-		merchant.PublicKey,
-		amount,
-		dec,
-		tok.TokenType,
-		nftUUID,
-	); err != nil {
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{merchant.PublicKey: true}); err != nil {
+		t.Fatalf("AllowUsers(merchant): %v", err)
+	}
+
+	if _, err := c.TransferToken(tok.Address, merchant.PublicKey, amount, dec, tok.TokenType, nftUUID); err != nil {
 		t.Fatalf("Transfer NFT: %v", err)
 	}
 
-	// ----- Cashback Contract -----
+	// Cashback Contract
 	start := time.Now().Add(2 * time.Second)
 	exp := time.Now().Add(30 * time.Minute)
 
@@ -146,23 +132,13 @@ func TestCashbackFlow_NonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
-
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address
 
-	// Merchant é o OWNER do cashback
+	// Merchant cria cashback
 	c.SetPrivateKey(merchantPriv)
 
-	out, err := c.AddCashback(
-		address,
-		merchant.PublicKey,
-		tok.Address,
-		cashbackV1Domain.PROGRAM_TYPE_FIXED,
-		"10000", 
-		start,
-		exp,
-		false,
-	)
+	out, err := c.AddCashback(address, merchant.PublicKey, tok.Address, cashbackV1Domain.PROGRAM_TYPE_FIXED, "10000", start, exp, false)
 	if err != nil {
 		t.Fatalf("AddCashback: %v", err)
 	}
@@ -173,61 +149,44 @@ func TestCashbackFlow_NonFungible(t *testing.T) {
 		t.Fatalf("cashback addr empty")
 	}
 
-	// ----- Deposit NFT into cashback (MERCHANT assina) -----
-	if _, err := c.DepositCashbackFunds(
-		cb.Address,
-		tok.Address,
-		amount,
-		tokenV1Domain.NON_FUNGIBLE,
-		nftUUID,
-	); err != nil {
+	c.SetPrivateKey(ownerPriv)
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{cb.Address: true}); err != nil {
+		t.Fatalf("AllowUsers(cashback contract): %v", err)
+	}
+
+	// Deposit NFT (MERCHANT assina)
+	c.SetPrivateKey(merchantPriv)
+	if _, err := c.DepositCashbackFunds(cb.Address, tok.Address, amount, tokenV1Domain.NON_FUNGIBLE, nftUUID); err != nil {
 		t.Fatalf("DepositCashbackFunds NFT: %v", err)
 	}
 
-	// ----- Update / Pause / Unpause -----
-	if _, err := c.UpdateCashback(
-		cb.Address,
-		tok.Address,
-		cashbackV1Domain.PROGRAM_TYPE_FIXED,
-		"10000",
-		start,
-		exp,
-	); err != nil {
+	// Update / Pause / Unpause
+	if _, err := c.UpdateCashback(cb.Address, tok.Address, cashbackV1Domain.PROGRAM_TYPE_FIXED, "10000", start, exp); err != nil {
 		t.Fatalf("UpdateCashback: %v", err)
 	}
-
 	_, _ = c.PauseCashback(cb.Address, true)
 	_, _ = c.UnpauseCashback(cb.Address, false)
 
 	time.Sleep(2 * time.Second)
 
-	// ----- Claim as user -----
-	_, userPriv := createWallet(t, c)
+	// Claim as user
+	user, userPriv := createWallet(t, c)
+
+	c.SetPrivateKey(ownerPriv)
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{user.PublicKey: true}); err != nil {
+		t.Fatalf("AllowUsers(user): %v", err)
+	}
 
 	c.SetPrivateKey(userPriv)
-	if _, err := c.ClaimCashback(
-		cb.Address,
-		amount, // NFT sempre "1"
-		tokenV1Domain.NON_FUNGIBLE,
-		nftUUID,
-	); err != nil {
+	if _, err := c.ClaimCashback(cb.Address, amount, tokenV1Domain.NON_FUNGIBLE, nftUUID); err != nil {
 		t.Fatalf("ClaimCashback NFT: %v", err)
 	}
 
-	// ----- Getters -----
+	// Getters
 	if _, err := c.GetCashback(cb.Address); err != nil {
 		t.Fatalf("GetCashback: %v", err)
 	}
-
-	if _, err := c.ListCashbacks(
-		merchant.PublicKey,
-		tok.Address,
-		"",
-		false,
-		1,
-		10,
-		true,
-	); err != nil {
+	if _, err := c.ListCashbacks(merchant.PublicKey, tok.Address, "", false, 1, 10, true); err != nil {
 		t.Fatalf("ListCashbacks: %v", err)
 	}
 }
