@@ -218,7 +218,7 @@ func createBasicToken(
 	creatorWebsite := "https://creator.example"
 	accessPolicy := domain.AccessPolicy{
 		Mode: domain.ALLOW,
-		List: map[string]bool{
+		Users: map[string]bool{
 			ownerPub: true,
 		},
 	}

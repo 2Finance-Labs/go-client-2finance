@@ -75,7 +75,7 @@ func (c *networkClient) AddToken(
 		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 
-	err := domain.ValidateUserMap(accessPolicy.List, "access policy")
+	err := domain.ValidateUserMap(accessPolicy.Users, "access policy")
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid access policy: %w", err)
 	}
