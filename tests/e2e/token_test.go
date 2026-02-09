@@ -253,6 +253,12 @@ func createBasicToken(
 
 	assetGLBUri := "https://example.com/asset.glb"
 	transferable := true
+	var stablecoin bool
+	if tokenType == tokenV1Domain.NON_FUNGIBLE {
+		stablecoin = false
+	} else {
+		stablecoin = true
+	}
 
 	out, err := c.AddToken(
 		address,
@@ -280,6 +286,7 @@ func createBasicToken(
 		assetGLBUri,
 		tokenType,
 		transferable,
+		stablecoin,
 	)
 	if err != nil {
 		t.Fatalf("AddToken: %v", err)
