@@ -133,7 +133,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	dec := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
 
-	stablecoin := true
+	stablecoin := false
 
 	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType, stablecoin)
 
