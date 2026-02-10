@@ -16,8 +16,9 @@ func TestPaymentFlow(t *testing.T) {
 	owner, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
+	stablecoin := false
 
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE, stablecoin)
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", dec, tok.TokenType)
 
 	payer, payerPriv := createWallet(t, c)
@@ -112,8 +113,9 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
+	stablecoin := false
 
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE, stablecoin)
 	payer, payerPriv := createWallet(t, c)
 	payee, _ := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
@@ -179,8 +181,9 @@ func TestPaymentFlow_NonFungible(t *testing.T) {
 
 	dec := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
+	stablecoin := false
 
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
 
 	// Mint 1 NFT
 	mintOut, err := c.MintToken(tok.Address, owner.PublicKey, "1", dec, tok.TokenType)
@@ -324,8 +327,9 @@ func TestPaymentAuthVoidFlow_NonFungible(t *testing.T) {
 
 	dec := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
+	stablecoin := false
 
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
 
 	mintOut, err := c.MintToken(tok.Address, owner.PublicKey, "1", dec, tok.TokenType)
 	if err != nil {

@@ -17,7 +17,8 @@ func TestFaucetFlow(t *testing.T) {
 
 	c.SetPrivateKey(ownerPriv)
 	dec := 5
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE)
+	stablecoin := false
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE, stablecoin)
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", tok.Decimals, tok.TokenType)
 
 	merchant, merchPriv := createWallet(t, c)
@@ -108,6 +109,7 @@ func TestFaucetFlow_NonFungible(t *testing.T) {
 
 	dec := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
+	stablecoin := false
 
 	tok := createBasicToken(
 		t,
@@ -116,6 +118,7 @@ func TestFaucetFlow_NonFungible(t *testing.T) {
 		dec,
 		true, // faucet = true
 		tokenType,
+		stablecoin,
 	)
 
 	// =========================

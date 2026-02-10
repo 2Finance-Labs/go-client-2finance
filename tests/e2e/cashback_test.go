@@ -17,7 +17,8 @@ func TestCashbackFlow(t *testing.T) {
 	c.SetPrivateKey(ownerPriv)
 
 	dec := 1
-	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE)
+	stablecoin := false
+	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE, stablecoin)
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", dec, tok.TokenType)
 
 	merchant, _ := createWallet(t, c)
@@ -94,8 +95,9 @@ func TestCashbackFlow_NonFungible(t *testing.T) {
 
 	dec := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
+	stablecoin := false
 
-	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType)
+	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType, stablecoin)
 
 	amount := "1"
 
