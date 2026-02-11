@@ -98,7 +98,7 @@ type Client2FinanceNetwork interface {
 		expired_at time.Time,
 		assetGLBUri string,
 		tokenType string,
-		transferable bool) (types.ContractOutput, error)
+		transferable, stablecoin bool) (types.ContractOutput, error)
 	MintToken(to, mintTo, amount string, decimals int, tokenType string) (types.ContractOutput, error)
 	BurnToken(to, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
 	TransferToken(tokenAddress, transferTo, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)

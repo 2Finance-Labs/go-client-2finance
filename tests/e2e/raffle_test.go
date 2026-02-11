@@ -19,7 +19,8 @@ func TestRaffleFlow(t *testing.T) {
 
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
-	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE)
+	stablecoin := false
+	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE, stablecoin)
 
 	bob, bobPriv := createWallet(t, c)
 	alice, alicePriv := createWallet(t, c)
@@ -255,10 +256,10 @@ func TestRaffleFlow(t *testing.T) {
 	mapOfPubPriv[ownerPrize.PublicKey] = ownerPrizePriv
 
 	c.SetPrivateKey(ownerPrizePriv)
-	tok1 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE)
-	tok2 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE)
-	tok3 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE)
-	tok4 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE)
+	tok1 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE, stablecoin)
+	tok2 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE, stablecoin)
+	tok3 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE, stablecoin)
+	tok4 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE, stablecoin)
 
 	if _, err := c.AllowUsers(tok1.Address, map[string]bool{rf.Address: true}); err != nil {
 		t.Fatalf("AllowUsers(tok1 -> raffle): %v", err)
@@ -385,7 +386,8 @@ func TestRaffleFlow_NonFungible(t *testing.T) {
 
 	dec := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
-	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType)
+	stablecoin := false
+	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType, stablecoin)
 
 	// --------------------------------------------------------------------
 	// Players
@@ -513,7 +515,7 @@ func TestRaffleFlow_NonFungible(t *testing.T) {
 	prizeOwner, prizePriv := createWallet(t, c)
 	c.SetPrivateKey(prizePriv)
 
-	prizeToken := createBasicToken(t, c, prizeOwner.PublicKey, 0, false, tokenType)
+	prizeToken := createBasicToken(t, c, prizeOwner.PublicKey, 0, false, tokenType, stablecoin)
 
 	mintPrize, err := c.MintToken(
 		prizeToken.Address,

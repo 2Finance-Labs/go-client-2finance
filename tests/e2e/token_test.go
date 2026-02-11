@@ -21,7 +21,9 @@ func TestTokenFlowFungible(t *testing.T) {
 	dec := 6
 	tokenType := tokenV1Domain.FUNGIBLE
 
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType)
+	stablecoin := false
+
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
 
 	// Mint & Burn
 	if _, err := c.MintToken(tok.Address, owner.PublicKey, amt(35, dec), dec, tok.TokenType); err != nil {
@@ -131,7 +133,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	dec := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
 
-	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType)
+	stablecoin := false
+
+	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType, stablecoin)
 
 	amount := "35"
 
@@ -197,6 +201,7 @@ func createBasicToken(
 	decimals int,
 	requireFee bool,
 	tokenType string,
+	stablecoin bool,
 ) tokenV1Domain.Token {
 	t.Helper()
 
@@ -280,6 +285,7 @@ func createBasicToken(
 		assetGLBUri,
 		tokenType,
 		transferable,
+		stablecoin,
 	)
 	if err != nil {
 		t.Fatalf("AddToken: %v", err)
