@@ -7,12 +7,11 @@ go 1.24.7
 
 // replace gitlab.com/2finance/2finance-network => /home/luiz/myrepo/2finance-network
 
-//replace gitlab.com/2finance/2finance-network => /home/gabriel-hausmann/Work/2finance-network
+// replace gitlab.com/2finance/2finance-network => /home/ghausmann/Trabalho/2finance-network
 
 require (
 	github.com/google/uuid v1.6.0
 	gitlab.com/2finance/2finance-network v0.0.0-20260201191645-4801344a0461
-
 )
 
 require (

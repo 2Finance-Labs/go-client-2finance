@@ -26,8 +26,7 @@ func (c *networkClient) AddToken(
 	tags map[string]string,
 	creator string,
 	creatorWebsite string,
-	allowUsers map[string]bool,
-	blockUsers map[string]bool,
+	accessPolicy domain.AccessPolicy,
 	feeTiersList []map[string]interface{},
 	feeAddress string,
 	freezeAuthorityRevoked bool,
@@ -37,7 +36,7 @@ func (c *networkClient) AddToken(
 	expired_at time.Time,
 	assetGLBUri string,
 	tokenType string,
-	transferable bool) (types.ContractOutput, error) {
+	transferable, stablecoin bool) (types.ContractOutput, error) {
 
 	if symbol == "" {
 		return types.ContractOutput{}, fmt.Errorf("symbol not set")
@@ -76,14 +75,9 @@ func (c *networkClient) AddToken(
 		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 
-	err := domain.ValidateUserMap(allowUsers, "allow users")
+	err := domain.ValidateUserMap(accessPolicy.Users, "access policy")
 	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid allow users: %w", err)
-	}
-
-	err = domain.ValidateUserMap(blockUsers, "block users")
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid block users: %w", err)
+		return types.ContractOutput{}, fmt.Errorf("invalid access policy: %w", err)
 	}
 
 	from := c.publicKey
@@ -110,8 +104,7 @@ func (c *networkClient) AddToken(
 		"tags":                     tags,
 		"creator":                  creator,
 		"creator_website":          creatorWebsite,
-		"allow_users":              allowUsers,
-		"block_users":              blockUsers,
+		"access_policy":            accessPolicy,
 		"freeze_authority_revoked": freezeAuthorityRevoked,
 		"mint_authority_revoked":   mintAuthorityRevoked,
 		"update_authority_revoked": updateAuthorityRevoked,
@@ -120,6 +113,7 @@ func (c *networkClient) AddToken(
 		"asset_glb_uri":            assetGLBUri,
 		"token_type":               tokenType,
 		"transferable":             transferable,
+		"stablecoin":               stablecoin,
 	}
 
 	version := uint8(1)
@@ -251,9 +245,9 @@ func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType str
 
 	method := tokenV1.METHOD_BURN_TOKEN
 	data := map[string]interface{}{
-		"amount": amount,
+		"amount":     amount,
 		"token_type": tokenType,
-		"uuid": uuid,
+		"uuid":       uuid,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -372,7 +366,7 @@ func (c *networkClient) AllowUsers(tokenAddress string, users map[string]bool) (
 
 	method := tokenV1.METHOD_ALLOW_USERS
 	data := map[string]interface{}{
-		"allow_users": users,
+		"users": users,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -421,7 +415,7 @@ func (c *networkClient) DisallowUsers(tokenAddress string, users map[string]bool
 
 	method := tokenV1.METHOD_DISALLOW_USERS
 	data := map[string]interface{}{
-		"allow_users": users,
+		"users": users,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -469,7 +463,7 @@ func (c *networkClient) BlockUsers(tokenAddress string, users map[string]bool) (
 
 	method := tokenV1.METHOD_BLOCK_USERS
 	data := map[string]interface{}{
-		"block_users": users,
+		"users": users,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -517,7 +511,7 @@ func (c *networkClient) UnblockUsers(tokenAddress string, users map[string]bool)
 
 	method := tokenV1.METHOD_UNBLOCK_USERS
 	data := map[string]interface{}{
-		"block_users": users,
+		"users": users,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -1027,7 +1021,6 @@ func (c *networkClient) UntransferableToken(tokenAddress string, transferable bo
 func (c *networkClient) GetToken(tokenAddress string, symbol string, name string) (types.ContractOutput, error) {
 	from := c.publicKey
 
-	
 	if tokenAddress == "" && symbol == "" && name == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address, symbol or name must be set")
 	}
@@ -1056,7 +1049,6 @@ func (c *networkClient) GetToken(tokenAddress string, symbol string, name string
 
 func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limit int, ascending bool) (types.ContractOutput, error) {
 	from := c.publicKey
-
 
 	if ownerAddress != "" {
 		if err := keys.ValidateEDDSAPublicKeyHex(ownerAddress); err != nil {
@@ -1124,7 +1116,6 @@ func (c *networkClient) GetTokenBalance(tokenAddress, ownerAddress string) (type
 
 func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress string, page, limit int, ascending bool) (types.ContractOutput, error) {
 	from := c.publicKey
-
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)

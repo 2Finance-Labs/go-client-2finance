@@ -17,7 +17,8 @@ func TestCouponFlow(t *testing.T) {
 	owner, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE)
+	stablecoin := true
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE, stablecoin)
 
 	start := time.Now().Add(2 * time.Second)
 	exp := time.Now().Add(25 * time.Minute)
@@ -84,6 +85,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	// =========================
 	owner, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
+	stablecoin := false
 
 	dec := 0
 	tok := createBasicToken(
@@ -93,6 +95,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		dec,
 		false,
 		tokenV1Domain.NON_FUNGIBLE,
+		stablecoin,
 	)
 
 	// =========================

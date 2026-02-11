@@ -7,16 +7,18 @@ import (
 	"time"
 
 	"gitlab.com/2finance/2finance-network/blockchain/block"
-	"gitlab.com/2finance/2finance-network/blockchain/virtualmachine"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
+	"gitlab.com/2finance/2finance-network/blockchain/virtualmachine"
 	"gitlab.com/2finance/2finance-network/infra/mqtt"
 
 	"strings"
+
 	"github.com/google/uuid"
 	"gitlab.com/2finance/2finance-network/infra/event"
 )
@@ -45,7 +47,7 @@ type Client2FinanceNetwork interface {
 	DeployContract2(
 		contractVersion string,
 		contractAddress string,
-		) (types.ContractOutput, error)
+	) (types.ContractOutput, error)
 	SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8, uuid7 string) (*transaction.Transaction, error)
 	SignAndSendTransaction(
 		chainId uint8,
@@ -55,7 +57,7 @@ type Client2FinanceNetwork interface {
 		data map[string]interface{},
 		version uint8,
 		uuid7 string,
-		) (types.ContractOutput, error)
+	) (types.ContractOutput, error)
 	GetState(
 		to string,
 		method string,
@@ -86,8 +88,7 @@ type Client2FinanceNetwork interface {
 		tags map[string]string,
 		creator string,
 		creatorWebsite string,
-		allowUsers map[string]bool,
-		blockUsers map[string]bool,
+		accessPolicy domain.AccessPolicy,
 		feeTiersList []map[string]interface{},
 		feeAddress string,
 		freezeAuthorityRevoked bool,
@@ -97,7 +98,7 @@ type Client2FinanceNetwork interface {
 		expired_at time.Time,
 		assetGLBUri string,
 		tokenType string,
-		transferable bool) (types.ContractOutput, error)
+		transferable, stablecoin bool) (types.ContractOutput, error)
 	MintToken(to, mintTo, amount string, decimals int, tokenType string) (types.ContractOutput, error)
 	BurnToken(to, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
 	TransferToken(tokenAddress, transferTo, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
@@ -472,7 +473,7 @@ type networkClient struct {
 	privateKey string
 	publicKey  string
 	replyTo    string
-	chainId	uint8
+	chainId    uint8
 }
 
 // New creates a new client
@@ -728,7 +729,7 @@ func (c *networkClient) GetState(
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to marshal data to JSONB: %w", err)
 	}
-	
+
 	// Build a transaction input without signature and hash for query
 	txInput := transaction.TransactionInput{
 		To:     to,
@@ -777,7 +778,6 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 
 	return blocks, nil
 }
-
 
 func (c *networkClient) SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8, uuid7 string) (*transaction.Transaction, error) {
 

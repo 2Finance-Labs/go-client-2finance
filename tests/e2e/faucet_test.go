@@ -17,12 +17,19 @@ func TestFaucetFlow(t *testing.T) {
 
 	c.SetPrivateKey(ownerPriv)
 	dec := 5
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE)
+	stablecoin := false
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenV1Domain.FUNGIBLE, stablecoin)
 	_ = createMint(t, c, tok, owner.PublicKey, "10000", tok.Decimals, tok.TokenType)
 
 	merchant, merchPriv := createWallet(t, c)
-
 	c.SetPrivateKey(ownerPriv)
+
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{
+		merchant.PublicKey: true,
+	}); err != nil {
+		t.Fatalf("AllowUsers: %v", err)
+	}
+
 	_ = createTransfer(t, c, tok, merchant.PublicKey, "50", tok.Decimals, tok.TokenType, "")
 
 	start := time.Now().Add(2 * time.Second)
@@ -102,6 +109,7 @@ func TestFaucetFlow_NonFungible(t *testing.T) {
 
 	dec := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
+	stablecoin := false
 
 	tok := createBasicToken(
 		t,
@@ -110,6 +118,7 @@ func TestFaucetFlow_NonFungible(t *testing.T) {
 		dec,
 		true, // faucet = true
 		tokenType,
+		stablecoin,
 	)
 
 	// =========================
@@ -143,6 +152,10 @@ func TestFaucetFlow_NonFungible(t *testing.T) {
 	// Transfer NFT OWNER → MERCHANT
 	// =========================
 	c.SetPrivateKey(ownerPriv)
+
+	if _, err := c.AllowUsers(tok.Address, map[string]bool{merchant.PublicKey: true}); err != nil {
+		t.Fatalf("AllowUsers: %v", err)
+	}
 
 	if _, err := c.TransferToken(
 		tok.Address,

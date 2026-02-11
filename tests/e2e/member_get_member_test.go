@@ -23,7 +23,8 @@ func TestMgMFlow(t *testing.T) {
 	owner, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 	dec := 6
-	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE)
+	stablecoin := true
+	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE, stablecoin)
 
 	// --------------------------------------------------------------------
 	// Deploy MgM + Faucet contracts
@@ -168,6 +169,7 @@ func TestMgMFlow_NonFungible(t *testing.T) {
 
 	dec := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
+	stablecoin := false
 
 	tok := createBasicToken(
 		t,
@@ -176,6 +178,7 @@ func TestMgMFlow_NonFungible(t *testing.T) {
 		dec,
 		false,
 		tokenType,
+		stablecoin,
 	)
 
 	// --------------------------------------------------------------------

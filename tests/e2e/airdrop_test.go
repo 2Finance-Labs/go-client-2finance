@@ -25,7 +25,8 @@ func TestAirdropFlow(t *testing.T) {
 
 	dec := 6
 	tokenType := tokenDomain.FUNGIBLE
-	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType)
+	stablecoin := false
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
 
 	if _, err := c.MintToken(tok.Address, owner.PublicKey, amt(10_000, dec), dec, tok.TokenType); err != nil {
 		t.Fatalf("MintToken: %v", err)
