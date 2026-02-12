@@ -27,6 +27,7 @@ func (c *networkClient) AddToken(
 	creator string,
 	creatorWebsite string,
 	accessPolicy domain.AccessPolicy,
+	frozenAccounts map[string]bool,
 	feeTiersList []map[string]interface{},
 	feeAddress string,
 	freezeAuthorityRevoked bool,
@@ -105,6 +106,7 @@ func (c *networkClient) AddToken(
 		"creator":                  creator,
 		"creator_website":          creatorWebsite,
 		"access_policy":            accessPolicy,
+		"frozen_accounts":			frozenAccounts,
 		"freeze_authority_revoked": freezeAuthorityRevoked,
 		"mint_authority_revoked":   mintAuthorityRevoked,
 		"update_authority_revoked": updateAuthorityRevoked,
@@ -319,6 +321,98 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 		"amount":      amount,
 		"token_type":  tokenType,
 		"uuid":        uuid,
+	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
+		from,
+		tokenAddress,
+		method,
+		data,
+		version,
+		uuid7)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
+func (c *networkClient) FreezeWallet(tokenAddress string, wallet string) (types.ContractOutput, error) {
+	from := c.publicKey
+
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if wallet == "" {
+		return types.ContractOutput{}, fmt.Errorf("wallet not set")
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(wallet); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid wallet: %w", err)
+	}
+
+	method := tokenV1.METHOD_FREEZE_WALLET
+	data := map[string]interface{}{
+		"wallet": wallet,
+	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
+		from,
+		tokenAddress,
+		method,
+		data,
+		version,
+		uuid7)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
+func (c *networkClient) UnfreezeWallet(tokenAddress string, wallet string) (types.ContractOutput, error) {
+	from := c.publicKey
+
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if wallet == "" {
+		return types.ContractOutput{}, fmt.Errorf("wallet not set")
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(wallet); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid wallet: %w", err)
+	}
+
+	method := tokenV1.METHOD_UNFREEZE_WALLET
+	data := map[string]interface{}{
+		"wallet": wallet,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()

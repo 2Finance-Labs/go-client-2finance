@@ -107,6 +107,13 @@ func TestTokenFlowFungible(t *testing.T) {
 	if _, err := c.UnpauseToken(tok.Address, false); err != nil {
 		t.Fatalf("UnpauseToken: %v", err)
 	}
+	if _, err := c.FreezeWallet(tok.Address, owner.PublicKey); err != nil {
+		t.Fatalf("FreezeWallet: %v", err)
+	}
+	if _, err := c.UnfreezeWallet(tok.Address, owner.PublicKey); err != nil {
+		t.Fatalf("UnfreezeWallet: %v", err)
+	}
+
 
 	// Balances / Listings
 	if _, err := c.GetTokenBalance(tok.Address, owner.PublicKey); err != nil {
@@ -182,6 +189,13 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("Transfer NFT: %v", err)
 	}
 
+	if _, err := c.FreezeWallet(tok.Address, owner.PublicKey); err != nil {
+		t.Fatalf("FreezeWallet: %v", err)
+	}
+	if _, err := c.UnfreezeWallet(tok.Address, owner.PublicKey); err != nil {
+		t.Fatalf("UnfreezeWallet: %v", err)
+	}
+
 	var tr tokenV1Domain.Transfer
 	unmarshalState(t, trOut.States[0].Object, &tr)
 	if tr.ToAddress != receiver.PublicKey {
@@ -222,6 +236,7 @@ func createBasicToken(
 			ownerPub: true,
 		},
 	}
+	frozenAccounts := map[string]bool{}
 	feeTiers := []map[string]interface{}{}
 
 	if requireFee {
@@ -270,6 +285,7 @@ func createBasicToken(
 		creator,
 		creatorWebsite,
 		accessPolicy,
+		frozenAccounts,
 		feeTiers,
 		feeAddress,
 		freezeAuthorityRevoked,
