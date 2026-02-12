@@ -89,6 +89,7 @@ type Client2FinanceNetwork interface {
 		creator string,
 		creatorWebsite string,
 		accessPolicy domain.AccessPolicy,
+		frozenAccounts map[string]bool,
 		feeTiersList []map[string]interface{},
 		feeAddress string,
 		freezeAuthorityRevoked bool,
@@ -112,9 +113,13 @@ type Client2FinanceNetwork interface {
 	UpdateMetadata(tokenAddress, symbol, name string, decimals int, description, image, website string,
 		tagsSocialMedia, tagsCategory, tags map[string]string,
 		creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error)
-	PauseToken(tokenAddress string, pause bool) (types.ContractOutput, error)
+	
+	FreezeWallet(tokenAddress string, wallet string) (types.ContractOutput, error)
+	UnfreezeWallet(tokenAddress string, wallet string) (types.ContractOutput, error)
 
+	PauseToken(tokenAddress string, pause bool) (types.ContractOutput, error)
 	UnpauseToken(tokenAddress string, unpause bool) (types.ContractOutput, error)
+
 	UpdateFeeTiers(tokenAddress string, feeTierList []map[string]interface{}) (types.ContractOutput, error)
 	UpdateFeeAddress(tokenAddress, feeAddress string) (types.ContractOutput, error)
 	UpdateGlbFile(tokenAddress string, newAssetGLBUri string) (types.ContractOutput, error)
