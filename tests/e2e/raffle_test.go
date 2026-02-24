@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"log"
 	"testing"
 	"time"
 
@@ -15,13 +16,45 @@ import (
 
 func TestRaffleFlow(t *testing.T) {
 	c := setupClient(t)
-	owner, ownerPriv := createWallet(t, c)
 
+	// --------------------------------------------------------------------
+	// Owner + base token
+	// --------------------------------------------------------------------
+	owner, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
+
 	dec := 6
 	stablecoin := false
 	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE, stablecoin)
 
+	// Token (mínimo) validate + log
+	if tok.Address == "" {
+		t.Fatalf("Token address empty")
+	}
+	if tok.Creator == "" {
+		t.Fatalf("Token creator empty")
+	}
+	if tok.Decimals != dec {
+		t.Fatalf("Token decimals mismatch: got %d want %d", tok.Decimals, dec)
+	}
+	if tok.TokenType != tokenV1Domain.FUNGIBLE {
+		t.Fatalf("Token type mismatch: got %s want %s", tok.TokenType, tokenV1Domain.FUNGIBLE)
+	}
+	if tok.Stablecoin != stablecoin {
+		t.Fatalf("Token stablecoin mismatch: got %v want %v", tok.Stablecoin, stablecoin)
+	}
+
+	log.Printf("Token Address: %s", tok.Address)
+	log.Printf("Token Symbol: %s", tok.Symbol)
+	log.Printf("Token Name: %s", tok.Name)
+	log.Printf("Token Decimals: %d", tok.Decimals)
+	log.Printf("Token Total Supply: %s", tok.TotalSupply)
+	log.Printf("Token Type: %s", tok.TokenType)
+	log.Printf("Token Stablecoin: %v", tok.Stablecoin)
+
+	// --------------------------------------------------------------------
+	// Players (pub/priv map)
+	// --------------------------------------------------------------------
 	bob, bobPriv := createWallet(t, c)
 	alice, alicePriv := createWallet(t, c)
 	robert, robertPriv := createWallet(t, c)
@@ -48,9 +81,11 @@ func TestRaffleFlow(t *testing.T) {
 		wonderwoman.PublicKey: wonderwomanPriv,
 	}
 
-	// owner permite participantes no token base
+	// --------------------------------------------------------------------
+	// Allow players on base token (owner)
+	// --------------------------------------------------------------------
 	c.SetPrivateKey(ownerPriv)
-	if _, err := c.AllowUsers(tok.Address, map[string]bool{
+	allowPlayersOut, err := c.AllowUsers(tok.Address, map[string]bool{
 		bob.PublicKey:         true,
 		alice.PublicKey:       true,
 		robert.PublicKey:      true,
@@ -62,55 +97,109 @@ func TestRaffleFlow(t *testing.T) {
 		spiderman.PublicKey:   true,
 		batman.PublicKey:      true,
 		wonderwoman.PublicKey: true,
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatalf("AllowUsers(participants): %v", err)
 	}
+	if len(allowPlayersOut.States) == 0 || allowPlayersOut.States[0].Object == nil {
+		t.Fatalf("AllowUsers(participants) returned empty/nil state")
+	}
 
+	var ap tokenV1Domain.AccessPolicy
+	unmarshalState(t, allowPlayersOut.States[0].Object, &ap)
+	if ap.Users == nil || !ap.Users[bob.PublicKey] {
+		t.Fatalf("AllowUsers(participants) missing bob in allowlist")
+	}
+
+	log.Printf("AllowUsers(participants) Output States: %+v", allowPlayersOut.States)
+	log.Printf("AllowUsers(participants) Output Logs: %+v", allowPlayersOut.Logs)
+	log.Printf("AllowUsers(participants) Output Delegated Call: %+v", allowPlayersOut.DelegatedCall)
+
+	// --------------------------------------------------------------------
+	// Mint base tokens to players - padrão mint
+	// --------------------------------------------------------------------
 	mintAmt := amt(100, dec)
-	if _, err := c.MintToken(tok.Address, bob.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-		t.Fatalf("MintToken(bob): %v", err)
+
+	type mintCase struct {
+		name string
+		to   string
 	}
-	if _, err := c.MintToken(tok.Address, alice.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-		t.Fatalf("MintToken(alice): %v", err)
-	}
-	if _, err := c.MintToken(tok.Address, robert.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-		t.Fatalf("MintToken(robert): %v", err)
-	}
-	if _, err := c.MintToken(tok.Address, alfred.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-		t.Fatalf("MintToken(alfred): %v", err)
-	}
-	if _, err := c.MintToken(tok.Address, luiz.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-		t.Fatalf("MintToken(luiz): %v", err)
-	}
-	if _, err := c.MintToken(tok.Address, jorge.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-		t.Fatalf("MintToken(jorge): %v", err)
-	}
-	if _, err := c.MintToken(tok.Address, luigui.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-		t.Fatalf("MintToken(luigui): %v", err)
-	}
-	if _, err := c.MintToken(tok.Address, superman.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-		t.Fatalf("MintToken(superman): %v", err)
-	}
-	if _, err := c.MintToken(tok.Address, spiderman.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-		t.Fatalf("MintToken(spiderman): %v", err)
-	}
-	if _, err := c.MintToken(tok.Address, batman.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-		t.Fatalf("MintToken(batman): %v", err)
-	}
-	if _, err := c.MintToken(tok.Address, wonderwoman.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-		t.Fatalf("MintToken(wonderwoman): %v", err)
+	mints := []mintCase{
+		{"bob", bob.PublicKey},
+		{"alice", alice.PublicKey},
+		{"robert", robert.PublicKey},
+		{"alfred", alfred.PublicKey},
+		{"luiz", luiz.PublicKey},
+		{"jorge", jorge.PublicKey},
+		{"luigui", luigui.PublicKey},
+		{"superman", superman.PublicKey},
+		{"spiderman", spiderman.PublicKey},
+		{"batman", batman.PublicKey},
+		{"wonderwoman", wonderwoman.PublicKey},
 	}
 
-	// merchant cria/gerencia raffle
+	for _, it := range mints {
+		out, err := c.MintToken(tok.Address, it.to, mintAmt, dec, tok.TokenType)
+		if err != nil {
+			t.Fatalf("MintToken(%s): %v", it.name, err)
+		}
+		if len(out.States) == 0 || out.States[0].Object == nil {
+			t.Fatalf("MintToken(%s) returned empty/nil state", it.name)
+		}
+
+		var mint tokenV1Domain.Mint
+		unmarshalState(t, out.States[0].Object, &mint)
+
+		if mint.TokenAddress != tok.Address {
+			t.Fatalf("Mint(%s) TokenAddress mismatch: got %s want %s", it.name, mint.TokenAddress, tok.Address)
+		}
+		if mint.MintTo != it.to {
+			t.Fatalf("Mint(%s) ToAddress mismatch: got %s want %s", it.name, mint.MintTo, it.to)
+		}
+		if mint.Amount != mintAmt {
+			t.Fatalf("Mint(%s) Amount mismatch: got %s want %s", it.name, mint.Amount, mintAmt)
+		}
+		if mint.TokenType != tok.TokenType {
+			t.Fatalf("Mint(%s) TokenType mismatch: got %s want %s", it.name, mint.TokenType, tok.TokenType)
+		}
+		if tok.TokenType == tokenV1Domain.FUNGIBLE && len(mint.TokenUUIDList) != 0 {
+			t.Fatalf("Mint(%s) fungible should not generate UUIDs", it.name)
+		}
+
+		log.Printf("Mint(%s) Output States: %+v", it.name, out.States)
+		log.Printf("Mint(%s) Output Logs: %+v", it.name, out.Logs)
+		log.Printf("Mint(%s) Output Delegated Call: %+v", it.name, out.DelegatedCall)
+
+		log.Printf("Mint(%s) TokenAddress: %s", it.name, mint.TokenAddress)
+		log.Printf("Mint(%s) ToAddress: %s", it.name, mint.MintTo)
+		log.Printf("Mint(%s) Amount: %s", it.name, mint.Amount)
+		log.Printf("Mint(%s) TokenType: %s", it.name, mint.TokenType)
+		log.Printf("Mint(%s) TokenUUIDList: %+v", it.name, mint.TokenUUIDList)
+	}
+
+	// --------------------------------------------------------------------
+	// Merchant runs raffle
+	// --------------------------------------------------------------------
 	merchant, merchPriv := createWallet(t, c)
 
-	// owner do token base permite merchant operar (se aplicável)
 	c.SetPrivateKey(ownerPriv)
-	if _, err := c.AllowUsers(tok.Address, map[string]bool{merchant.PublicKey: true}); err != nil {
+	allowMerchantOut, err := c.AllowUsers(tok.Address, map[string]bool{merchant.PublicKey: true})
+	if err != nil {
 		t.Fatalf("AllowUsers(merchant): %v", err)
 	}
+	if len(allowMerchantOut.States) == 0 || allowMerchantOut.States[0].Object == nil {
+		t.Fatalf("AllowUsers(merchant) returned empty/nil state")
+	}
 
+	log.Printf("AllowUsers(merchant) Output States: %+v", allowMerchantOut.States)
+	log.Printf("AllowUsers(merchant) Output Logs: %+v", allowMerchantOut.Logs)
+	log.Printf("AllowUsers(merchant) Output Delegated Call: %+v", allowMerchantOut.DelegatedCall)
+
+	// --------------------------------------------------------------------
+	// Deploy Raffle contract
+	// --------------------------------------------------------------------
 	c.SetPrivateKey(merchPriv)
+
 	start := time.Now().Add(2 * time.Second)
 	exp := time.Now().Add(24 * time.Hour)
 	seedPass := "e2e-seed"
@@ -120,11 +209,25 @@ func TestRaffleFlow(t *testing.T) {
 	contractState := models.ContractStateModel{}
 	deployedContract, err := c.DeployContract1(raffleV1.RAFFLE_CONTRACT_V1)
 	if err != nil {
-		t.Fatalf("DeployContract: %v", err)
+		t.Fatalf("DeployContract(Raffle): %v", err)
+	}
+	if len(deployedContract.States) == 0 || deployedContract.States[0].Object == nil {
+		t.Fatalf("DeployContract(Raffle) returned empty/nil state")
 	}
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 	address := contractState.Address
+	if address == "" {
+		t.Fatalf("DeployContract(Raffle) returned empty contract address")
+	}
 
+	log.Printf("DeployContract(Raffle) Output States: %+v", deployedContract.States)
+	log.Printf("DeployContract(Raffle) Output Logs: %+v", deployedContract.Logs)
+	log.Printf("DeployContract(Raffle) Output Delegated Call: %+v", deployedContract.DelegatedCall)
+	log.Printf("Raffle Contract Address: %s", address)
+
+	// --------------------------------------------------------------------
+	// AddRaffle (merchant) - valida campos determinísticos + log
+	// --------------------------------------------------------------------
 	added, err := c.AddRaffle(
 		address,
 		merchant.PublicKey,
@@ -141,24 +244,77 @@ func TestRaffleFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AddRaffle: %v", err)
 	}
+	if len(added.States) == 0 || added.States[0].Object == nil {
+		t.Fatalf("AddRaffle returned empty/nil state")
+	}
+
 	var rf raffleV1Domain.Raffle
 	unmarshalState(t, added.States[0].Object, &rf)
+
 	if rf.Address == "" {
 		t.Fatalf("raffle addr empty")
 	}
-
-	// owner do token base permite o contrato do raffle movimentar o token base (entrada/saída)
-	c.SetPrivateKey(ownerPriv)
-	if _, err := c.AllowUsers(tok.Address, map[string]bool{rf.Address: true}); err != nil {
-		t.Fatalf("AllowUsers(raffle -> tok): %v", err)
+	if rf.Owner != merchant.PublicKey {
+		t.Fatalf("AddRaffle Owner mismatch: got %q want %q", rf.Owner, merchant.PublicKey)
+	}
+	if rf.TokenAddress != tok.Address {
+		t.Fatalf("AddRaffle TokenAddress mismatch: got %q want %q", rf.TokenAddress, tok.Address)
+	}
+	if rf.TicketPrice != amt(1, dec) {
+		t.Fatalf("AddRaffle TicketPrice mismatch: got %q want %q", rf.TicketPrice, amt(1, dec))
+	}
+	if rf.MaxEntries != 100 {
+		t.Fatalf("AddRaffle MaxEntries mismatch: got %d want %d", rf.MaxEntries, 100)
+	}
+	if rf.MaxEntriesPerUser != 5 {
+		t.Fatalf("AddRaffle MaxEntriesPerUser mismatch: got %d want %d", rf.MaxEntriesPerUser, 5)
+	}
+	if rf.Hash == "" {
+		t.Fatalf("AddRaffle Hash empty")
 	}
 
-	// update raffle (merchant)
+	log.Printf("AddRaffle Output States: %+v", added.States)
+	log.Printf("AddRaffle Output Logs: %+v", added.Logs)
+	log.Printf("AddRaffle Output Delegated Call: %+v", added.DelegatedCall)
+
+	log.Printf("AddRaffle Address: %s", rf.Address)
+	log.Printf("AddRaffle Owner: %s", rf.Owner)
+	log.Printf("AddRaffle TokenAddress: %s", rf.TokenAddress)
+	log.Printf("AddRaffle TicketPrice: %s", rf.TicketPrice)
+	log.Printf("AddRaffle MaxEntries: %d", rf.MaxEntries)
+	log.Printf("AddRaffle MaxEntriesPerUser: %d", rf.MaxEntriesPerUser)
+	log.Printf("AddRaffle StartAt: %s", rf.StartAt.String())
+	log.Printf("AddRaffle ExpiredAt: %s", rf.ExpiredAt.String())
+	log.Printf("AddRaffle Paused: %v", rf.Paused)
+	log.Printf("AddRaffle Hash: %s", rf.Hash)
+	log.Printf("AddRaffle SeedCommitHex: %s", rf.SeedCommitHex)
+
+	// --------------------------------------------------------------------
+	// Allow raffle contract to move base token (owner)
+	// --------------------------------------------------------------------
+	c.SetPrivateKey(ownerPriv)
+	allowRaffleOut, err := c.AllowUsers(tok.Address, map[string]bool{rf.Address: true})
+	if err != nil {
+		t.Fatalf("AllowUsers(raffle -> tok): %v", err)
+	}
+	if len(allowRaffleOut.States) == 0 || allowRaffleOut.States[0].Object == nil {
+		t.Fatalf("AllowUsers(raffle -> tok) returned empty/nil state")
+	}
+
+	log.Printf("AllowUsers(raffle -> tok) Output States: %+v", allowRaffleOut.States)
+	log.Printf("AllowUsers(raffle -> tok) Output Logs: %+v", allowRaffleOut.Logs)
+	log.Printf("AllowUsers(raffle -> tok) Output Delegated Call: %+v", allowRaffleOut.DelegatedCall)
+
+	// --------------------------------------------------------------------
+	// Update raffle (merchant) - valida campos determinísticos + log
+	// --------------------------------------------------------------------
 	c.SetPrivateKey(merchPriv)
+
 	newStart := time.Now().Add(1 * time.Hour)
 	newExp := time.Now().Add(26 * time.Hour)
 	commit2 := seed.CommitSeed(seedPass + "2")
-	if _, err := c.UpdateRaffle(
+
+	upOut, err := c.UpdateRaffle(
 		rf.Address,
 		rf.TokenAddress,
 		amt(2, dec),
@@ -168,89 +324,151 @@ func TestRaffleFlow(t *testing.T) {
 		&newExp,
 		commit2,
 		map[string]string{"k": "v"},
-	); err != nil {
+	)
+	if err != nil {
 		t.Fatalf("UpdateRaffle: %v", err)
 	}
+	if len(upOut.States) == 0 || upOut.States[0].Object == nil {
+		t.Fatalf("UpdateRaffle returned empty/nil state")
+	}
 
-	if _, err := c.PauseRaffle(rf.Address, true); err != nil {
+	var rfUp raffleV1Domain.Raffle
+	unmarshalState(t, upOut.States[0].Object, &rfUp)
+
+	if rfUp.Address != rf.Address {
+		t.Fatalf("UpdateRaffle Address mismatch: got %q want %q", rfUp.Address, rf.Address)
+	}
+	if rfUp.TokenAddress != rf.TokenAddress {
+		t.Fatalf("UpdateRaffle TokenAddress mismatch: got %q want %q", rfUp.TokenAddress, rf.TokenAddress)
+	}
+	if rfUp.TicketPrice != amt(2, dec) {
+		t.Fatalf("UpdateRaffle TicketPrice mismatch: got %q want %q", rfUp.TicketPrice, amt(2, dec))
+	}
+	if rfUp.MaxEntries != 150 {
+		t.Fatalf("UpdateRaffle MaxEntries mismatch: got %d want %d", rfUp.MaxEntries, 150)
+	}
+	if rfUp.MaxEntriesPerUser != 10 {
+		t.Fatalf("UpdateRaffle MaxEntriesPerUser mismatch: got %d want %d", rfUp.MaxEntriesPerUser, 10)
+	}
+	if rfUp.SeedCommitHex != commit2 {
+		t.Fatalf("UpdateRaffle SeedCommitHex mismatch: got %q want %q", rfUp.SeedCommitHex, commit2)
+	}
+
+	log.Printf("UpdateRaffle Output States: %+v", upOut.States)
+	log.Printf("UpdateRaffle Output Logs: %+v", upOut.Logs)
+	log.Printf("UpdateRaffle Output Delegated Call: %+v", upOut.DelegatedCall)
+
+	// --------------------------------------------------------------------
+	// Pause / Unpause (merchant) - valida + log
+	// --------------------------------------------------------------------
+	pauseOut, err := c.PauseRaffle(rf.Address, true)
+	if err != nil {
 		t.Fatalf("PauseRaffle: %v", err)
 	}
-	if _, err := c.UnpauseRaffle(rf.Address, false); err != nil {
+	if len(pauseOut.States) == 0 || pauseOut.States[0].Object == nil {
+		t.Fatalf("PauseRaffle returned empty/nil state")
+	}
+	var paused raffleV1Domain.Raffle
+	unmarshalState(t, pauseOut.States[0].Object, &paused)
+	if paused.Address != rf.Address {
+		t.Fatalf("PauseRaffle Address mismatch: got %q want %q", paused.Address, rf.Address)
+	}
+	if !paused.Paused {
+		t.Fatalf("PauseRaffle expected Paused=true")
+	}
+
+	log.Printf("PauseRaffle Output States: %+v", pauseOut.States)
+	log.Printf("PauseRaffle Output Logs: %+v", pauseOut.Logs)
+	log.Printf("PauseRaffle Output Delegated Call: %+v", pauseOut.DelegatedCall)
+
+	unpauseOut, err := c.UnpauseRaffle(rf.Address, false)
+	if err != nil {
 		t.Fatalf("UnpauseRaffle: %v", err)
 	}
+	if len(unpauseOut.States) == 0 || unpauseOut.States[0].Object == nil {
+		t.Fatalf("UnpauseRaffle returned empty/nil state")
+	}
+	var unpaused raffleV1Domain.Raffle
+	unmarshalState(t, unpauseOut.States[0].Object, &unpaused)
+	if unpaused.Address != rf.Address {
+		t.Fatalf("UnpauseRaffle Address mismatch: got %q want %q", unpaused.Address, rf.Address)
+	}
+	if unpaused.Paused {
+		t.Fatalf("UnpauseRaffle expected Paused=false")
+	}
 
-	// esperar start e entrar
+	log.Printf("UnpauseRaffle Output States: %+v", unpauseOut.States)
+	log.Printf("UnpauseRaffle Output Logs: %+v", unpauseOut.Logs)
+	log.Printf("UnpauseRaffle Output Delegated Call: %+v", unpauseOut.DelegatedCall)
+
+	// --------------------------------------------------------------------
+	// Wait start and enter (players)
+	// --------------------------------------------------------------------
 	waitUntil(t, 10*time.Second, func() bool { return time.Now().After(start) })
 
-	c.SetPrivateKey(bobPriv)
-	if _, err := c.EnterRaffle(rf.Address, 2, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(bob): %v", err)
-	}
-	if _, err := c.EnterRaffle(rf.Address, 7, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(bob): %v", err)
-	}
-	if _, err := c.EnterRaffle(rf.Address, 3, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(bob): %v", err)
-	}
-	if _, err := c.EnterRaffle(rf.Address, 5, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(bob): %v", err)
+	enter := func(name, priv string, tickets int) {
+		c.SetPrivateKey(priv)
+		out, err := c.EnterRaffle(rf.Address, tickets, tok.Address, tokenV1Domain.FUNGIBLE, "")
+		if err != nil {
+			t.Fatalf("EnterRaffle(%s): %v", name, err)
+		}
+		if len(out.States) == 0 || out.States[0].Object == nil {
+			t.Fatalf("EnterRaffle(%s) returned empty/nil state", name)
+		}
+
+		var et raffleV1Models.EnterTicketsModel
+		unmarshalState(t, out.States[0].Object, &et)
+
+		if et.RaffleAddress != rf.Address {
+			t.Fatalf("EnterRaffle(%s) raffle_address mismatch: got %q want %q", name, et.RaffleAddress, rf.Address)
+		}
+		// entrant no model = "entrant"
+		if et.Entrant == "" {
+			t.Fatalf("EnterRaffle(%s) entrant empty", name)
+		}
+		if et.Tickets != tickets {
+			t.Fatalf("EnterRaffle(%s) tickets mismatch: got %d want %d", name, et.Tickets, tickets)
+		}
+		if et.PayTokenAddress != tok.Address {
+			t.Fatalf("EnterRaffle(%s) pay_token_address mismatch: got %q want %q", name, et.PayTokenAddress, tok.Address)
+		}
+		if et.AmountPaid == "" {
+			t.Fatalf("EnterRaffle(%s) amount_paid empty", name)
+		}
+		if et.UUID == "" {
+			t.Fatalf("EnterRaffle(%s) uuid empty", name)
+		}
+
+		log.Printf("EnterRaffle(%s) Output States: %+v", name, out.States)
+		log.Printf("EnterRaffle(%s) Output Logs: %+v", name, out.Logs)
+		log.Printf("EnterRaffle(%s) Output Delegated Call: %+v", name, out.DelegatedCall)
+
+		log.Printf("EnterRaffle(%s) RaffleAddress: %s", name, et.RaffleAddress)
+		log.Printf("EnterRaffle(%s) UUID: %s", name, et.UUID)
+		log.Printf("EnterRaffle(%s) Entrant: %s", name, et.Entrant)
+		log.Printf("EnterRaffle(%s) Tickets: %d", name, et.Tickets)
+		log.Printf("EnterRaffle(%s) PayTokenAddress: %s", name, et.PayTokenAddress)
+		log.Printf("EnterRaffle(%s) AmountPaid: %s", name, et.AmountPaid)
 	}
 
-	c.SetPrivateKey(alicePriv)
-	if _, err := c.EnterRaffle(rf.Address, 5, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(alice): %v", err)
-	}
-
-	c.SetPrivateKey(robertPriv)
-	if _, err := c.EnterRaffle(rf.Address, 11, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(robert): %v", err)
-	}
-
-	c.SetPrivateKey(alfredPriv)
-	if _, err := c.EnterRaffle(rf.Address, 13, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(alfred): %v", err)
-	}
-
-	c.SetPrivateKey(luizPriv)
-	if _, err := c.EnterRaffle(rf.Address, 17, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(luiz): %v", err)
-	}
-
-	c.SetPrivateKey(jorgePriv)
-	if _, err := c.EnterRaffle(rf.Address, 19, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(jorge): %v", err)
-	}
-
-	c.SetPrivateKey(luiguiPriv)
-	if _, err := c.EnterRaffle(rf.Address, 23, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(luigui): %v", err)
-	}
-
-	c.SetPrivateKey(supermanPriv)
-	if _, err := c.EnterRaffle(rf.Address, 29, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(superman): %v", err)
-	}
-	if _, err := c.EnterRaffle(rf.Address, 31, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(superman): %v", err)
-	}
-
-	c.SetPrivateKey(spidermanPriv)
-	if _, err := c.EnterRaffle(rf.Address, 37, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(spiderman): %v", err)
-	}
-
-	c.SetPrivateKey(batmanPriv)
-	if _, err := c.EnterRaffle(rf.Address, 41, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(batman): %v", err)
-	}
-
-	c.SetPrivateKey(wonderwomanPriv)
-	if _, err := c.EnterRaffle(rf.Address, 43, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-		t.Fatalf("EnterRaffle(wonderwoman): %v", err)
-	}
+	enter("bob", bobPriv, 2)
+	enter("bob", bobPriv, 7)
+	enter("bob", bobPriv, 3)
+	enter("bob", bobPriv, 5)
+	enter("alice", alicePriv, 5)
+	enter("robert", robertPriv, 11)
+	enter("alfred", alfredPriv, 13)
+	enter("luiz", luizPriv, 17)
+	enter("jorge", jorgePriv, 19)
+	enter("luigui", luiguiPriv, 23)
+	enter("superman", supermanPriv, 29)
+	enter("superman", supermanPriv, 31)
+	enter("spiderman", spidermanPriv, 37)
+	enter("batman", batmanPriv, 41)
+	enter("wonderwoman", wonderwomanPriv, 43)
 
 	// ------------------------------------------------------------
-	// PRÊMIOS: ownerPrize cria tokens separados e deposita no raffle
+	// PRIZES: prize owner creates tokens and deposits in raffle
 	// ------------------------------------------------------------
 	ownerPrize, ownerPrizePriv := createWallet(t, c)
 	mapOfPubPriv[ownerPrize.PublicKey] = ownerPrizePriv
@@ -261,94 +479,188 @@ func TestRaffleFlow(t *testing.T) {
 	tok3 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE, stablecoin)
 	tok4 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE, stablecoin)
 
-	if _, err := c.AllowUsers(tok1.Address, map[string]bool{rf.Address: true}); err != nil {
-		t.Fatalf("AllowUsers(tok1 -> raffle): %v", err)
-	}
-	if _, err := c.AllowUsers(tok2.Address, map[string]bool{rf.Address: true}); err != nil {
-		t.Fatalf("AllowUsers(tok2 -> raffle): %v", err)
-	}
-	if _, err := c.AllowUsers(tok3.Address, map[string]bool{rf.Address: true}); err != nil {
-		t.Fatalf("AllowUsers(tok3 -> raffle): %v", err)
-	}
-	if _, err := c.AllowUsers(tok4.Address, map[string]bool{rf.Address: true}); err != nil {
-		t.Fatalf("AllowUsers(tok4 -> raffle): %v", err)
-	}
-
-	// deposit prizes (ownerPrize assina)
-	output, err := c.AddRafflePrize(rf.Address, tok1.Address, amt(2, dec), tokenV1Domain.FUNGIBLE, "")
-	if err != nil {
-		t.Fatalf("AddRafflePrize(tok1): %v", err)
-	}
-	output, err = c.AddRafflePrize(rf.Address, tok2.Address, amt(3, dec), tokenV1Domain.FUNGIBLE, "")
-	if err != nil {
-		t.Fatalf("AddRafflePrize(tok2): %v", err)
-	}
-	output, err = c.AddRafflePrize(rf.Address, tok3.Address, amt(4, dec), tokenV1Domain.FUNGIBLE, "")
-	if err != nil {
-		t.Fatalf("AddRafflePrize(tok3): %v", err)
-	}
-	output, err = c.AddRafflePrize(rf.Address, tok4.Address, amt(5, dec), tokenV1Domain.FUNGIBLE, "")
-	if err != nil {
-		t.Fatalf("AddRafflePrize(tok4): %v", err)
+	// allow raffle to move prize tokens
+	for _, pt := range []struct {
+		name string
+		tok  tokenV1Domain.Token
+	}{
+		{"tok1", tok1},
+		{"tok2", tok2},
+		{"tok3", tok3},
+		{"tok4", tok4},
+	} {
+		out, err := c.AllowUsers(pt.tok.Address, map[string]bool{rf.Address: true})
+		if err != nil {
+			t.Fatalf("AllowUsers(%s -> raffle): %v", pt.name, err)
+		}
+		if len(out.States) == 0 || out.States[0].Object == nil {
+			t.Fatalf("AllowUsers(%s -> raffle) returned empty/nil state", pt.name)
+		}
+		log.Printf("AllowUsers(%s -> raffle) Output States: %+v", pt.name, out.States)
+		log.Printf("AllowUsers(%s -> raffle) Output Logs: %+v", pt.name, out.Logs)
+		log.Printf("AllowUsers(%s -> raffle) Output Delegated Call: %+v", pt.name, out.DelegatedCall)
 	}
 
-	var rp raffleV1Domain.RafflePrize
-	unmarshalState(t, output.States[0].Object, &rp)
+	// deposit prizes (ownerPrize signs) - valida + log
+	addPrize := func(name, prizeTokenAddr, amount string) raffleV1Domain.RafflePrize {
+		out, err := c.AddRafflePrize(rf.Address, prizeTokenAddr, amount, tokenV1Domain.FUNGIBLE, "")
+		if err != nil {
+			t.Fatalf("AddRafflePrize(%s): %v", name, err)
+		}
+		if len(out.States) == 0 || out.States[0].Object == nil {
+			t.Fatalf("AddRafflePrize(%s) returned empty/nil state", name)
+		}
 
-	// remove last prize (ownerPrize assina)
-	if _, err := c.RemoveRafflePrize(rf.Address, tokenV1Domain.FUNGIBLE, rp.UUID); err != nil {
+		var rp raffleV1Domain.RafflePrize
+		unmarshalState(t, out.States[0].Object, &rp)
+
+		if rp.RaffleAddress != rf.Address {
+			t.Fatalf("AddRafflePrize(%s) raffle_address mismatch: got %q want %q", name, rp.RaffleAddress, rf.Address)
+		}
+		if rp.TokenAddress != prizeTokenAddr {
+			t.Fatalf("AddRafflePrize(%s) token_address mismatch: got %q want %q", name, rp.TokenAddress, prizeTokenAddr)
+		}
+		if rp.Amount != amount {
+			t.Fatalf("AddRafflePrize(%s) amount mismatch: got %q want %q", name, rp.Amount, amount)
+		}
+		if rp.UUID == "" {
+			t.Fatalf("AddRafflePrize(%s) uuid empty", name)
+		}
+
+		log.Printf("AddRafflePrize(%s) Output States: %+v", name, out.States)
+		log.Printf("AddRafflePrize(%s) Output Logs: %+v", name, out.Logs)
+		log.Printf("AddRafflePrize(%s) Output Delegated Call: %+v", name, out.DelegatedCall)
+
+		log.Printf("AddRafflePrize(%s) RaffleAddress: %s", name, rp.RaffleAddress)
+		log.Printf("AddRafflePrize(%s) UUID: %s", name, rp.UUID)
+		log.Printf("AddRafflePrize(%s) Sponsor: %s", name, rp.Sponsor)
+		log.Printf("AddRafflePrize(%s) TokenAddress: %s", name, rp.TokenAddress)
+		log.Printf("AddRafflePrize(%s) Amount: %s", name, rp.Amount)
+
+		return rp
+	}
+
+	rp1 := addPrize("tok1", tok1.Address, amt(2, dec))
+	_ = addPrize("tok2", tok2.Address, amt(3, dec))
+	_ = addPrize("tok3", tok3.Address, amt(4, dec))
+	_ = addPrize("tok4", tok4.Address, amt(5, dec))
+
+	// remove last prize (ownerPrize signs) - valida + log (usa rp1 só pra garantir UUID válido de algum)
+	remOut, err := c.RemoveRafflePrize(rf.Address, tokenV1Domain.FUNGIBLE, rp1.UUID)
+	if err != nil {
 		t.Fatalf("RemoveRafflePrize: %v", err)
 	}
+	if len(remOut.States) == 0 || remOut.States[0].Object == nil {
+		t.Fatalf("RemoveRafflePrize returned empty/nil state")
+	}
+	var removed raffleV1Domain.RafflePrize
+	unmarshalState(t, remOut.States[0].Object, &removed)
+	if removed.UUID != rp1.UUID {
+		t.Fatalf("RemoveRafflePrize UUID mismatch: got %q want %q", removed.UUID, rp1.UUID)
+	}
 
-	// draw (merchant assina)
+	log.Printf("RemoveRafflePrize Output States: %+v", remOut.States)
+	log.Printf("RemoveRafflePrize Output Logs: %+v", remOut.Logs)
+	log.Printf("RemoveRafflePrize Output Delegated Call: %+v", remOut.DelegatedCall)
+
+	// --------------------------------------------------------------------
+	// Draw (merchant) - valida + log
+	// --------------------------------------------------------------------
 	c.SetPrivateKey(merchPriv)
-	draw, err := c.DrawRaffle(rf.Address, seedPass+"2")
+	drawOut, err := c.DrawRaffle(rf.Address, seedPass+"2")
 	if err != nil {
 		t.Fatalf("DrawRaffle: %v", err)
 	}
+	if len(drawOut.States) == 0 || drawOut.States[0].Object == nil {
+		t.Fatalf("DrawRaffle returned empty/nil state")
+	}
 
-	var d []raffleV1Models.RafflePrizeModel
-	unmarshalState(t, draw.States[0].Object, &d)
+	var drawn []raffleV1Models.RafflePrizeModel
+	unmarshalState(t, drawOut.States[0].Object, &drawn)
 
-	listPrizes, err := c.ListPrizes(rf.Address, 1, 10, true)
+	log.Printf("DrawRaffle Output States: %+v", drawOut.States)
+	log.Printf("DrawRaffle Output Logs: %+v", drawOut.Logs)
+	log.Printf("DrawRaffle Output Delegated Call: %+v", drawOut.DelegatedCall)
+
+	// --------------------------------------------------------------------
+	// ListPrizes - valida + log
+	// --------------------------------------------------------------------
+	listPrizesOut, err := c.ListPrizes(rf.Address, 1, 50, true)
 	if err != nil {
 		t.Fatalf("ListPrizes: %v", err)
 	}
-	unmarshalState(t, listPrizes.States[0].Object, &d)
+	if len(listPrizesOut.States) == 0 || listPrizesOut.States[0].Object == nil {
+		t.Fatalf("ListPrizes returned empty/nil state")
+	}
 
-	// ------------------------------------------------------------
-	// IMPORTANTÍSSIMO (corrige seu erro atual):
-	// Winner (assinante do ClaimRaffle) também precisa TER ACESSO ao token do prêmio.
-	// Então: antes de cada Claim, o ownerPrize (dono dos tokens de prêmio) faz AllowUsers(prize.TokenAddress, winner).
-	// ------------------------------------------------------------
-	for index, prize := range d {
-		if prize.Winner != "" {
-			// 1) owner do token do prêmio (ownerPrize) libera o WINNER no token do prêmio
-			c.SetPrivateKey(ownerPrizePriv)
-			if _, err := c.AllowUsers(prize.TokenAddress, map[string]bool{prize.Winner: true}); err != nil {
-				t.Fatalf("AllowUsers(prizeToken -> winner): token=%s winner=%s err=%v", prize.TokenAddress, prize.Winner, err)
-			}
+	var prizes []raffleV1Models.RafflePrizeModel
+	unmarshalState(t, listPrizesOut.States[0].Object, &prizes)
 
-			// 2) winner assina o claim
-			priv, ok := mapOfPubPriv[prize.Winner]
-			if !ok {
-				t.Fatalf("missing private key for winner %s", prize.Winner)
-			}
-			c.SetPrivateKey(priv)
+	foundAny := false
+	for _, pz := range prizes {
+		if pz.UUID != "" {
+			foundAny = true
+			break
+		}
+	}
+	if !foundAny {
+		t.Fatalf("ListPrizes returned empty prize list (no UUIDs)")
+	}
 
-			if _, err := c.ClaimRaffle(rf.Address, prize.Winner, tokenV1Domain.FUNGIBLE, ""); err != nil {
-				t.Fatalf("ClaimRaffle: %v", err)
-			}
+	log.Printf("ListPrizes Output States: %+v", listPrizesOut.States)
+	log.Printf("ListPrizes Output Logs: %+v", listPrizesOut.Logs)
+	log.Printf("ListPrizes Output Delegated Call: %+v", listPrizesOut.DelegatedCall)
+
+	// --------------------------------------------------------------------
+	// Claim prizes - valida + log
+	// --------------------------------------------------------------------
+	for idx, prize := range prizes {
+		if prize.Winner == "" {
+			continue
 		}
 
-		// última iteração: claim duplicado (espera erro)
-		if len(d) == index+1 && prize.Winner != "" {
-			priv, ok := mapOfPubPriv[prize.Winner]
-			if !ok {
-				t.Fatalf("missing private key for winner %s", prize.Winner)
-			}
-			c.SetPrivateKey(priv)
+		// 1) owner do token do prêmio libera o WINNER no token do prêmio
+		c.SetPrivateKey(ownerPrizePriv)
+		allowWinnerOut, err := c.AllowUsers(prize.TokenAddress, map[string]bool{prize.Winner: true})
+		if err != nil {
+			t.Fatalf("AllowUsers(prizeToken -> winner): token=%s winner=%s err=%v", prize.TokenAddress, prize.Winner, err)
+		}
+		if len(allowWinnerOut.States) == 0 || allowWinnerOut.States[0].Object == nil {
+			t.Fatalf("AllowUsers(prizeToken -> winner) returned empty/nil state")
+		}
 
+		// 2) winner assina o claim
+		priv, ok := mapOfPubPriv[prize.Winner]
+		if !ok {
+			t.Fatalf("missing private key for winner %s", prize.Winner)
+		}
+		c.SetPrivateKey(priv)
+
+		claimOut, err := c.ClaimRaffle(rf.Address, prize.Winner, tokenV1Domain.FUNGIBLE, "")
+		if err != nil {
+			t.Fatalf("ClaimRaffle: %v", err)
+		}
+		if len(claimOut.States) == 0 || claimOut.States[0].Object == nil {
+			t.Fatalf("ClaimRaffle returned empty/nil state")
+		}
+
+		var claimed raffleV1Models.RafflePrizeModel
+		unmarshalState(t, claimOut.States[0].Object, &claimed)
+
+		if claimed.UUID == "" {
+			t.Fatalf("ClaimRaffle returned empty prize uuid")
+		}
+		if claimed.Winner != prize.Winner {
+			t.Fatalf("ClaimRaffle winner mismatch: got %q want %q", claimed.Winner, prize.Winner)
+		}
+
+		log.Printf("ClaimRaffle Output States: %+v", claimOut.States)
+		log.Printf("ClaimRaffle Output Logs: %+v", claimOut.Logs)
+		log.Printf("ClaimRaffle Output Delegated Call: %+v", claimOut.DelegatedCall)
+
+		// última iteração: claim duplicado (espera erro)
+		if len(prizes) == idx+1 {
+			c.SetPrivateKey(priv)
 			_, err := c.ClaimRaffle(rf.Address, prize.Winner, tokenV1Domain.FUNGIBLE, "")
 			if err == nil {
 				t.Fatalf("expected error on duplicate claim, got nil")
@@ -356,23 +668,42 @@ func TestRaffleFlow(t *testing.T) {
 		}
 	}
 
-	listPrizesClaimed, err := c.ListPrizes(rf.Address, 1, 10, true)
+	// --------------------------------------------------------------------
+	// List prizes claimed - valida todos claimed
+	// --------------------------------------------------------------------
+	listClaimedOut, err := c.ListPrizes(rf.Address, 1, 50, true)
 	if err != nil {
 		t.Fatalf("ListPrizes(claimed): %v", err)
 	}
+	if len(listClaimedOut.States) == 0 || listClaimedOut.States[0].Object == nil {
+		t.Fatalf("ListPrizes(claimed) returned empty/nil state")
+	}
 
-	unmarshalState(t, listPrizesClaimed.States[0].Object, &d)
-	for _, prize := range d {
-		if !prize.Claimed {
+	var claimedList []raffleV1Models.RafflePrizeModel
+	unmarshalState(t, listClaimedOut.States[0].Object, &claimedList)
+
+	for _, prize := range claimedList {
+		// se seu backend mantiver prizes sem winner (ex: removidos), você pode flexibilizar aqui.
+		if prize.Winner != "" && !prize.Claimed {
 			t.Fatalf("prize must be claimed: %+v", prize)
 		}
 	}
 
-	// withdraw leftovers (merchant)
+	// --------------------------------------------------------------------
+	// Withdraw leftovers (merchant)
+	// --------------------------------------------------------------------
 	c.SetPrivateKey(merchPriv)
-	if _, err := c.WithdrawRaffle(rf.Address, tok.Address, amt(1, dec), tokenV1Domain.FUNGIBLE, ""); err != nil {
+	withdrawOut, err := c.WithdrawRaffle(rf.Address, tok.Address, amt(1, dec), tokenV1Domain.FUNGIBLE, "")
+	if err != nil {
 		t.Fatalf("WithdrawRaffle: %v", err)
 	}
+	if len(withdrawOut.States) == 0 || withdrawOut.States[0].Object == nil {
+		t.Fatalf("WithdrawRaffle returned empty/nil state")
+	}
+
+	log.Printf("WithdrawRaffle Output States: %+v", withdrawOut.States)
+	log.Printf("WithdrawRaffle Output Logs: %+v", withdrawOut.Logs)
+	log.Printf("WithdrawRaffle Output Delegated Call: %+v", withdrawOut.DelegatedCall)
 }
 
 func TestRaffleFlow_NonFungible(t *testing.T) {
@@ -389,6 +720,16 @@ func TestRaffleFlow_NonFungible(t *testing.T) {
 	stablecoin := false
 	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType, stablecoin)
 
+	if tok.Address == "" {
+		t.Fatalf("Token address empty")
+	}
+	if tok.TokenType != tokenType {
+		t.Fatalf("Token type mismatch: got %s want %s", tok.TokenType, tokenType)
+	}
+
+	log.Printf("Token Address: %s", tok.Address)
+	log.Printf("Token Type: %s", tok.TokenType)
+
 	// --------------------------------------------------------------------
 	// Players
 	// --------------------------------------------------------------------
@@ -397,7 +738,6 @@ func TestRaffleFlow_NonFungible(t *testing.T) {
 		priv string
 		uuid string
 	}
-
 	bob, bobPriv := createWallet(t, c)
 	alice, alicePriv := createWallet(t, c)
 
@@ -406,35 +746,65 @@ func TestRaffleFlow_NonFungible(t *testing.T) {
 		{alice.PublicKey, alicePriv, ""},
 	}
 
+	// allow players
 	c.SetPrivateKey(ownerPriv)
-	if _, err := c.AllowUsers(tok.Address, map[string]bool{
+	allowPlayersOut, err := c.AllowUsers(tok.Address, map[string]bool{
 		bob.PublicKey:   true,
 		alice.PublicKey: true,
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatalf("AllowUsers(players): %v", err)
 	}
+	if len(allowPlayersOut.States) == 0 || allowPlayersOut.States[0].Object == nil {
+		t.Fatalf("AllowUsers(players) returned empty/nil state")
+	}
+
+	log.Printf("AllowUsers(players) Output States: %+v", allowPlayersOut.States)
+	log.Printf("AllowUsers(players) Output Logs: %+v", allowPlayersOut.Logs)
+	log.Printf("AllowUsers(players) Output Delegated Call: %+v", allowPlayersOut.DelegatedCall)
 
 	// --------------------------------------------------------------------
-	// Mint 1 NFT ticket per player
+	// Mint 1 NFT ticket per player - padrão mint
 	// --------------------------------------------------------------------
 	for i := range players {
-		mintOut, err := c.MintToken(
-			tok.Address,
-			players[i].pub,
-			"1",
-			dec,
-			tokenType,
-		)
+		mintOut, err := c.MintToken(tok.Address, players[i].pub, "1", dec, tokenType)
 		if err != nil {
 			t.Fatalf("MintToken NFT: %v", err)
+		}
+		if len(mintOut.States) == 0 || mintOut.States[0].Object == nil {
+			t.Fatalf("MintToken NFT returned empty/nil state")
 		}
 
 		var mint tokenV1Domain.Mint
 		unmarshalState(t, mintOut.States[0].Object, &mint)
-		if len(mint.TokenUUIDList) == 0 {
-			t.Fatalf("MintToken NFT returned empty uuid list")
+
+		if mint.TokenAddress != tok.Address {
+			t.Fatalf("Mint TokenAddress mismatch: got %s want %s", mint.TokenAddress, tok.Address)
 		}
+		if mint.MintTo != players[i].pub {
+			t.Fatalf("Mint ToAddress mismatch: got %s want %s", mint.MintTo, players[i].pub)
+		}
+		if mint.TokenType != tok.TokenType {
+			t.Fatalf("Mint TokenType mismatch: got %s want %s", mint.TokenType, tok.TokenType)
+		}
+		if len(mint.TokenUUIDList) != 1 {
+			t.Fatalf("expected 1 uuid, got %d", len(mint.TokenUUIDList))
+		}
+
 		players[i].uuid = mint.TokenUUIDList[0]
+		if players[i].uuid == "" {
+			t.Fatalf("minted uuid empty")
+		}
+
+		log.Printf("Mint Output States: %+v", mintOut.States)
+		log.Printf("Mint Output Logs: %+v", mintOut.Logs)
+		log.Printf("Mint Output Delegated Call: %+v", mintOut.DelegatedCall)
+
+		log.Printf("Mint TokenAddress: %s", mint.TokenAddress)
+		log.Printf("Mint ToAddress: %s", mint.MintTo)
+		log.Printf("Mint Amount: %s", mint.Amount)
+		log.Printf("Mint TokenType: %s", mint.TokenType)
+		log.Printf("Mint TokenUUIDList: %+v", mint.TokenUUIDList)
 	}
 
 	// --------------------------------------------------------------------
@@ -443,10 +813,17 @@ func TestRaffleFlow_NonFungible(t *testing.T) {
 	merchant, merchPriv := createWallet(t, c)
 
 	c.SetPrivateKey(ownerPriv)
-	if _, err := c.AllowUsers(tok.Address, map[string]bool{merchant.PublicKey: true}); err != nil {
+	allowMerchantOut, err := c.AllowUsers(tok.Address, map[string]bool{merchant.PublicKey: true})
+	if err != nil {
 		t.Fatalf("AllowUsers(merchant): %v", err)
 	}
+	if len(allowMerchantOut.States) == 0 || allowMerchantOut.States[0].Object == nil {
+		t.Fatalf("AllowUsers(merchant) returned empty/nil state")
+	}
 
+	// --------------------------------------------------------------------
+	// Deploy raffle contract
+	// --------------------------------------------------------------------
 	c.SetPrivateKey(merchPriv)
 
 	start := time.Now().Add(2 * time.Second)
@@ -461,8 +838,14 @@ func TestRaffleFlow_NonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
+	if len(deployedContract.States) == 0 || deployedContract.States[0].Object == nil {
+		t.Fatalf("DeployContract returned empty/nil state")
+	}
 	unmarshalState(t, deployedContract.States[0].Object, &contractState)
 
+	// --------------------------------------------------------------------
+	// AddRaffle (merchant) - valida + log
+	// --------------------------------------------------------------------
 	added, err := c.AddRaffle(
 		contractState.Address,
 		merchant.PublicKey,
@@ -479,34 +862,93 @@ func TestRaffleFlow_NonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AddRaffle NFT: %v", err)
 	}
+	if len(added.States) == 0 || added.States[0].Object == nil {
+		t.Fatalf("AddRaffle NFT returned empty/nil state")
+	}
 
 	var rf raffleV1Domain.Raffle
 	unmarshalState(t, added.States[0].Object, &rf)
+
 	if rf.Address == "" {
 		t.Fatalf("raffle addr empty")
 	}
+	if rf.Owner != merchant.PublicKey {
+		t.Fatalf("AddRaffle Owner mismatch: got %q want %q", rf.Owner, merchant.PublicKey)
+	}
+	if rf.TokenAddress != tok.Address {
+		t.Fatalf("AddRaffle TokenAddress mismatch: got %q want %q", rf.TokenAddress, tok.Address)
+	}
+	if rf.TicketPrice != "1" {
+		t.Fatalf("AddRaffle TicketPrice mismatch: got %q want %q", rf.TicketPrice, "1")
+	}
+	if rf.MaxEntries != 10 {
+		t.Fatalf("AddRaffle MaxEntries mismatch: got %d want %d", rf.MaxEntries, 10)
+	}
+	if rf.MaxEntriesPerUser != 1 {
+		t.Fatalf("AddRaffle MaxEntriesPerUser mismatch: got %d want %d", rf.MaxEntriesPerUser, 1)
+	}
+	if rf.SeedCommitHex != commit {
+		t.Fatalf("AddRaffle SeedCommitHex mismatch: got %q want %q", rf.SeedCommitHex, commit)
+	}
+	if rf.Hash == "" {
+		t.Fatalf("AddRaffle Hash empty")
+	}
 
+	log.Printf("AddRaffle NFT Output States: %+v", added.States)
+	log.Printf("AddRaffle NFT Output Logs: %+v", added.Logs)
+	log.Printf("AddRaffle NFT Output Delegated Call: %+v", added.DelegatedCall)
+
+	// allow raffle to move ticket token
 	c.SetPrivateKey(ownerPriv)
-	if _, err := c.AllowUsers(tok.Address, map[string]bool{rf.Address: true}); err != nil {
+	allowRaffleOut, err := c.AllowUsers(tok.Address, map[string]bool{rf.Address: true})
+	if err != nil {
 		t.Fatalf("AllowUsers(raffle -> ticketToken): %v", err)
+	}
+	if len(allowRaffleOut.States) == 0 || allowRaffleOut.States[0].Object == nil {
+		t.Fatalf("AllowUsers(raffle -> ticketToken) returned empty/nil state")
 	}
 
 	// --------------------------------------------------------------------
-	// Players enter raffle (UUID obrigatório)
+	// Players enter raffle (UUID obrigatório) - valida + log
 	// --------------------------------------------------------------------
 	waitUntil(t, 10*time.Second, func() bool { return time.Now().After(start) })
 
 	for _, p := range players {
 		c.SetPrivateKey(p.priv)
-		if _, err := c.EnterRaffle(
-			rf.Address,
-			1,
-			tok.Address,
-			tokenType,
-			p.uuid,
-		); err != nil {
+
+		out, err := c.EnterRaffle(rf.Address, 1, tok.Address, tokenType, p.uuid)
+		if err != nil {
 			t.Fatalf("EnterRaffle NFT: %v", err)
 		}
+		if len(out.States) == 0 || out.States[0].Object == nil {
+			t.Fatalf("EnterRaffle NFT returned empty/nil state")
+		}
+
+		var et raffleV1Models.EnterTicketsModel
+		unmarshalState(t, out.States[0].Object, &et)
+
+		if et.RaffleAddress != rf.Address {
+			t.Fatalf("EnterRaffle NFT raffle_address mismatch: got %q want %q", et.RaffleAddress, rf.Address)
+		}
+		if et.Entrant != p.pub {
+			t.Fatalf("EnterRaffle NFT entrant mismatch: got %q want %q", et.Entrant, p.pub)
+		}
+		if et.Tickets != 1 {
+			t.Fatalf("EnterRaffle NFT tickets mismatch: got %d want %d", et.Tickets, 1)
+		}
+		if et.PayTokenAddress != tok.Address {
+			t.Fatalf("EnterRaffle NFT pay_token_address mismatch: got %q want %q", et.PayTokenAddress, tok.Address)
+		}
+		if et.AmountPaid == "" {
+			t.Fatalf("EnterRaffle NFT amount_paid empty")
+		}
+		if et.UUID == "" {
+			t.Fatalf("EnterRaffle NFT uuid empty")
+		}
+
+		log.Printf("EnterRaffle NFT Output States: %+v", out.States)
+		log.Printf("EnterRaffle NFT Output Logs: %+v", out.Logs)
+		log.Printf("EnterRaffle NFT Output Delegated Call: %+v", out.DelegatedCall)
 	}
 
 	// --------------------------------------------------------------------
@@ -517,65 +959,99 @@ func TestRaffleFlow_NonFungible(t *testing.T) {
 
 	prizeToken := createBasicToken(t, c, prizeOwner.PublicKey, 0, false, tokenType, stablecoin)
 
-	mintPrize, err := c.MintToken(
-		prizeToken.Address,
-		prizeOwner.PublicKey,
-		"1",
-		0,
-		tokenType,
-	)
+	mintPrizeOut, err := c.MintToken(prizeToken.Address, prizeOwner.PublicKey, "1", 0, tokenType)
 	if err != nil {
 		t.Fatalf("Mint prize NFT: %v", err)
 	}
+	if len(mintPrizeOut.States) == 0 || mintPrizeOut.States[0].Object == nil {
+		t.Fatalf("Mint prize NFT returned empty/nil state")
+	}
 
 	var prizeMint tokenV1Domain.Mint
-	unmarshalState(t, mintPrize.States[0].Object, &prizeMint)
-	if len(prizeMint.TokenUUIDList) == 0 {
-		t.Fatalf("prize mint returned empty uuid list")
+	unmarshalState(t, mintPrizeOut.States[0].Object, &prizeMint)
+	if len(prizeMint.TokenUUIDList) != 1 {
+		t.Fatalf("prize mint expected 1 uuid, got %d", len(prizeMint.TokenUUIDList))
 	}
 	prizeUUID := prizeMint.TokenUUIDList[0]
+	if prizeUUID == "" {
+		t.Fatalf("prize uuid empty")
+	}
 
-	if _, err := c.AllowUsers(prizeToken.Address, map[string]bool{rf.Address: true}); err != nil {
+	allowPrizeOut, err := c.AllowUsers(prizeToken.Address, map[string]bool{rf.Address: true})
+	if err != nil {
 		t.Fatalf("AllowUsers(prizeToken -> raffle): %v", err)
 	}
+	if len(allowPrizeOut.States) == 0 || allowPrizeOut.States[0].Object == nil {
+		t.Fatalf("AllowUsers(prizeToken -> raffle) returned empty/nil state")
+	}
 
-	// deposit prize (prizeOwner assina)
-	if _, err := c.AddRafflePrize(
-		rf.Address,
-		prizeToken.Address,
-		"1",
-		tokenType,
-		prizeUUID,
-	); err != nil {
+	// deposit prize (prizeOwner signs) - valida + log
+	addPrizeOut, err := c.AddRafflePrize(rf.Address, prizeToken.Address, "1", tokenType, prizeUUID)
+	if err != nil {
 		t.Fatalf("AddRafflePrize NFT: %v", err)
 	}
+	if len(addPrizeOut.States) == 0 || addPrizeOut.States[0].Object == nil {
+		t.Fatalf("AddRafflePrize NFT returned empty/nil state")
+	}
+
+	var rp raffleV1Domain.RafflePrize
+	unmarshalState(t, addPrizeOut.States[0].Object, &rp)
+
+	if rp.RaffleAddress != rf.Address {
+		t.Fatalf("AddRafflePrize NFT raffle_address mismatch: got %q want %q", rp.RaffleAddress, rf.Address)
+	}
+	if rp.TokenAddress != prizeToken.Address {
+		t.Fatalf("AddRafflePrize NFT token_address mismatch: got %q want %q", rp.TokenAddress, prizeToken.Address)
+	}
+	if rp.Amount != "1" {
+		t.Fatalf("AddRafflePrize NFT amount mismatch: got %q want %q", rp.Amount, "1")
+	}
+	if rp.UUID == "" {
+		t.Fatalf("AddRafflePrize NFT uuid empty")
+	}
+
+	log.Printf("AddRafflePrize NFT Output States: %+v", addPrizeOut.States)
+	log.Printf("AddRafflePrize NFT Output Logs: %+v", addPrizeOut.Logs)
+	log.Printf("AddRafflePrize NFT Output Delegated Call: %+v", addPrizeOut.DelegatedCall)
 
 	// --------------------------------------------------------------------
 	// DRAW
 	// --------------------------------------------------------------------
 	c.SetPrivateKey(merchPriv)
-	draw, err := c.DrawRaffle(rf.Address, seedPass)
+	drawOut, err := c.DrawRaffle(rf.Address, seedPass)
 	if err != nil {
 		t.Fatalf("DrawRaffle NFT: %v", err)
 	}
+	if len(drawOut.States) == 0 || drawOut.States[0].Object == nil {
+		t.Fatalf("DrawRaffle NFT returned empty/nil state")
+	}
 
 	var prizes []raffleV1Models.RafflePrizeModel
-	unmarshalState(t, draw.States[0].Object, &prizes)
+	unmarshalState(t, drawOut.States[0].Object, &prizes)
+
+	log.Printf("DrawRaffle NFT Output States: %+v", drawOut.States)
+	log.Printf("DrawRaffle NFT Output Logs: %+v", drawOut.Logs)
+	log.Printf("DrawRaffle NFT Output Delegated Call: %+v", drawOut.DelegatedCall)
 
 	// --------------------------------------------------------------------
-	// Claim prize
+	// Claim prize (winner)
 	// --------------------------------------------------------------------
 	for _, pz := range prizes {
 		if pz.Winner == "" {
 			continue
 		}
 
+		// prize owner libera winner no prize token
 		c.SetPrivateKey(prizePriv)
-		if _, err := c.AllowUsers(prizeToken.Address, map[string]bool{pz.Winner: true}); err != nil {
+		allowWinnerOut, err := c.AllowUsers(prizeToken.Address, map[string]bool{pz.Winner: true})
+		if err != nil {
 			t.Fatalf("AllowUsers(prizeToken -> winner): %v", err)
 		}
+		if len(allowWinnerOut.States) == 0 || allowWinnerOut.States[0].Object == nil {
+			t.Fatalf("AllowUsers(prizeToken -> winner) returned empty/nil state")
+		}
 
-		// winner assina o claim
+		// winner signs claim
 		var winnerPriv string
 		for _, p := range players {
 			if p.pub == pz.Winner {
@@ -588,14 +1064,25 @@ func TestRaffleFlow_NonFungible(t *testing.T) {
 		}
 
 		c.SetPrivateKey(winnerPriv)
-		if _, err := c.ClaimRaffle(
-			rf.Address,
-			pz.Winner,
-			tokenType,
-			pz.UUID, // UUID do prize (seu modelo usa UUID aqui)
-		); err != nil {
+		claimOut, err := c.ClaimRaffle(rf.Address, pz.Winner, tokenType, pz.UUID)
+		if err != nil {
 			t.Fatalf("ClaimRaffle NFT: %v", err)
 		}
+		if len(claimOut.States) == 0 || claimOut.States[0].Object == nil {
+			t.Fatalf("ClaimRaffle NFT returned empty/nil state")
+		}
+
+		var claimed raffleV1Models.RafflePrizeModel
+		unmarshalState(t, claimOut.States[0].Object, &claimed)
+		if claimed.UUID == "" {
+			t.Fatalf("ClaimRaffle NFT returned empty uuid")
+		}
+		if claimed.Winner != pz.Winner {
+			t.Fatalf("ClaimRaffle NFT winner mismatch: got %q want %q", claimed.Winner, pz.Winner)
+		}
+
+		log.Printf("ClaimRaffle NFT Output States: %+v", claimOut.States)
+		log.Printf("ClaimRaffle NFT Output Logs: %+v", claimOut.Logs)
+		log.Printf("ClaimRaffle NFT Output Delegated Call: %+v", claimOut.DelegatedCall)
 	}
 }
-
