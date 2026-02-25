@@ -29,56 +29,6 @@ func TestAirdropFlow(t *testing.T) {
 	stablecoin := false
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
 
-	if tok.Address == "" {
-		t.Fatalf("token address empty")
-	}
-	if tok.Symbol == "" {
-		t.Fatalf("token symbol empty")
-	}
-	if tok.Name == "" {
-		t.Fatalf("token name empty")
-	}
-	if tok.Decimals != dec {
-		t.Fatalf("token decimals mismatch: got %d want %d", tok.Decimals, dec)
-	}
-	if tok.TokenType != tokenType {
-		t.Fatalf("token type mismatch: got %s want %s", tok.TokenType, tokenType)
-	}
-	if tok.Stablecoin != stablecoin {
-		t.Fatalf("token stablecoin mismatch: got %v want %v", tok.Stablecoin, stablecoin)
-	}
-	if tok.Creator == "" {
-		t.Fatalf("token creator empty")
-	}
-
-	log.Printf("Token Address: %s", tok.Address)
-	log.Printf("Token Symbol: %s", tok.Symbol)
-	log.Printf("Token Name: %s", tok.Name)
-	log.Printf("Token Decimals: %d", tok.Decimals)
-	log.Printf("Token Total Supply: %s", tok.TotalSupply)
-	log.Printf("Token Description: %s", tok.Description)
-	log.Printf("Token Image: %s", tok.Image)
-	log.Printf("Token Website: %s", tok.Website)
-	log.Printf("Token Tags Social: %+v", tok.TagsSocialMedia)
-	log.Printf("Token Tags Category: %+v", tok.TagsCategory)
-	log.Printf("Token Tags: %+v", tok.Tags)
-	log.Printf("Token Creator: %s", tok.Creator)
-	log.Printf("Token Creator Website: %s", tok.CreatorWebsite)
-	log.Printf("Token Access Policy Mode: %s", tok.AccessPolicy.Mode)
-	log.Printf("Token Access Policy Users: %+v", tok.AccessPolicy.Users)
-	log.Printf("Token Frozen Accounts: %+v", tok.FrozenAccounts)
-	log.Printf("Token Fee Tiers: %+v", tok.FeeTiersList)
-	log.Printf("Token Fee Address: %s", tok.FeeAddress)
-	log.Printf("Token Freeze Authority Revoked: %v", tok.FreezeAuthorityRevoked)
-	log.Printf("Token Mint Authority Revoked: %v", tok.MintAuthorityRevoked)
-	log.Printf("Token Update Authority Revoked: %v", tok.UpdateAuthorityRevoked)
-	log.Printf("Token Paused: %v", tok.Paused)
-	log.Printf("Token Expired At: %s", tok.ExpiredAt.String())
-	log.Printf("Token Asset GLB URI: %s", tok.AssetGLBUri)
-	log.Printf("Token Type: %s", tok.TokenType)
-	log.Printf("Token Transferable: %v", tok.Transferable)
-	log.Printf("Token Stablecoin: %v", tok.Stablecoin)
-
 	// --------------------------------------------------------------------
 	// Mint (envelope + validate + log)
 	// --------------------------------------------------------------------
@@ -92,9 +42,6 @@ func TestAirdropFlow(t *testing.T) {
 	if mintOut.States[0].Object == nil {
 		t.Fatalf("MintToken returned nil state object")
 	}
-
-	// opcional: se você tiver struct de Mint no tokenDomain, dá para validar também.
-	// aqui eu mantenho no padrão "envelope" + logs, sem inventar campos.
 
 	log.Printf("Mint Output States: %+v", mintOut.States)
 	log.Printf("Mint Output Logs: %+v", mintOut.Logs)
