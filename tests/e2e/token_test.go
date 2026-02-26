@@ -26,359 +26,181 @@ func TestTokenFlowFungible(t *testing.T) {
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
 
 	// -------------------------
-	// Token (validate + log)
+	// Mint (envelope + unmarshal + validate + logs + events)
 	// -------------------------
-	if tok.Owner != owner.PublicKey {
-		t.Fatalf("token owner mismatch: got %s want %s", tok.Owner, owner.PublicKey)
-	}
-	if tok.Decimals != dec {
-		t.Fatalf("token decimals mismatch: got %d want %d", tok.Decimals, dec)
-	}
-	if tok.TokenType != tokenType {
-		t.Fatalf("token type mismatch: got %s want %s", tok.TokenType, tokenType)
-	}
-	if tok.Stablecoin != stablecoin {
-		t.Fatalf("token stablecoin mismatch: got %v want %v", tok.Stablecoin, stablecoin)
-	}
+	mintAmt := amt(35, dec)
 
-	// if tok.AccessPolicy.Mode == "" {
-	// 	t.Fatalf("token access policy mode empty")
-	// }
-	// if tok.AccessPolicy.Users == nil {
-	// 	t.Fatalf("token access policy users nil")
-	// }
-	// if !tok.AccessPolicy.Users[owner.PublicKey] {
-	// 	t.Fatalf("token access policy must include owner: %s", owner.PublicKey)
-	// }
+	mintOut, err := c.MintToken(tok.Address, owner.PublicKey, mintAmt, dec, tok.TokenType)
+	require.NoError(t, err, "MintToken")
 
-	// -------------------------
-	// Mint (envelope + unmarshal + validate + log)
-	// -------------------------
-	mintOut, err := c.MintToken(tok.Address, owner.PublicKey, amt(35, dec), dec, tok.TokenType)
-	if err != nil {
-		t.Fatalf("MintToken: %v", err)
-	}
-
-	require.Len(t, mintOut.Logs, 3, "MintToken should return 3 logs (mint, supply, balance)")
-
-	// 1) valida infra e consistência entre logs
-	txHash := mintOut.Logs[0].TransactionHash
-	contractAddr := mintOut.Logs[0].ContractAddress
-	contractVer := mintOut.Logs[0].ContractVersion
-
-	for i := range mintOut.Logs {
-		tests.AssertLogBase(t, mintOut.Logs[i])
-
-		require.Equal(t, txHash, mintOut.Logs[i].TransactionHash, "transaction_hash should be the same for all logs")
-		require.Equal(t, contractAddr, mintOut.Logs[i].ContractAddress, "contract_address should be the same for all logs")
-		require.Equal(t, contractVer, mintOut.Logs[i].ContractVersion, "contract_version should be the same for all logs")
-	}
-
-	// 2) valida tipos (ajuste as constantes reais do seu projeto)
-	require.Equal(t, "MINT", mintOut.Logs[0].LogType)    // ou domain.LOG_MINT, etc.
-	require.Equal(t, "SUPPLY", mintOut.Logs[1].LogType)  // ou domain.LOG_SUPPLY
-	require.Equal(t, "BALANCE", mintOut.Logs[2].LogType) // ou domain.LOG_BALANCE
-
-	// 3) valida o EVENT de cada log
-	// Aqui usamos map[string]any pra não depender da struct exata do Event.
-	mintEvent := tests.UnmarshalJSONB[map[string]any](t, mintOut.Logs[0].Event)
-
-	// Nomes de campos: ajuste para o seu schema real do evento
-	// (ex.: "token_address" vs "tokenAddress", "mint_to" vs "mintTo"...)
-	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, mintEvent, "token_address"))
-	require.Equal(t, owner.PublicKey, tests.RequireMapFieldString(t, mintEvent, "mint_to"))
-	require.Equal(t, amt(35, dec), tests.RequireMapFieldString(t, mintEvent, "amount"))
-	require.Equal(t, tok.TokenType, tests.RequireMapFieldString(t, mintEvent, "token_type"))
-
-	// supply event
-	supplyEvent := tests.UnmarshalJSONB[map[string]any](t, mintOut.Logs[1].Event)
-	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, supplyEvent, "token_address"))
-	require.Equal(t, amt(35, dec), tests.RequireMapFieldString(t, supplyEvent, "amount_delta"))
-	// se existir total supply no evento:
-	require.NotEmpty(t, tests.RequireMapFieldString(t, supplyEvent, "total_supply"))
-
-	// balance event
-	balanceEvent := tests.UnmarshalJSONB[map[string]any](t, mintOut.Logs[2].Event)
-	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, balanceEvent, "token_address"))
-	require.Equal(t, owner.PublicKey, tests.RequireMapFieldString(t, balanceEvent, "owner"))
-	require.Equal(t, amt(35, dec), tests.RequireMapFieldString(t, balanceEvent, "amount_delta"))
-	require.Equal(t, tok.TokenType, tests.RequireMapFieldString(t, balanceEvent, "token_type"))
-
-	if mintOut.States[0].Object == nil {
-		t.Fatalf("MintToken returned nil state object")
-	}
+	// States (Mint, Supply, Balance)
+	tests.RequireStateObjectsNotNil(t, mintOut.States, 3)
 
 	var mint tokenV1Domain.Mint
 	tests.UnmarshalState(t, mintOut.States[0].Object, &mint)
+	require.Equal(t, tok.Address, mint.TokenAddress)
+	require.Equal(t, owner.PublicKey, mint.MintTo)
+	require.Equal(t, mintAmt, mint.Amount)
+	require.Equal(t, tok.TokenType, mint.TokenType)
 
-	if mint.TokenAddress != tok.Address {
-		t.Fatalf("Mint TokenAddress mismatch: got %s want %s", mint.TokenAddress, tok.Address)
-	}
-	if mint.MintTo != owner.PublicKey {
-		t.Fatalf("Mint ToAddress mismatch: got %s want %s", mint.MintTo, owner.PublicKey)
-	}
-	// expectedMintAmount := amt(35, dec)
-	// if mint.Amount != expectedMintAmount {
-	// 	t.Fatalf("Mint Amount mismatch: got %s want %s", mint.Amount, expectedMintAmount)
-	// }
-	if mint.TokenType != tok.TokenType {
-		t.Fatalf("Mint TokenType mismatch: got %s want %s", mint.TokenType, tok.TokenType)
-	}
+	var supplyAfterMint tokenV1Domain.Supply
+	tests.UnmarshalState(t, mintOut.States[1].Object, &supplyAfterMint)
+	require.Equal(t, tok.Address, supplyAfterMint.TokenAddress)
+	require.NotEmpty(t, supplyAfterMint.Amount)
+
+	var balAfterMint tokenV1Domain.Balance
+	tests.UnmarshalState(t, mintOut.States[2].Object, &balAfterMint)
+	require.Equal(t, tok.Address, balAfterMint.TokenAddress)
+	require.Equal(t, owner.PublicKey, balAfterMint.OwnerAddress)
+	require.Equal(t, tok.TokenType, balAfterMint.TokenType)
+	require.NotEmpty(t, balAfterMint.Amount)
+
+	// Logs 
+	tests.RequireLogsBase(t, mintOut.Logs, 3)
+	tests.RequireLogTypesInOrder(t, mintOut.Logs, []string{
+		domain.TOKEN_MINTED_LOG,
+		domain.TOKEN_TOTAL_SUPPLY_INCREASED_LOG,
+		domain.TOKEN_BALANCE_INCREASED_LOG,
+	})
+
+	// Events 
+	mintEvent := tests.UnmarshalJSONB[map[string]any](t, mintOut.Logs[0].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, mintEvent, "token_address"))
+	require.Equal(t, owner.PublicKey, tests.RequireMapFieldString(t, mintEvent, "mint_to"))
+	require.Equal(t, mintAmt, tests.RequireMapFieldString(t, mintEvent, "amount"))
+	require.Equal(t, tok.TokenType, tests.RequireMapFieldString(t, mintEvent, "token_type"))
+
+	supplyMintEvent := tests.UnmarshalJSONB[map[string]any](t, mintOut.Logs[1].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, supplyMintEvent, "token_address"))
+	require.Equal(t, mintAmt, tests.RequireMapFieldString(t, supplyMintEvent, "amount_delta"))
+	require.NotEmpty(t, tests.RequireMapFieldString(t, supplyMintEvent, "total_supply"))
+
+	balanceMintEvent := tests.UnmarshalJSONB[map[string]any](t, mintOut.Logs[2].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, balanceMintEvent, "token_address"))
+	require.Equal(t, owner.PublicKey, tests.RequireMapFieldString(t, balanceMintEvent, "owner"))
+	require.Equal(t, mintAmt, tests.RequireMapFieldString(t, balanceMintEvent, "amount_delta"))
+	require.Equal(t, tok.TokenType, tests.RequireMapFieldString(t, balanceMintEvent, "token_type"))
 
 	// -------------------------
-	// Burn (envelope + unmarshal + validate + log)
+	// Burn (envelope + unmarshal + validate + logs + events)
 	// -------------------------
 	burnAmt := amt(12, dec)
 
 	burnOut, err := c.BurnToken(tok.Address, burnAmt, dec, tok.TokenType, "")
-	if err != nil {
-		t.Fatalf("BurnToken: %v", err)
-	}
+	require.NoError(t, err, "BurnToken")
 
-	// -------------------------
-	// 1) STATES
-	// -------------------------
-	if len(burnOut.States) != 3 {
-		t.Fatalf("BurnToken returned %d states, want 3", len(burnOut.States))
-	}
+	// States (Burn, Supply, Balance)
+	tests.RequireStateObjectsNotNil(t, burnOut.States, 3)
 
-	if burnOut.States[0].Object == nil {
-		t.Fatalf("BurnToken returned nil burn state object")
-	}
-	if burnOut.States[1].Object == nil {
-		t.Fatalf("BurnToken returned nil supply state object")
-	}
-	if burnOut.States[2].Object == nil {
-		t.Fatalf("BurnToken returned nil balance state object")
-	}
-
-	// Burn
 	var burn tokenV1Domain.Burn
 	tests.UnmarshalState(t, burnOut.States[0].Object, &burn)
+	require.Equal(t, tok.Address, burn.TokenAddress)
+	require.Equal(t, owner.PublicKey, burn.BurnFrom)
+	require.Equal(t, burnAmt, burn.Amount)
+	require.Equal(t, tok.TokenType, burn.TokenType)
 
-	if burn.TokenAddress != tok.Address {
-		t.Fatalf("Burn TokenAddress mismatch: got %s want %s", burn.TokenAddress, tok.Address)
-	}
-	if burn.BurnFrom != owner.PublicKey {
-		t.Fatalf("Burn BurnFrom mismatch: got %s want %s", burn.BurnFrom, owner.PublicKey)
-	}
-	if burn.Amount != burnAmt {
-		t.Fatalf("Burn Amount mismatch: got %s want %s", burn.Amount, burnAmt)
-	}
-	if burn.TokenType != tok.TokenType {
-		t.Fatalf("Burn TokenType mismatch: got %s want %s", burn.TokenType, tok.TokenType)
-	}
+	var supplyAfterBurn tokenV1Domain.Supply
+	tests.UnmarshalState(t, burnOut.States[1].Object, &supplyAfterBurn)
+	require.Equal(t, tok.Address, supplyAfterBurn.TokenAddress)
+	require.NotEmpty(t, supplyAfterBurn.Amount)
 
-	// Supply
-	var supply tokenV1Domain.Supply
-	tests.UnmarshalState(t, burnOut.States[1].Object, &supply)
+	var balAfterBurn tokenV1Domain.Balance
+	tests.UnmarshalState(t, burnOut.States[2].Object, &balAfterBurn)
+	require.Equal(t, tok.Address, balAfterBurn.TokenAddress)
+	require.Equal(t, owner.PublicKey, balAfterBurn.OwnerAddress)
+	require.Equal(t, tok.TokenType, balAfterBurn.TokenType)
+	require.NotEmpty(t, balAfterBurn.Amount)
 
-	if supply.TokenAddress != tok.Address {
-		t.Fatalf("Supply TokenAddress mismatch: got %s want %s", supply.TokenAddress, tok.Address)
-	}
+	// Logs 
+	tests.RequireLogsBase(t, burnOut.Logs, 3)
+	tests.RequireLogTypesInOrder(t, burnOut.Logs, []string{
+		domain.TOKEN_BURNED_LOG,
+		domain.TOKEN_TOTAL_SUPPLY_DECREASED_LOG,
+		domain.TOKEN_BALANCE_DECREASED_LOG,
+	})
 
-	// Balance (estado final do burner)
-	var bal tokenV1Domain.Balance
-	tests.UnmarshalState(t, burnOut.States[2].Object, &bal)
-
-	if bal.TokenAddress != tok.Address {
-		t.Fatalf("Balance TokenAddress mismatch: got %s want %s", bal.TokenAddress, tok.Address)
-	}
-	if bal.OwnerAddress != owner.PublicKey {
-		t.Fatalf("Balance Owner mismatch: got %s want %s", bal.OwnerAddress, owner.PublicKey)
-	}
-	if bal.TokenType != tok.TokenType {
-		t.Fatalf("Balance TokenType mismatch: got %s want %s", bal.TokenType, tok.TokenType)
-	}
-
-	// -------------------------
-	// 2) LOGS (infra + consistência)
-	// -------------------------
-	if len(burnOut.Logs) != 3 {
-		t.Fatalf("BurnToken should return 3 logs (burn, supply, balance), got %d", len(burnOut.Logs))
-	}
-
-	txHash = burnOut.Logs[0].TransactionHash
-	contractAddr = burnOut.Logs[0].ContractAddress
-	contractVer = burnOut.Logs[0].ContractVersion
-
-	for i := range burnOut.Logs {
-		tests.AssertLogBase(t, burnOut.Logs[i])
-
-		if burnOut.Logs[i].TransactionHash != txHash {
-			t.Fatalf("Log[%d] TransactionHash mismatch: got %s want %s", i, burnOut.Logs[i].TransactionHash, txHash)
-		}
-		if burnOut.Logs[i].ContractAddress != contractAddr {
-			t.Fatalf("Log[%d] ContractAddress mismatch: got %s want %s", i, burnOut.Logs[i].ContractAddress, contractAddr)
-		}
-		if burnOut.Logs[i].ContractVersion != contractVer {
-			t.Fatalf("Log[%d] ContractVersion mismatch: got %s want %s", i, burnOut.Logs[i].ContractVersion, contractVer)
-		}
-	}
-
-	// ✅ Ajuste para os LogTypes reais do seu projeto (constantes seriam melhor)
-	if burnOut.Logs[0].LogType != "BURN" {
-		t.Fatalf("Log[0] LogType mismatch: got %s want %s", burnOut.Logs[0].LogType, "BURN")
-	}
-	if burnOut.Logs[1].LogType != "SUPPLY" {
-		t.Fatalf("Log[1] LogType mismatch: got %s want %s", burnOut.Logs[1].LogType, "SUPPLY")
-	}
-	if burnOut.Logs[2].LogType != "BALANCE" {
-		t.Fatalf("Log[2] LogType mismatch: got %s want %s", burnOut.Logs[2].LogType, "BALANCE")
-	}
-
-	// -------------------------
-	// 3) EVENTS (conteúdo)
-	// -------------------------
-	// Estratégia: Event(JSONB) -> map[string]any -> validar campos críticos.
-	// ✅ Ajuste os nomes das chaves ("token_address", "burn_from", etc.) para o seu JSON real.
-
-	// Burn event
+	// Events 
 	burnEvent := tests.UnmarshalJSONB[map[string]any](t, burnOut.Logs[0].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, burnEvent, "token_address"))
+	require.Equal(t, owner.PublicKey, tests.RequireMapFieldString(t, burnEvent, "burn_from"))
+	require.Equal(t, burnAmt, tests.RequireMapFieldString(t, burnEvent, "amount"))
+	require.Equal(t, tok.TokenType, tests.RequireMapFieldString(t, burnEvent, "token_type"))
 
-	if tests.RequireMapFieldString(t, burnEvent, "token_address") != tok.Address {
-		t.Fatalf("burn event token_address mismatch")
-	}
-	if tests.RequireMapFieldString(t, burnEvent, "burn_from") != owner.PublicKey {
-		t.Fatalf("burn event burn_from mismatch")
-	}
-	if tests.RequireMapFieldString(t, burnEvent, "amount") != burnAmt {
-		t.Fatalf("burn event amount mismatch")
-	}
-	if tests.RequireMapFieldString(t, burnEvent, "token_type") != tok.TokenType {
-		t.Fatalf("burn event token_type mismatch")
-	}
-
-	// Supply event (decrease total supply)
-	supplyEvent = tests.UnmarshalJSONB[map[string]any](t, burnOut.Logs[1].Event)
-
-	if tests.RequireMapFieldString(t, supplyEvent, "token_address") != tok.Address {
-		t.Fatalf("supply event token_address mismatch")
-	}
-
-	// Se existir delta no evento, normalmente é "-amount" OU (op="decrease", amount="X").
-	// Deixo compatível com os dois estilos:
-	if v, ok := supplyEvent["amount_delta"]; ok {
+	supplyBurnEvent := tests.UnmarshalJSONB[map[string]any](t, burnOut.Logs[1].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, supplyBurnEvent, "token_address"))
+	
+	if v, ok := supplyBurnEvent["amount_delta"]; ok {
 		deltaStr, _ := v.(string)
-		if deltaStr != "-"+burnAmt && deltaStr != burnAmt {
-			t.Fatalf("supply event amount_delta unexpected: %v", v)
-		}
+		require.Contains(t, []string{"-" + burnAmt, burnAmt}, deltaStr)
 	}
-	if v, ok := supplyEvent["amount"]; ok {
+	if v, ok := supplyBurnEvent["amount"]; ok {
 		amtStr, _ := v.(string)
-		// se seu evento usa "amount" puro para decrease, espera burnAmt
-		if amtStr != "" && amtStr != burnAmt {
-			t.Fatalf("supply event amount unexpected: %v", v)
+		if amtStr != "" {
+			require.Equal(t, burnAmt, amtStr)
 		}
 	}
 
-	// Balance event (decrease do burner)
-	balanceEvent = tests.UnmarshalJSONB[map[string]any](t, burnOut.Logs[2].Event)
-
-	if tests.RequireMapFieldString(t, balanceEvent, "token_address") != tok.Address {
-		t.Fatalf("balance event token_address mismatch")
-	}
-	if tests.RequireMapFieldString(t, balanceEvent, "owner") != owner.PublicKey {
-		t.Fatalf("balance event owner mismatch")
-	}
-	if tests.RequireMapFieldString(t, balanceEvent, "token_type") != tok.TokenType {
-		t.Fatalf("balance event token_type mismatch")
-	}
-
-	// delta esperado (se existir)
-	if v, ok := balanceEvent["amount_delta"]; ok {
-		deltaStr, _ := v.(string)
-		if deltaStr != "-"+burnAmt && deltaStr != burnAmt {
-			t.Fatalf("balance event amount_delta unexpected: %v", v)
-		}
-	}
-
-	// validação forte (se existir balance_after no evento): bater com o state final
-	if v, ok := balanceEvent["balance_after"]; ok {
+	balanceBurnEvent := tests.UnmarshalJSONB[map[string]any](t, burnOut.Logs[2].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, balanceBurnEvent, "token_address"))
+	require.Equal(t, owner.PublicKey, tests.RequireMapFieldString(t, balanceBurnEvent, "owner"))
+	require.Equal(t, tok.TokenType, tests.RequireMapFieldString(t, balanceBurnEvent, "token_type"))
+	if v, ok := balanceBurnEvent["balance_after"]; ok {
 		afterStr, _ := v.(string)
-		if afterStr != "" && afterStr != bal.Amount {
-			t.Fatalf("balance event balance_after mismatch: got %v want %s", v, bal.Amount)
+		if afterStr != "" {
+			require.Equal(t, balAfterBurn.Amount, afterStr)
 		}
 	}
 
 	// -------------------------
-	// AllowUsers (envelope + unmarshal + validate + log)
+	// AllowUsers (envelope + unmarshal + validate + logs)
 	// -------------------------
 	receiver, _ := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 
-	allowOut, err := c.AllowUsers(tok.Address, map[string]bool{
-		receiver.PublicKey: true,
-	})
-	if err != nil {
-		t.Fatalf("AllowUsers: %v", err)
-	}
-	if len(allowOut.States) == 0 {
-		t.Fatalf("AllowUsers returned empty States")
-	}
-	if allowOut.States[0].Object == nil {
-		t.Fatalf("AllowUsers returned nil state object")
-	}
+	allowOut, err := c.AllowUsers(tok.Address, map[string]bool{receiver.PublicKey: true})
+	require.NoError(t, err, "AllowUsers")
+
+	tests.RequireStateObjectsNotNil(t, allowOut.States, 1)
 
 	var accessPolicy tokenV1Domain.AccessPolicy
 	tests.UnmarshalState(t, allowOut.States[0].Object, &accessPolicy)
+	require.NotEmpty(t, accessPolicy.Mode)
+	require.NotNil(t, accessPolicy.Users)
+	require.True(t, accessPolicy.Users[receiver.PublicKey])
 
-	if accessPolicy.Mode == "" {
-		t.Fatalf("AllowUsers Mode empty")
-	}
-	if accessPolicy.Users == nil {
-		t.Fatalf("AllowUsers Users nil")
-	}
-	if !accessPolicy.Users[receiver.PublicKey] {
-		t.Fatalf("AllowUsers missing receiver in allowlist: %s", receiver.PublicKey)
+	// Logs 
+	if len(allowOut.Logs) > 0 {
+		tests.RequireLogsBase(t, allowOut.Logs, len(allowOut.Logs))
+		_ = tests.FindLogByType(t, allowOut.Logs, domain.TOKEN_USERS_ALLOWED_LOG)
 	}
 
 	// -------------------------
-	// Transfer (envelope + unmarshal + validate + log)
+	// Transfer (envelope + unmarshal + validate + logs)
 	// -------------------------
-	trOut, err := c.TransferToken(
-		tok.Address,
-		receiver.PublicKey,
-		amt(1, dec),
-		dec,
-		tok.TokenType,
-		"",
-	)
-	if err != nil {
-		t.Fatalf("TransferToken: %v", err)
-	}
-	if len(trOut.States) == 0 {
-		t.Fatalf("TransferToken returned empty States")
-	}
-	if trOut.States[0].Object == nil {
-		t.Fatalf("TransferToken returned nil state object")
-	}
+	trAmt := amt(1, dec)
+
+	trOut, err := c.TransferToken(tok.Address, receiver.PublicKey, trAmt, dec, tok.TokenType, "")
+	require.NoError(t, err, "TransferToken")
+
+	tests.RequireStateObjectsNotNil(t, trOut.States, 1)
 
 	var tr tokenV1Domain.Transfer
 	tests.UnmarshalState(t, trOut.States[0].Object, &tr)
+	require.Equal(t, tok.Address, tr.TokenAddress)
+	require.Equal(t, owner.PublicKey, tr.FromAddress)
+	require.Equal(t, receiver.PublicKey, tr.ToAddress)
+	require.Equal(t, trAmt, tr.Amount)
+	require.Equal(t, tok.TokenType, tr.TokenType)
+	require.Empty(t, tr.UUID, "fungible transfer must not have uuid")
 
-	if tr.TokenAddress != tok.Address {
-		t.Fatalf("Transfer TokenAddress mismatch: got %s want %s", tr.TokenAddress, tok.Address)
-	}
-	if tr.FromAddress != owner.PublicKey {
-		t.Fatalf("Transfer FromAddress mismatch: got %s want %s", tr.FromAddress, owner.PublicKey)
-	}
-	if tr.ToAddress != receiver.PublicKey {
-		t.Fatalf("Transfer ToAddress mismatch: got %s want %s", tr.ToAddress, receiver.PublicKey)
-	}
-	expectedTransferAmount := amt(1, dec)
-	if tr.Amount != expectedTransferAmount {
-		t.Fatalf("Transfer Amount mismatch: got %s want %s", tr.Amount, expectedTransferAmount)
-	}
-	if tr.TokenType != tok.TokenType {
-		t.Fatalf("Transfer TokenType mismatch: got %s want %s", tr.TokenType, tok.TokenType)
-	}
-	if tok.TokenType == tokenV1Domain.FUNGIBLE && tr.UUID != "" {
-		t.Fatalf("Fungible transfer should not have UUID, got %q", tr.UUID)
+	// Logs 
+	if len(trOut.Logs) > 0 {
+		tests.RequireLogsBase(t, trOut.Logs, len(trOut.Logs))
+		_ = tests.FindLogByType(t, trOut.Logs, domain.TOKEN_TRANSFERRED_LOG)
 	}
 
 	// -------------------------
-	// Fee tiers (envelope + unmarshal + validate + log)
+	// Fee tiers (envelope + unmarshal + validate + logs)
 	// -------------------------
 	feeTiersOut, err := c.UpdateFeeTiers(tok.Address, []map[string]interface{}{
 		{
@@ -389,52 +211,43 @@ func TestTokenFlowFungible(t *testing.T) {
 			"fee_bps":    25,
 		},
 	})
-	if err != nil {
-		t.Fatalf("UpdateFeeTiers: %v", err)
-	}
-	if len(feeTiersOut.States) == 0 {
-		t.Fatalf("UpdateFeeTiers returned empty States")
-	}
-	if feeTiersOut.States[0].Object == nil {
-		t.Fatalf("UpdateFeeTiers returned nil state object")
-	}
+	require.NoError(t, err, "UpdateFeeTiers")
+
+	tests.RequireStateObjectsNotNil(t, feeTiersOut.States, 1)
 
 	var feeTiers tokenV1Domain.FeeTiers
 	tests.UnmarshalState(t, feeTiersOut.States[0].Object, &feeTiers)
+	require.NotEmpty(t, feeTiers.FeeTiersList)
 
-	if feeTiers.FeeTiersList == nil || len(feeTiers.FeeTiersList) == 0 {
-		t.Fatalf("UpdateFeeTiers returned empty FeeTiersList")
+	if len(feeTiersOut.Logs) > 0 {
+		tests.RequireLogsBase(t, feeTiersOut.Logs, len(feeTiersOut.Logs))
+		_ = tests.FindLogByType(t, feeTiersOut.Logs, domain.TOKEN_FEE_UPDATED_LOG)
 	}
 
 	// -------------------------
-	// Fee address (envelope + unmarshal + validate + log)
+	// Fee address (envelope + unmarshal + validate + logs)
 	// -------------------------
 	feeOut, err := c.UpdateFeeAddress(tok.Address, owner.PublicKey)
-	if err != nil {
-		t.Fatalf("UpdateFeeAddress: %v", err)
-	}
-	if len(feeOut.States) == 0 {
-		t.Fatalf("UpdateFeeAddress returned empty States")
-	}
-	if feeOut.States[0].Object == nil {
-		t.Fatalf("UpdateFeeAddress returned nil state object")
-	}
+	require.NoError(t, err, "UpdateFeeAddress")
+
+	tests.RequireStateObjectsNotNil(t, feeOut.States, 1)
 
 	var fee tokenV1Domain.Fee
 	tests.UnmarshalState(t, feeOut.States[0].Object, &fee)
+	require.Equal(t, tok.Address, fee.TokenAddress)
+	require.Equal(t, owner.PublicKey, fee.FeeAddress)
 
-	if fee.TokenAddress != tok.Address {
-		t.Fatalf("UpdateFeeAddress TokenAddress mismatch: got %s want %s", fee.TokenAddress, tok.Address)
-	}
-	if fee.FeeAddress != owner.PublicKey {
-		t.Fatalf("UpdateFeeAddress FeeAddress mismatch: got %s want %s", fee.FeeAddress, owner.PublicKey)
+	if len(feeOut.Logs) > 0 {
+		tests.RequireLogsBase(t, feeOut.Logs, len(feeOut.Logs))
+		_ = tests.FindLogByType(t, feeOut.Logs, domain.TOKEN_FEE_ADDRESS_UPDATED_LOG)
 	}
 
 	// -------------------------
-	// Metadata (envelope + unmarshal + validate + log)
+	// Metadata (envelope + unmarshal + validate + logs)
 	// -------------------------
 	newSymbol := "2F-NEW" + randSuffix(4)
 	newName := "2Finance New"
+	expAt := time.Now().Add(30 * 24 * time.Hour)
 
 	metaOut, err := c.UpdateMetadata(
 		tok.Address,
@@ -449,280 +262,203 @@ func TestTokenFlowFungible(t *testing.T) {
 		map[string]string{"tag": "e2e"},
 		"creator",
 		"https://creator",
-		time.Now().Add(30*24*time.Hour),
+		expAt,
 	)
-	if err != nil {
-		t.Fatalf("UpdateMetadata: %v", err)
-	}
-	if len(metaOut.States) == 0 {
-		t.Fatalf("UpdateMetadata returned empty States")
-	}
-	if metaOut.States[0].Object == nil {
-		t.Fatalf("UpdateMetadata returned nil state object")
-	}
+	require.NoError(t, err, "UpdateMetadata")
+
+	tests.RequireStateObjectsNotNil(t, metaOut.States, 1)
 
 	var meta tokenV1Domain.Token
 	tests.UnmarshalState(t, metaOut.States[0].Object, &meta)
+	require.Equal(t, tok.Address, meta.Address)
+	require.Equal(t, newSymbol, meta.Symbol)
+	require.Equal(t, newName, meta.Name)
+	require.Equal(t, dec, meta.Decimals)
 
-	if meta.Address != tok.Address {
-		t.Fatalf("UpdateMetadata Address mismatch: got %s want %s", meta.Address, tok.Address)
-	}
-	if meta.Symbol != newSymbol {
-		t.Fatalf("UpdateMetadata Symbol mismatch: got %s want %s", meta.Symbol, newSymbol)
-	}
-	if meta.Name != newName {
-		t.Fatalf("UpdateMetadata Name mismatch: got %s want %s", meta.Name, newName)
-	}
-	if meta.Decimals != dec {
-		t.Fatalf("UpdateMetadata Decimals mismatch: got %d want %d", meta.Decimals, dec)
+	if len(metaOut.Logs) > 0 {
+		tests.RequireLogsBase(t, metaOut.Logs, len(metaOut.Logs))
+		_ = tests.FindLogByType(t, metaOut.Logs, domain.TOKEN_METADATA_UPDATED_LOG)
 	}
 
 	// -------------------------
-	// Revoke Mint Authority (envelope + unmarshal + validate + log)
+	// Revoke Mint Authority (envelope + unmarshal + validate + logs)
 	// -------------------------
 	revMintOut, err := c.RevokeMintAuthority(tok.Address, true)
-	if err != nil {
-		t.Fatalf("RevokeMintAuthority: %v", err)
-	}
-	if len(revMintOut.States) == 0 {
-		t.Fatalf("RevokeMintAuthority returned empty States")
-	}
-	if revMintOut.States[0].Object == nil {
-		t.Fatalf("RevokeMintAuthority returned nil state object")
-	}
+	require.NoError(t, err, "RevokeMintAuthority")
+
+	tests.RequireStateObjectsNotNil(t, revMintOut.States, 1)
 
 	var revMint tokenV1Domain.Token
 	tests.UnmarshalState(t, revMintOut.States[0].Object, &revMint)
+	require.Equal(t, tok.Address, revMint.Address)
+	require.True(t, revMint.MintAuthorityRevoked)
 
-	if revMint.Address != tok.Address {
-		t.Fatalf("RevokeMintAuthority Address mismatch: got %s want %s", revMint.Address, tok.Address)
-	}
-	if !revMint.MintAuthorityRevoked {
-		t.Fatalf("RevokeMintAuthority expected MintAuthorityRevoked=true")
+	if len(revMintOut.Logs) > 0 {
+		tests.RequireLogsBase(t, revMintOut.Logs, len(revMintOut.Logs))
+		_ = tests.FindLogByType(t, revMintOut.Logs, domain.TOKEN_MINT_AUTHORITY_REVOKED_LOG)
 	}
 
 	// -------------------------
-	// Revoke Update Authority (envelope + unmarshal + validate + log)
+	// Revoke Update Authority (envelope + unmarshal + validate + logs)
 	// -------------------------
 	revUpdOut, err := c.RevokeUpdateAuthority(tok.Address, true)
-	if err != nil {
-		t.Fatalf("RevokeUpdateAuthority: %v", err)
-	}
-	if len(revUpdOut.States) == 0 {
-		t.Fatalf("RevokeUpdateAuthority returned empty States")
-	}
-	if revUpdOut.States[0].Object == nil {
-		t.Fatalf("RevokeUpdateAuthority returned nil state object")
-	}
+	require.NoError(t, err, "RevokeUpdateAuthority")
+
+	tests.RequireStateObjectsNotNil(t, revUpdOut.States, 1)
 
 	var revUpd tokenV1Domain.Token
 	tests.UnmarshalState(t, revUpdOut.States[0].Object, &revUpd)
+	require.Equal(t, tok.Address, revUpd.Address)
+	require.True(t, revUpd.UpdateAuthorityRevoked)
 
-	if revUpd.Address != tok.Address {
-		t.Fatalf("RevokeUpdateAuthority Address mismatch: got %s want %s", revUpd.Address, tok.Address)
-	}
-	if !revUpd.UpdateAuthorityRevoked {
-		t.Fatalf("RevokeUpdateAuthority expected UpdateAuthorityRevoked=true")
+	if len(revUpdOut.Logs) > 0 {
+		tests.RequireLogsBase(t, revUpdOut.Logs, len(revUpdOut.Logs))
+		_ = tests.FindLogByType(t, revUpdOut.Logs, domain.TOKEN_UPDATE_AUTHORITY_REVOKED_LOG)
 	}
 
 	// -------------------------
-	// Pause (envelope + unmarshal + validate + log)
+	// Pause (envelope + unmarshal + validate + logs)
 	// -------------------------
 	pauseOut, err := c.PauseToken(tok.Address, true)
-	if err != nil {
-		t.Fatalf("PauseToken: %v", err)
-	}
-	if len(pauseOut.States) == 0 {
-		t.Fatalf("PauseToken returned empty States")
-	}
-	if pauseOut.States[0].Object == nil {
-		t.Fatalf("PauseToken returned nil state object")
-	}
+	require.NoError(t, err, "PauseToken")
+
+	tests.RequireStateObjectsNotNil(t, pauseOut.States, 1)
 
 	var pause tokenV1Domain.Token
 	tests.UnmarshalState(t, pauseOut.States[0].Object, &pause)
+	require.Equal(t, tok.Address, pause.Address)
+	require.True(t, pause.Paused)
 
-	if pause.Address != tok.Address {
-		t.Fatalf("PauseToken Address mismatch: got %s want %s", pause.Address, tok.Address)
-	}
-	if !pause.Paused {
-		t.Fatalf("PauseToken expected Paused=true")
+	if len(pauseOut.Logs) > 0 {
+		tests.RequireLogsBase(t, pauseOut.Logs, len(pauseOut.Logs))
+		_ = tests.FindLogByType(t, pauseOut.Logs, domain.TOKEN_PAUSED_LOG)
 	}
 
 	// -------------------------
-	// Unpause (envelope + unmarshal + validate + log)
+	// Unpause (envelope + unmarshal + validate + logs)
 	// -------------------------
 	unpauseOut, err := c.UnpauseToken(tok.Address, false)
-	if err != nil {
-		t.Fatalf("UnpauseToken: %v", err)
-	}
-	if len(unpauseOut.States) == 0 {
-		t.Fatalf("UnpauseToken returned empty States")
-	}
-	if unpauseOut.States[0].Object == nil {
-		t.Fatalf("UnpauseToken returned nil state object")
-	}
+	require.NoError(t, err, "UnpauseToken")
+
+	tests.RequireStateObjectsNotNil(t, unpauseOut.States, 1)
 
 	var unpause tokenV1Domain.Token
 	tests.UnmarshalState(t, unpauseOut.States[0].Object, &unpause)
+	require.Equal(t, tok.Address, unpause.Address)
+	require.False(t, unpause.Paused)
 
-	if unpause.Address != tok.Address {
-		t.Fatalf("UnpauseToken Address mismatch: got %s want %s", unpause.Address, tok.Address)
-	}
-	if unpause.Paused {
-		t.Fatalf("UnpauseToken expected Paused=false")
+	if len(unpauseOut.Logs) > 0 {
+		tests.RequireLogsBase(t, unpauseOut.Logs, len(unpauseOut.Logs))
+		_ = tests.FindLogByType(t, unpauseOut.Logs, domain.TOKEN_UNPAUSED_LOG)
 	}
 
 	// -------------------------
-	// Freeze wallet (envelope + unmarshal + validate + log)
+	// Freeze wallet (envelope + unmarshal + validate + logs)
 	// -------------------------
 	freezeOut, err := c.FreezeWallet(tok.Address, owner.PublicKey)
-	if err != nil {
-		t.Fatalf("FreezeWallet: %v", err)
-	}
-	if len(freezeOut.States) == 0 {
-		t.Fatalf("FreezeWallet returned empty States")
-	}
-	if freezeOut.States[0].Object == nil {
-		t.Fatalf("FreezeWallet returned nil state object")
-	}
+	require.NoError(t, err, "FreezeWallet")
+
+	tests.RequireStateObjectsNotNil(t, freezeOut.States, 1)
 
 	var freeze tokenV1Domain.Token
 	tests.UnmarshalState(t, freezeOut.States[0].Object, &freeze)
+	require.Equal(t, tok.Address, freeze.Address)
+	require.NotNil(t, freeze.FrozenAccounts)
+	require.True(t, freeze.FrozenAccounts[owner.PublicKey])
 
-	if freeze.Address != tok.Address {
-		t.Fatalf("FreezeWallet Address mismatch: got %s want %s", freeze.Address, tok.Address)
-	}
-	if freeze.Owner == "" {
-		t.Fatalf("FreezeWallet Owner empty")
-	}
-	if freeze.FrozenAccounts == nil {
-		t.Fatalf("FreezeWallet FrozenAccounts nil")
-	}
-	if !freeze.FrozenAccounts[owner.PublicKey] {
-		t.Fatalf("FreezeWallet expected owner to be frozen: %s", owner.PublicKey)
+	if len(freezeOut.Logs) > 0 {
+		tests.RequireLogsBase(t, freezeOut.Logs, len(freezeOut.Logs))
+		_ = tests.FindLogByType(t, freezeOut.Logs, domain.TOKEN_FREEZE_ACCOUNT_LOG)
 	}
 
 	// -------------------------
-	// Unfreeze wallet (envelope + unmarshal + validate + log)
+	// Unfreeze wallet (envelope + unmarshal + validate + logs)
 	// -------------------------
 	unfreezeOut, err := c.UnfreezeWallet(tok.Address, owner.PublicKey)
-	if err != nil {
-		t.Fatalf("UnfreezeWallet: %v", err)
-	}
-	if len(unfreezeOut.States) == 0 {
-		t.Fatalf("UnfreezeWallet returned empty States")
-	}
-	if unfreezeOut.States[0].Object == nil {
-		t.Fatalf("UnfreezeWallet returned nil state object")
-	}
+	require.NoError(t, err, "UnfreezeWallet")
+
+	tests.RequireStateObjectsNotNil(t, unfreezeOut.States, 1)
 
 	var unfreeze tokenV1Domain.Token
 	tests.UnmarshalState(t, unfreezeOut.States[0].Object, &unfreeze)
+	require.Equal(t, tok.Address, unfreeze.Address)
+	require.NotNil(t, unfreeze.FrozenAccounts)
+	require.False(t, unfreeze.FrozenAccounts[owner.PublicKey])
 
-	if unfreeze.Address != tok.Address {
-		t.Fatalf("UnfreezeWallet Address mismatch: got %s want %s", unfreeze.Address, tok.Address)
-	}
-	if unfreeze.FrozenAccounts == nil {
-		t.Fatalf("UnfreezeWallet FrozenAccounts nil")
-	}
-	if unfreeze.FrozenAccounts[owner.PublicKey] {
-		t.Fatalf("UnfreezeWallet expected owner to be unfrozen: %s", owner.PublicKey)
+	if len(unfreezeOut.Logs) > 0 {
+		tests.RequireLogsBase(t, unfreezeOut.Logs, len(unfreezeOut.Logs))
+		_ = tests.FindLogByType(t, unfreezeOut.Logs, domain.TOKEN_UNFREEZE_ACCOUNT_LOG)
 	}
 
 	// -------------------------
-	// GetTokenBalance (envelope + unmarshal + validate + log)
+	// GetTokenBalance (envelope + unmarshal + validate + logs mínimos)
 	// -------------------------
 	getBalOut, err := c.GetTokenBalance(tok.Address, owner.PublicKey)
-	if err != nil {
-		t.Fatalf("GetTokenBalance(owner): %v", err)
-	}
-	if len(getBalOut.States) == 0 {
-		t.Fatalf("GetTokenBalance returned empty States")
-	}
-	if getBalOut.States[0].Object == nil {
-		t.Fatalf("GetTokenBalance returned nil state object")
-	}
+	require.NoError(t, err, "GetTokenBalance(owner)")
 
-	tests.UnmarshalState(t, getBalOut.States[0].Object, &bal)
+	tests.RequireStateObjectsNotNil(t, getBalOut.States, 1)
 
-	if bal.TokenAddress != tok.Address {
-		t.Fatalf("GetTokenBalance TokenAddress mismatch: got %s want %s", bal.TokenAddress, tok.Address)
-	}
-	if bal.OwnerAddress != owner.PublicKey {
-		t.Fatalf("GetTokenBalance OwnerAddress mismatch: got %s want %s", bal.OwnerAddress, owner.PublicKey)
-	}
-	if bal.Amount == "" {
-		t.Fatalf("GetTokenBalance Amount empty")
+	var gotBal tokenV1Domain.Balance
+	tests.UnmarshalState(t, getBalOut.States[0].Object, &gotBal)
+	require.Equal(t, tok.Address, gotBal.TokenAddress)
+	require.Equal(t, owner.PublicKey, gotBal.OwnerAddress)
+	require.NotEmpty(t, gotBal.Amount)
+
+	if len(getBalOut.Logs) > 0 {
+		tests.RequireLogsBase(t, getBalOut.Logs, len(getBalOut.Logs))
 	}
 
 	// -------------------------
-	// ListTokenBalances (envelope + unmarshal + validate + log)
+	// ListTokenBalances (envelope + unmarshal + validate + logs mínimos)
 	// -------------------------
 	listBalOut, err := c.ListTokenBalances(tok.Address, "", 1, 10, true)
-	if err != nil {
-		t.Fatalf("ListTokenBalances: %v", err)
-	}
-	if len(listBalOut.States) == 0 {
-		t.Fatalf("ListTokenBalances returned empty States")
-	}
-	if listBalOut.States[0].Object == nil {
-		t.Fatalf("ListTokenBalances returned nil state object")
-	}
+	require.NoError(t, err, "ListTokenBalances")
+
+	tests.RequireStateObjectsNotNil(t, listBalOut.States, 1)
 
 	var balList []tokenV1Domain.Balance
 	tests.UnmarshalState(t, listBalOut.States[0].Object, &balList)
+	require.NotEmpty(t, balList)
+	require.NotEmpty(t, balList[0].TokenAddress)
 
-	if len(balList) == 0 {
-		t.Fatalf("ListTokenBalances returned empty list")
+	if len(listBalOut.Logs) > 0 {
+		tests.RequireLogsBase(t, listBalOut.Logs, len(listBalOut.Logs))
 	}
 
 	// -------------------------
-	// GetToken (envelope + unmarshal + validate + log)
+	// GetToken (envelope + unmarshal + validate + logs mínimos)
 	// -------------------------
 	getTokOut, err := c.GetToken(tok.Address, "", "")
-	if err != nil {
-		t.Fatalf("GetToken: %v", err)
-	}
-	if len(getTokOut.States) == 0 {
-		t.Fatalf("GetToken returned empty States")
-	}
-	if getTokOut.States[0].Object == nil {
-		t.Fatalf("GetToken returned nil state object")
-	}
+	require.NoError(t, err, "GetToken")
+
+	tests.RequireStateObjectsNotNil(t, getTokOut.States, 1)
 
 	var got tokenV1Domain.Token
 	tests.UnmarshalState(t, getTokOut.States[0].Object, &got)
+	require.Equal(t, tok.Address, got.Address)
+	require.NotEmpty(t, got.Symbol)
+	require.NotEmpty(t, got.Name)
+	require.Equal(t, tok.TokenType, got.TokenType)
 
-	if got.Address != tok.Address {
-		t.Fatalf("GetToken Address mismatch: got %s want %s", got.Address, tok.Address)
-	}
-	if got.Symbol == "" || got.Name == "" {
-		t.Fatalf("GetToken Symbol/Name empty: symbol=%q name=%q", got.Symbol, got.Name)
-	}
-	if got.TokenType != tok.TokenType {
-		t.Fatalf("GetToken TokenType mismatch: got %s want %s", got.TokenType, tok.TokenType)
+	if len(getTokOut.Logs) > 0 {
+		tests.RequireLogsBase(t, getTokOut.Logs, len(getTokOut.Logs))
 	}
 
 	// -------------------------
-	// ListTokens (envelope + unmarshal + validate + log)
+	// ListTokens (envelope + unmarshal + validate + logs mínimos)
 	// -------------------------
 	listTokOut, err := c.ListTokens("", "", "", 1, 10, true)
-	if err != nil {
-		t.Fatalf("ListTokens: %v", err)
-	}
-	if len(listTokOut.States) == 0 {
-		t.Fatalf("ListTokens returned empty States")
-	}
-	if listTokOut.States[0].Object == nil {
-		t.Fatalf("ListTokens returned nil state object")
-	}
+	require.NoError(t, err, "ListTokens")
+
+	tests.RequireStateObjectsNotNil(t, listTokOut.States, 1)
 
 	var tokList []tokenV1Domain.Token
 	tests.UnmarshalState(t, listTokOut.States[0].Object, &tokList)
+	require.NotEmpty(t, tokList)
+	require.NotEmpty(t, tokList[0].Address)
 
-	if len(tokList) == 0 {
-		t.Fatalf("ListTokens returned empty list")
+	if len(listTokOut.Logs) > 0 {
+		tests.RequireLogsBase(t, listTokOut.Logs, len(listTokOut.Logs))
 	}
 }
 
@@ -738,206 +474,198 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType, stablecoin)
 
 	// -------------------------
-	// Token (validate + log)
+	// Mint NFT (envelope + unmarshal + validate + logs + events)
 	// -------------------------
-	if tok.Address == "" {
-		t.Fatalf("token address empty")
-	}
-	if tok.Symbol == "" {
-		t.Fatalf("token symbol empty")
-	}
-	if tok.Name == "" {
-		t.Fatalf("token name empty")
-	}
-	if tok.Decimals != dec {
-		t.Fatalf("token decimals mismatch: got %d want %d", tok.Decimals, dec)
-	}
-	if tok.TokenType != tokenType {
-		t.Fatalf("token type mismatch: got %s want %s", tok.TokenType, tokenType)
-	}
-	if tok.Stablecoin != stablecoin {
-		t.Fatalf("token stablecoin mismatch: got %v want %v", tok.Stablecoin, stablecoin)
-	}
-	if tok.Creator == "" {
-		t.Fatalf("token creator empty")
-	}
-	// if tok.AccessPolicy.Mode == "" {
-	// 	t.Fatalf("token access policy mode empty")
-	// }
-	if tok.AccessPolicy.Users == nil {
-		t.Fatalf("token access policy users nil")
-	}
-	if !tok.AccessPolicy.Users[owner.PublicKey] {
-		t.Fatalf("token access policy must include owner: %s", owner.PublicKey)
-	}
+	mintAmt := amt(35, dec)
 
-	// -------------------------
-	// Mint NFT (envelope + unmarshal + validate + log)
-	// -------------------------
-	mintOut, err := c.MintToken(tok.Address, owner.PublicKey, amt(35, dec), dec, tok.TokenType)
-	if err != nil {
-		t.Fatalf("MintToken NFT: %v", err)
-	}
-	if len(mintOut.States) == 0 {
-		t.Fatalf("MintToken returned empty States")
-	}
-	if mintOut.States[0].Object == nil {
-		t.Fatalf("MintToken returned nil state object")
-	}
+	mintOut, err := c.MintToken(tok.Address, owner.PublicKey, mintAmt, dec, tok.TokenType)
+	require.NoError(t, err, "MintToken NFT")
+
+	// States (Mint, Supply, Balance)
+	tests.RequireStateObjectsNotNil(t, mintOut.States, 3)
 
 	var mint tokenV1Domain.Mint
 	tests.UnmarshalState(t, mintOut.States[0].Object, &mint)
+	require.Equal(t, tok.Address, mint.TokenAddress)
+	require.Equal(t, owner.PublicKey, mint.MintTo)
+	require.Equal(t, mintAmt, mint.Amount)
+	require.Equal(t, tok.TokenType, mint.TokenType)
 
-	if mint.TokenAddress != tok.Address {
-		t.Fatalf("Mint TokenAddress mismatch: got %s want %s", mint.TokenAddress, tok.Address)
-	}
-	if mint.MintTo != owner.PublicKey {
-		t.Fatalf("Mint ToAddress mismatch: got %s want %s", mint.MintTo, owner.PublicKey)
-	}
-	expectedMintAmount := amt(35, dec) // with dec=0, should be "35"
-	if mint.Amount != expectedMintAmount {
-		t.Fatalf("Mint Amount mismatch: got %s want %s", mint.Amount, expectedMintAmount)
-	}
-	if mint.TokenType != tok.TokenType {
-		t.Fatalf("Mint TokenType mismatch: got %s want %s", mint.TokenType, tok.TokenType)
-	}
-	if len(mint.TokenUUIDList) != 35 {
-		t.Fatalf("expected %d uuid, got %d", 35, len(mint.TokenUUIDList))
-	}
-	// sanity: UUIDs not empty
+	require.Len(t, mint.TokenUUIDList, 35, "expected 35 uuids")
 	for i, u := range mint.TokenUUIDList {
-		if u == "" {
-			t.Fatalf("mint uuid[%d] empty", i)
+		require.NotEmpty(t, u, "mint uuid[%d] empty", i)
+	}
+
+	var supplyAfterMint tokenV1Domain.Supply
+	tests.UnmarshalState(t, mintOut.States[1].Object, &supplyAfterMint)
+	require.Equal(t, tok.Address, supplyAfterMint.TokenAddress)
+	require.NotEmpty(t, supplyAfterMint.Amount)
+
+	var balAfterMint tokenV1Domain.Balance
+	tests.UnmarshalState(t, mintOut.States[2].Object, &balAfterMint)
+	require.Equal(t, tok.Address, balAfterMint.TokenAddress)
+	require.Equal(t, owner.PublicKey, balAfterMint.OwnerAddress)
+	require.Equal(t, tok.TokenType, balAfterMint.TokenType)
+	require.NotEmpty(t, balAfterMint.TokenUUIDList, "balance uuid list empty after mint")
+
+	// Logs 
+	tests.RequireLogsBase(t, mintOut.Logs, 3)
+	tests.RequireLogTypesInOrder(t, mintOut.Logs, []string{
+		domain.TOKEN_MINTED_LOG,
+		domain.TOKEN_TOTAL_SUPPLY_INCREASED_LOG,
+		domain.TOKEN_BALANCE_INCREASED_LOG,
+	})
+
+	// Events 
+	mintEvent := tests.UnmarshalJSONB[map[string]any](t, mintOut.Logs[0].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, mintEvent, "token_address"))
+	require.Equal(t, owner.PublicKey, tests.RequireMapFieldString(t, mintEvent, "mint_to"))
+	require.Equal(t, mintAmt, tests.RequireMapFieldString(t, mintEvent, "amount"))
+	require.Equal(t, tok.TokenType, tests.RequireMapFieldString(t, mintEvent, "token_type"))
+
+	supplyMintEvent := tests.UnmarshalJSONB[map[string]any](t, mintOut.Logs[1].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, supplyMintEvent, "token_address"))
+	require.Equal(t, mintAmt, tests.RequireMapFieldString(t, supplyMintEvent, "amount_delta"))
+	require.NotEmpty(t, tests.RequireMapFieldString(t, supplyMintEvent, "total_supply"))
+
+	balanceMintEvent := tests.UnmarshalJSONB[map[string]any](t, mintOut.Logs[2].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, balanceMintEvent, "token_address"))
+	require.Equal(t, owner.PublicKey, tests.RequireMapFieldString(t, balanceMintEvent, "owner"))
+	require.Equal(t, mintAmt, tests.RequireMapFieldString(t, balanceMintEvent, "amount_delta"))
+	require.Equal(t, tok.TokenType, tests.RequireMapFieldString(t, balanceMintEvent, "token_type"))
+
+	// -------------------------
+	// Burn 1 NFT (envelope + unmarshal + validate + logs + events)
+	// -------------------------
+	burnUUID := mint.TokenUUIDList[0]
+	require.NotEmpty(t, burnUUID, "burnUUID empty")
+
+	burnAmt := amt(1, dec) // "1"
+	burnOut, err := c.BurnToken(tok.Address, burnAmt, dec, tok.TokenType, burnUUID)
+	require.NoError(t, err, "BurnToken NFT")
+
+	// States (Burn, Supply, Balance)
+	tests.RequireStateObjectsNotNil(t, burnOut.States, 3)
+
+	var burn tokenV1Domain.Burn
+	tests.UnmarshalState(t, burnOut.States[0].Object, &burn)
+	require.Equal(t, tok.Address, burn.TokenAddress)
+	require.Equal(t, owner.PublicKey, burn.BurnFrom) // signer
+	require.Equal(t, burnAmt, burn.Amount)
+	require.Equal(t, tok.TokenType, burn.TokenType)
+	require.Equal(t, burnUUID, burn.UUID)
+
+	var supplyAfterBurn tokenV1Domain.Supply
+	tests.UnmarshalState(t, burnOut.States[1].Object, &supplyAfterBurn)
+	require.Equal(t, tok.Address, supplyAfterBurn.TokenAddress)
+	require.NotEmpty(t, supplyAfterBurn.Amount)
+
+	var balAfterBurn tokenV1Domain.Balance
+	tests.UnmarshalState(t, burnOut.States[2].Object, &balAfterBurn)
+	require.Equal(t, tok.Address, balAfterBurn.TokenAddress)
+	require.Equal(t, owner.PublicKey, balAfterBurn.OwnerAddress)
+	require.Equal(t, tok.TokenType, balAfterBurn.TokenType)
+	
+	for _, u := range balAfterBurn.TokenUUIDList {
+		require.NotEqual(t, burnUUID, u, "burned uuid must not remain in balance")
+	}
+
+	// Logs 
+	tests.RequireLogsBase(t, burnOut.Logs, 3)
+	tests.RequireLogTypesInOrder(t, burnOut.Logs, []string{
+		domain.TOKEN_BURNED_LOG,
+		domain.TOKEN_TOTAL_SUPPLY_DECREASED_LOG,
+		domain.TOKEN_BALANCE_DECREASED_LOG,
+	})
+
+	// Events
+	burnEvent := tests.UnmarshalJSONB[map[string]any](t, burnOut.Logs[0].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, burnEvent, "token_address"))
+	require.Equal(t, owner.PublicKey, tests.RequireMapFieldString(t, burnEvent, "burn_from"))
+	require.Equal(t, burnAmt, tests.RequireMapFieldString(t, burnEvent, "amount"))
+	require.Equal(t, tok.TokenType, tests.RequireMapFieldString(t, burnEvent, "token_type"))
+	
+	if v, ok := burnEvent["uuid"]; ok {
+		if s, _ := v.(string); s != "" {
+			require.Equal(t, burnUUID, s)
+		}
+	}
+
+	supplyBurnEvent := tests.UnmarshalJSONB[map[string]any](t, burnOut.Logs[1].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, supplyBurnEvent, "token_address"))
+	if v, ok := supplyBurnEvent["amount_delta"]; ok {
+		deltaStr, _ := v.(string)
+		require.Contains(t, []string{"-" + burnAmt, burnAmt}, deltaStr)
+	}
+	if v, ok := supplyBurnEvent["amount"]; ok {
+		amtStr, _ := v.(string)
+		if amtStr != "" {
+			require.Equal(t, burnAmt, amtStr)
+		}
+	}
+
+	balanceBurnEvent := tests.UnmarshalJSONB[map[string]any](t, burnOut.Logs[2].Event)
+	require.Equal(t, tok.Address, tests.RequireMapFieldString(t, balanceBurnEvent, "token_address"))
+	require.Equal(t, owner.PublicKey, tests.RequireMapFieldString(t, balanceBurnEvent, "owner"))
+	require.Equal(t, tok.TokenType, tests.RequireMapFieldString(t, balanceBurnEvent, "token_type"))
+	
+	if v, ok := balanceBurnEvent["uuid"]; ok {
+		if s, _ := v.(string); s != "" {
+			require.Equal(t, burnUUID, s)
 		}
 	}
 
 	// -------------------------
-	// Burn 1 NFT (envelope + unmarshal + validate + log)
-	// -------------------------
-	burnUUID := mint.TokenUUIDList[0]
-	burnOut, err := c.BurnToken(
-		tok.Address,
-		amt(1, dec),
-		dec,
-		tok.TokenType,
-		burnUUID,
-	)
-	if err != nil {
-		t.Fatalf("BurnToken: %v", err)
-	}
-	if len(burnOut.States) == 0 {
-		t.Fatalf("BurnToken returned empty States")
-	}
-	if burnOut.States[0].Object == nil {
-		t.Fatalf("BurnToken returned nil state object")
-	}
-
-	var burn tokenV1Domain.Burn
-	tests.UnmarshalState(t, burnOut.States[0].Object, &burn)
-
-	if burn.TokenAddress != tok.Address {
-		t.Fatalf("Burn TokenAddress mismatch: got %s want %s", burn.TokenAddress, tok.Address)
-	}
-	if burn.BurnFrom != owner.PublicKey {
-		t.Fatalf("Burn FromAddress mismatch: got %s want %s", burn.BurnFrom, owner.PublicKey)
-	}
-	expectedBurnAmount := amt(1, dec) // "1"
-	if burn.Amount != expectedBurnAmount {
-		t.Fatalf("Burn Amount mismatch: got %s want %s", burn.Amount, expectedBurnAmount)
-	}
-	if burn.TokenType != tok.TokenType {
-		t.Fatalf("Burn TokenType mismatch: got %s want %s", burn.TokenType, tok.TokenType)
-	}
-	if burn.UUID != burnUUID {
-		t.Fatalf("Burn UUID mismatch: got %q want %q", burn.UUID, burnUUID)
-	}
-
-	// -------------------------
-	// AllowUsers (envelope + unmarshal + validate + log)
+	// AllowUsers (envelope + unmarshal + validate + logs)
 	// -------------------------
 	receiver, _ := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 
-	allowOut, err := c.AllowUsers(tok.Address, map[string]bool{
-		receiver.PublicKey: true,
-	})
-	if err != nil {
-		t.Fatalf("AllowUsers: %v", err)
-	}
-	if len(allowOut.States) == 0 {
-		t.Fatalf("AllowUsers returned empty States")
-	}
-	if allowOut.States[0].Object == nil {
-		t.Fatalf("AllowUsers returned nil state object")
-	}
+	allowOut, err := c.AllowUsers(tok.Address, map[string]bool{receiver.PublicKey: true})
+	require.NoError(t, err, "AllowUsers")
+
+	tests.RequireStateObjectsNotNil(t, allowOut.States, 1)
 
 	var accessPolicy tokenV1Domain.AccessPolicy
 	tests.UnmarshalState(t, allowOut.States[0].Object, &accessPolicy)
+	require.NotEmpty(t, accessPolicy.Mode)
+	require.NotNil(t, accessPolicy.Users)
+	require.True(t, accessPolicy.Users[receiver.PublicKey])
 
-	if accessPolicy.Mode == "" {
-		t.Fatalf("AllowUsers Mode empty")
-	}
-	if accessPolicy.Users == nil {
-		t.Fatalf("AllowUsers Users nil")
-	}
-	if !accessPolicy.Users[receiver.PublicKey] {
-		t.Fatalf("AllowUsers missing receiver in allowlist: %s", receiver.PublicKey)
+	if len(allowOut.Logs) > 0 {
+		tests.RequireLogsBase(t, allowOut.Logs, len(allowOut.Logs))
+		_ = tests.FindLogByType(t, allowOut.Logs, domain.TOKEN_USERS_ALLOWED_LOG)
 	}
 
 	// -------------------------
-	// Transfer NFT (envelope + unmarshal + validate + log)
+	// Transfer NFT (envelope + unmarshal + validate + logs)
 	// -------------------------
-	transferUUID := mint.TokenUUIDList[1] // uuid that was not burned
-	if transferUUID == burnUUID {
-		t.Fatalf("transferUUID equals burned UUID, test data invalid")
-	}
-	if transferUUID == "" {
-		t.Fatalf("transferUUID empty")
-	}
+	transferUUID := mint.TokenUUIDList[1]
+	require.NotEmpty(t, transferUUID, "transferUUID empty")
+	require.NotEqual(t, burnUUID, transferUUID, "transferUUID equals burned uuid")
 
-	trOut, err := c.TransferToken(
-		tok.Address,
-		receiver.PublicKey,
-		amt(1, dec),
-		dec,
-		tok.TokenType,
-		transferUUID,
-	)
-	if err != nil {
-		t.Fatalf("Transfer NFT: %v", err)
-	}
-	if len(trOut.States) == 0 {
-		t.Fatalf("TransferToken returned empty States")
-	}
-	if trOut.States[0].Object == nil {
-		t.Fatalf("TransferToken returned nil state object")
-	}
+	trAmt := amt(1, dec) // "1"
+	trOut, err := c.TransferToken(tok.Address, receiver.PublicKey, trAmt, dec, tok.TokenType, transferUUID)
+	require.NoError(t, err, "TransferToken NFT")
+
+	tests.RequireStateObjectsNotNil(t, trOut.States, 1)
 
 	var tr tokenV1Domain.Transfer
 	tests.UnmarshalState(t, trOut.States[0].Object, &tr)
+	require.Equal(t, tok.Address, tr.TokenAddress)
+	require.Equal(t, owner.PublicKey, tr.FromAddress)
+	require.Equal(t, receiver.PublicKey, tr.ToAddress)
+	require.Equal(t, trAmt, tr.Amount)
+	require.Equal(t, tok.TokenType, tr.TokenType)
+	require.Equal(t, transferUUID, tr.UUID)
 
-	if tr.TokenAddress != tok.Address {
-		t.Fatalf("Transfer TokenAddress mismatch: got %s want %s", tr.TokenAddress, tok.Address)
-	}
-	if tr.FromAddress != owner.PublicKey {
-		t.Fatalf("Transfer FromAddress mismatch: got %s want %s", tr.FromAddress, owner.PublicKey)
-	}
-	if tr.ToAddress != receiver.PublicKey {
-		t.Fatalf("Transfer ToAddress mismatch: got %s want %s", tr.ToAddress, receiver.PublicKey)
-	}
-	expectedTransferAmount := amt(1, dec) // "1"
-	if tr.Amount != expectedTransferAmount {
-		t.Fatalf("Transfer Amount mismatch: got %s want %s", tr.Amount, expectedTransferAmount)
-	}
-	if tr.TokenType != tok.TokenType {
-		t.Fatalf("Transfer TokenType mismatch: got %s want %s", tr.TokenType, tok.TokenType)
-	}
-	if tr.UUID != transferUUID {
-		t.Fatalf("Transfer UUID mismatch: got %q want %q", tr.UUID, transferUUID)
+	if len(trOut.Logs) > 0 {
+		tests.RequireLogsBase(t, trOut.Logs, len(trOut.Logs))
+		_ = tests.FindLogByType(t, trOut.Logs, domain.TOKEN_TRANSFERRED_LOG)
 	}
 
 	// -------------------------
-	// Fee tiers (envelope + unmarshal + validate + log)
+	// Fee tiers (envelope + unmarshal + validate + logs)
 	// -------------------------
 	feeTiersOut, err := c.UpdateFeeTiers(tok.Address, []map[string]interface{}{
 		{
@@ -948,52 +676,43 @@ func TestTokenFlowNonFungible(t *testing.T) {
 			"fee_bps":    25,
 		},
 	})
-	if err != nil {
-		t.Fatalf("UpdateFeeTiers: %v", err)
-	}
-	if len(feeTiersOut.States) == 0 {
-		t.Fatalf("UpdateFeeTiers returned empty States")
-	}
-	if feeTiersOut.States[0].Object == nil {
-		t.Fatalf("UpdateFeeTiers returned nil state object")
-	}
+	require.NoError(t, err, "UpdateFeeTiers")
+
+	tests.RequireStateObjectsNotNil(t, feeTiersOut.States, 1)
 
 	var feeTiers tokenV1Domain.FeeTiers
 	tests.UnmarshalState(t, feeTiersOut.States[0].Object, &feeTiers)
+	require.NotEmpty(t, feeTiers.FeeTiersList)
 
-	if feeTiers.FeeTiersList == nil || len(feeTiers.FeeTiersList) == 0 {
-		t.Fatalf("UpdateFeeTiers returned empty FeeTiersList")
+	if len(feeTiersOut.Logs) > 0 {
+		tests.RequireLogsBase(t, feeTiersOut.Logs, len(feeTiersOut.Logs))
+		_ = tests.FindLogByType(t, feeTiersOut.Logs, domain.TOKEN_FEE_UPDATED_LOG)
 	}
 
 	// -------------------------
-	// Fee address (envelope + unmarshal + validate + log)
+	// Fee address (envelope + unmarshal + validate + logs)
 	// -------------------------
 	feeOut, err := c.UpdateFeeAddress(tok.Address, owner.PublicKey)
-	if err != nil {
-		t.Fatalf("UpdateFeeAddress: %v", err)
-	}
-	if len(feeOut.States) == 0 {
-		t.Fatalf("UpdateFeeAddress returned empty States")
-	}
-	if feeOut.States[0].Object == nil {
-		t.Fatalf("UpdateFeeAddress returned nil state object")
-	}
+	require.NoError(t, err, "UpdateFeeAddress")
+
+	tests.RequireStateObjectsNotNil(t, feeOut.States, 1)
 
 	var fee tokenV1Domain.Fee
 	tests.UnmarshalState(t, feeOut.States[0].Object, &fee)
+	require.Equal(t, tok.Address, fee.TokenAddress)
+	require.Equal(t, owner.PublicKey, fee.FeeAddress)
 
-	if fee.TokenAddress != tok.Address {
-		t.Fatalf("UpdateFeeAddress TokenAddress mismatch: got %s want %s", fee.TokenAddress, tok.Address)
-	}
-	if fee.FeeAddress != owner.PublicKey {
-		t.Fatalf("UpdateFeeAddress FeeAddress mismatch: got %s want %s", fee.FeeAddress, owner.PublicKey)
+	if len(feeOut.Logs) > 0 {
+		tests.RequireLogsBase(t, feeOut.Logs, len(feeOut.Logs))
+		_ = tests.FindLogByType(t, feeOut.Logs, domain.TOKEN_FEE_ADDRESS_UPDATED_LOG)
 	}
 
 	// -------------------------
-	// Metadata (envelope + unmarshal + validate + log)
+	// Metadata (envelope + unmarshal + validate + logs)
 	// -------------------------
 	newSymbol := "2F-NEW" + randSuffix(4)
 	newName := "2Finance New"
+	expAt := time.Now().Add(30 * 24 * time.Hour)
 
 	metaOut, err := c.UpdateMetadata(
 		tok.Address,
@@ -1008,281 +727,202 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		map[string]string{"tag": "e2e"},
 		"creator",
 		"https://creator",
-		time.Now().Add(30*24*time.Hour),
+		expAt,
 	)
-	if err != nil {
-		t.Fatalf("UpdateMetadata: %v", err)
-	}
-	if len(metaOut.States) == 0 {
-		t.Fatalf("UpdateMetadata returned empty States")
-	}
-	if metaOut.States[0].Object == nil {
-		t.Fatalf("UpdateMetadata returned nil state object")
-	}
+	require.NoError(t, err, "UpdateMetadata")
+
+	tests.RequireStateObjectsNotNil(t, metaOut.States, 1)
 
 	var meta tokenV1Domain.Token
 	tests.UnmarshalState(t, metaOut.States[0].Object, &meta)
+	require.Equal(t, tok.Address, meta.Address)
+	require.Equal(t, newSymbol, meta.Symbol)
+	require.Equal(t, newName, meta.Name)
+	require.Equal(t, dec, meta.Decimals)
 
-	if meta.Address != tok.Address {
-		t.Fatalf("UpdateMetadata Address mismatch: got %s want %s", meta.Address, tok.Address)
-	}
-	if meta.Symbol != newSymbol {
-		t.Fatalf("UpdateMetadata Symbol mismatch: got %s want %s", meta.Symbol, newSymbol)
-	}
-	if meta.Name != newName {
-		t.Fatalf("UpdateMetadata Name mismatch: got %s want %s", meta.Name, newName)
-	}
-	if meta.Decimals != dec {
-		t.Fatalf("UpdateMetadata Decimals mismatch: got %d want %d", meta.Decimals, dec)
+	if len(metaOut.Logs) > 0 {
+		tests.RequireLogsBase(t, metaOut.Logs, len(metaOut.Logs))
+		_ = tests.FindLogByType(t, metaOut.Logs, domain.TOKEN_METADATA_UPDATED_LOG)
 	}
 
 	// -------------------------
-	// Revoke Mint Authority (envelope + unmarshal + validate + log)
+	// Revoke Mint Authority (envelope + unmarshal + validate + logs)
 	// -------------------------
 	revMintOut, err := c.RevokeMintAuthority(tok.Address, true)
-	if err != nil {
-		t.Fatalf("RevokeMintAuthority: %v", err)
-	}
-	if len(revMintOut.States) == 0 {
-		t.Fatalf("RevokeMintAuthority returned empty States")
-	}
-	if revMintOut.States[0].Object == nil {
-		t.Fatalf("RevokeMintAuthority returned nil state object")
-	}
+	require.NoError(t, err, "RevokeMintAuthority")
+
+	tests.RequireStateObjectsNotNil(t, revMintOut.States, 1)
 
 	var revMint tokenV1Domain.Token
 	tests.UnmarshalState(t, revMintOut.States[0].Object, &revMint)
+	require.Equal(t, tok.Address, revMint.Address)
+	require.True(t, revMint.MintAuthorityRevoked)
 
-	if revMint.Address != tok.Address {
-		t.Fatalf("RevokeMintAuthority Address mismatch: got %s want %s", revMint.Address, tok.Address)
-	}
-	if !revMint.MintAuthorityRevoked {
-		t.Fatalf("RevokeMintAuthority expected MintAuthorityRevoked=true")
+	if len(revMintOut.Logs) > 0 {
+		tests.RequireLogsBase(t, revMintOut.Logs, len(revMintOut.Logs))
+		_ = tests.FindLogByType(t, revMintOut.Logs, domain.TOKEN_MINT_AUTHORITY_REVOKED_LOG)
 	}
 
 	// -------------------------
-	// Revoke Update Authority (envelope + unmarshal + validate + log)
+	// Revoke Update Authority (envelope + unmarshal + validate + logs)
 	// -------------------------
 	revUpdOut, err := c.RevokeUpdateAuthority(tok.Address, true)
-	if err != nil {
-		t.Fatalf("RevokeUpdateAuthority: %v", err)
-	}
-	if len(revUpdOut.States) == 0 {
-		t.Fatalf("RevokeUpdateAuthority returned empty States")
-	}
-	if revUpdOut.States[0].Object == nil {
-		t.Fatalf("RevokeUpdateAuthority returned nil state object")
-	}
+	require.NoError(t, err, "RevokeUpdateAuthority")
+
+	tests.RequireStateObjectsNotNil(t, revUpdOut.States, 1)
 
 	var revUpd tokenV1Domain.Token
 	tests.UnmarshalState(t, revUpdOut.States[0].Object, &revUpd)
+	require.Equal(t, tok.Address, revUpd.Address)
+	require.True(t, revUpd.UpdateAuthorityRevoked)
 
-	if revUpd.Address != tok.Address {
-		t.Fatalf("RevokeUpdateAuthority Address mismatch: got %s want %s", revUpd.Address, tok.Address)
-	}
-	if !revUpd.UpdateAuthorityRevoked {
-		t.Fatalf("RevokeUpdateAuthority expected UpdateAuthorityRevoked=true")
+	if len(revUpdOut.Logs) > 0 {
+		tests.RequireLogsBase(t, revUpdOut.Logs, len(revUpdOut.Logs))
+		_ = tests.FindLogByType(t, revUpdOut.Logs, domain.TOKEN_UPDATE_AUTHORITY_REVOKED_LOG)
 	}
 
 	// -------------------------
-	// Pause (envelope + unmarshal + validate + log)
+	// Pause (envelope + unmarshal + validate + logs)
 	// -------------------------
 	pauseOut, err := c.PauseToken(tok.Address, true)
-	if err != nil {
-		t.Fatalf("PauseToken: %v", err)
-	}
-	if len(pauseOut.States) == 0 {
-		t.Fatalf("PauseToken returned empty States")
-	}
-	if pauseOut.States[0].Object == nil {
-		t.Fatalf("PauseToken returned nil state object")
-	}
+	require.NoError(t, err, "PauseToken")
+
+	tests.RequireStateObjectsNotNil(t, pauseOut.States, 1)
 
 	var pause tokenV1Domain.Token
 	tests.UnmarshalState(t, pauseOut.States[0].Object, &pause)
+	require.Equal(t, tok.Address, pause.Address)
+	require.True(t, pause.Paused)
 
-	if pause.Address != tok.Address {
-		t.Fatalf("PauseToken Address mismatch: got %s want %s", pause.Address, tok.Address)
-	}
-	if !pause.Paused {
-		t.Fatalf("PauseToken expected Paused=true")
+	if len(pauseOut.Logs) > 0 {
+		tests.RequireLogsBase(t, pauseOut.Logs, len(pauseOut.Logs))
+		_ = tests.FindLogByType(t, pauseOut.Logs, domain.TOKEN_PAUSED_LOG)
 	}
 
 	// -------------------------
-	// Unpause (envelope + unmarshal + validate + log)
+	// Unpause (envelope + unmarshal + validate + logs)
 	// -------------------------
 	unpauseOut, err := c.UnpauseToken(tok.Address, false)
-	if err != nil {
-		t.Fatalf("UnpauseToken: %v", err)
-	}
-	if len(unpauseOut.States) == 0 {
-		t.Fatalf("UnpauseToken returned empty States")
-	}
-	if unpauseOut.States[0].Object == nil {
-		t.Fatalf("UnpauseToken returned nil state object")
-	}
+	require.NoError(t, err, "UnpauseToken")
+
+	tests.RequireStateObjectsNotNil(t, unpauseOut.States, 1)
 
 	var unpause tokenV1Domain.Token
 	tests.UnmarshalState(t, unpauseOut.States[0].Object, &unpause)
+	require.Equal(t, tok.Address, unpause.Address)
+	require.False(t, unpause.Paused)
 
-	if unpause.Address != tok.Address {
-		t.Fatalf("UnpauseToken Address mismatch: got %s want %s", unpause.Address, tok.Address)
-	}
-	if unpause.Paused {
-		t.Fatalf("UnpauseToken expected Paused=false")
+	if len(unpauseOut.Logs) > 0 {
+		tests.RequireLogsBase(t, unpauseOut.Logs, len(unpauseOut.Logs))
+		_ = tests.FindLogByType(t, unpauseOut.Logs, domain.TOKEN_UNPAUSED_LOG)
 	}
 
 	// -------------------------
-	// Freeze wallet (envelope + unmarshal + validate + log)
+	// Freeze wallet (envelope + unmarshal + validate + logs)
 	// -------------------------
 	freezeOut, err := c.FreezeWallet(tok.Address, owner.PublicKey)
-	if err != nil {
-		t.Fatalf("FreezeWallet: %v", err)
-	}
-	if len(freezeOut.States) == 0 {
-		t.Fatalf("FreezeWallet returned empty States")
-	}
-	if freezeOut.States[0].Object == nil {
-		t.Fatalf("FreezeWallet returned nil state object")
-	}
+	require.NoError(t, err, "FreezeWallet")
+
+	tests.RequireStateObjectsNotNil(t, freezeOut.States, 1)
 
 	var freeze tokenV1Domain.Token
 	tests.UnmarshalState(t, freezeOut.States[0].Object, &freeze)
+	require.Equal(t, tok.Address, freeze.Address)
+	require.NotNil(t, freeze.FrozenAccounts)
+	require.True(t, freeze.FrozenAccounts[owner.PublicKey])
 
-	if freeze.Address != tok.Address {
-		t.Fatalf("FreezeWallet Address mismatch: got %s want %s", freeze.Address, tok.Address)
-	}
-	if freeze.Owner == "" {
-		t.Fatalf("FreezeWallet Owner empty")
-	}
-	if freeze.FrozenAccounts == nil {
-		t.Fatalf("FreezeWallet FrozenAccounts nil")
-	}
-	if !freeze.FrozenAccounts[owner.PublicKey] {
-		t.Fatalf("FreezeWallet expected owner to be frozen: %s", owner.PublicKey)
+	if len(freezeOut.Logs) > 0 {
+		tests.RequireLogsBase(t, freezeOut.Logs, len(freezeOut.Logs))
+		_ = tests.FindLogByType(t, freezeOut.Logs, domain.TOKEN_FREEZE_ACCOUNT_LOG)
 	}
 
 	// -------------------------
-	// Unfreeze wallet (envelope + unmarshal + validate + log)
+	// Unfreeze wallet (envelope + unmarshal + validate + logs)
 	// -------------------------
 	unfreezeOut, err := c.UnfreezeWallet(tok.Address, owner.PublicKey)
-	if err != nil {
-		t.Fatalf("UnfreezeWallet: %v", err)
-	}
-	if len(unfreezeOut.States) == 0 {
-		t.Fatalf("UnfreezeWallet returned empty States")
-	}
-	if unfreezeOut.States[0].Object == nil {
-		t.Fatalf("UnfreezeWallet returned nil state object")
-	}
+	require.NoError(t, err, "UnfreezeWallet")
+
+	tests.RequireStateObjectsNotNil(t, unfreezeOut.States, 1)
 
 	var unfreeze tokenV1Domain.Token
 	tests.UnmarshalState(t, unfreezeOut.States[0].Object, &unfreeze)
+	require.Equal(t, tok.Address, unfreeze.Address)
+	require.NotNil(t, unfreeze.FrozenAccounts)
+	require.False(t, unfreeze.FrozenAccounts[owner.PublicKey])
 
-	if unfreeze.Address != tok.Address {
-		t.Fatalf("UnfreezeWallet Address mismatch: got %s want %s", unfreeze.Address, tok.Address)
-	}
-	if unfreeze.FrozenAccounts == nil {
-		t.Fatalf("UnfreezeWallet FrozenAccounts nil")
-	}
-	if unfreeze.FrozenAccounts[owner.PublicKey] {
-		t.Fatalf("UnfreezeWallet expected owner to be unfrozen: %s", owner.PublicKey)
+	if len(unfreezeOut.Logs) > 0 {
+		tests.RequireLogsBase(t, unfreezeOut.Logs, len(unfreezeOut.Logs))
+		_ = tests.FindLogByType(t, unfreezeOut.Logs, domain.TOKEN_UNFREEZE_ACCOUNT_LOG)
 	}
 
 	// -------------------------
-	// GetTokenBalance (envelope + unmarshal + validate + log)
+	// GetTokenBalance (envelope + unmarshal + validate + logs mínimos)
 	// -------------------------
 	getBalOut, err := c.GetTokenBalance(tok.Address, owner.PublicKey)
-	if err != nil {
-		t.Fatalf("GetTokenBalance(owner): %v", err)
-	}
-	if len(getBalOut.States) == 0 {
-		t.Fatalf("GetTokenBalance returned empty States")
-	}
-	if getBalOut.States[0].Object == nil {
-		t.Fatalf("GetTokenBalance returned nil state object")
-	}
+	require.NoError(t, err, "GetTokenBalance(owner)")
 
-	var balance tokenV1Domain.Balance
-	tests.UnmarshalState(t, getBalOut.States[0].Object, &balance)
+	tests.RequireStateObjectsNotNil(t, getBalOut.States, 1)
 
-	if balance.TokenAddress != tok.Address {
-		t.Fatalf("GetTokenBalance TokenAddress mismatch: got %s want %s", balance.TokenAddress, tok.Address)
-	}
-	if balance.OwnerAddress != owner.PublicKey {
-		t.Fatalf("GetTokenBalance OwnerAddress mismatch: got %s want %s", balance.OwnerAddress, owner.PublicKey)
-	}
-	if balance.Amount == "" {
-		t.Fatalf("GetTokenBalance Amount empty")
+	var gotBal tokenV1Domain.Balance
+	tests.UnmarshalState(t, getBalOut.States[0].Object, &gotBal)
+	require.Equal(t, tok.Address, gotBal.TokenAddress)
+	require.Equal(t, owner.PublicKey, gotBal.OwnerAddress)
+
+	if len(getBalOut.Logs) > 0 {
+		tests.RequireLogsBase(t, getBalOut.Logs, len(getBalOut.Logs))
 	}
 
 	// -------------------------
-	// ListTokenBalances (envelope + unmarshal + validate + log)
+	// ListTokenBalances (envelope + unmarshal + validate + logs mínimos)
 	// -------------------------
 	listBalOut, err := c.ListTokenBalances(tok.Address, "", 1, 10, true)
-	if err != nil {
-		t.Fatalf("ListTokenBalances: %v", err)
-	}
-	if len(listBalOut.States) == 0 {
-		t.Fatalf("ListTokenBalances returned empty States")
-	}
-	if listBalOut.States[0].Object == nil {
-		t.Fatalf("ListTokenBalances returned nil state object")
-	}
+	require.NoError(t, err, "ListTokenBalances")
+
+	tests.RequireStateObjectsNotNil(t, listBalOut.States, 1)
 
 	var balList []tokenV1Domain.Balance
 	tests.UnmarshalState(t, listBalOut.States[0].Object, &balList)
+	require.NotEmpty(t, balList)
+	require.NotEmpty(t, balList[0].TokenAddress)
 
-	if len(balList) == 0 {
-		t.Fatalf("ListTokenBalances returned empty list")
+	if len(listBalOut.Logs) > 0 {
+		tests.RequireLogsBase(t, listBalOut.Logs, len(listBalOut.Logs))
 	}
 
 	// -------------------------
-	// GetToken (envelope + unmarshal + validate + log)
+	// GetToken (envelope + unmarshal + validate + logs mínimos)
 	// -------------------------
 	getTokOut, err := c.GetToken(tok.Address, "", "")
-	if err != nil {
-		t.Fatalf("GetToken: %v", err)
-	}
-	if len(getTokOut.States) == 0 {
-		t.Fatalf("GetToken returned empty States")
-	}
-	if getTokOut.States[0].Object == nil {
-		t.Fatalf("GetToken returned nil state object")
-	}
+	require.NoError(t, err, "GetToken")
+
+	tests.RequireStateObjectsNotNil(t, getTokOut.States, 1)
 
 	var got tokenV1Domain.Token
 	tests.UnmarshalState(t, getTokOut.States[0].Object, &got)
+	require.Equal(t, tok.Address, got.Address)
+	require.NotEmpty(t, got.Symbol)
+	require.NotEmpty(t, got.Name)
+	require.Equal(t, tok.TokenType, got.TokenType)
 
-	if got.Address != tok.Address {
-		t.Fatalf("GetToken Address mismatch: got %s want %s", got.Address, tok.Address)
-	}
-	if got.Symbol == "" || got.Name == "" {
-		t.Fatalf("GetToken Symbol/Name empty: symbol=%q name=%q", got.Symbol, got.Name)
-	}
-	if got.TokenType != tok.TokenType {
-		t.Fatalf("GetToken TokenType mismatch: got %s want %s", got.TokenType, tok.TokenType)
+	if len(getTokOut.Logs) > 0 {
+		tests.RequireLogsBase(t, getTokOut.Logs, len(getTokOut.Logs))
 	}
 
 	// -------------------------
-	// ListTokens (envelope + unmarshal + validate + log)
+	// ListTokens (envelope + unmarshal + validate + logs mínimos)
 	// -------------------------
 	listTokOut, err := c.ListTokens("", "", "", 1, 10, true)
-	if err != nil {
-		t.Fatalf("ListTokens: %v", err)
-	}
-	if len(listTokOut.States) == 0 {
-		t.Fatalf("ListTokens returned empty States")
-	}
-	if listTokOut.States[0].Object == nil {
-		t.Fatalf("ListTokens returned nil state object")
-	}
+	require.NoError(t, err, "ListTokens")
+
+	tests.RequireStateObjectsNotNil(t, listTokOut.States, 1)
 
 	var tokList []tokenV1Domain.Token
 	tests.UnmarshalState(t, listTokOut.States[0].Object, &tokList)
+	require.NotEmpty(t, tokList)
+	require.NotEmpty(t, tokList[0].Address)
 
-	if len(tokList) == 0 {
-		t.Fatalf("ListTokens returned empty list")
+	if len(listTokOut.Logs) > 0 {
+		tests.RequireLogsBase(t, listTokOut.Logs, len(listTokOut.Logs))
 	}
 }
 
@@ -1386,8 +1026,49 @@ func createBasicToken(
 		t.Fatalf("AddToken: %v", err)
 	}
 
+	require.NoError(t, err, "AddToken")
+
+	require.GreaterOrEqual(t, len(out.States), 1, "AddToken must return at least 1 state")
+	require.NotNil(t, out.States[0].Object, "AddToken states[0].Object nil")
+
+	if len(out.Logs) > 0 {
+		tests.RequireLogsBase(t, out.Logs, len(out.Logs))
+		ev := tests.UnmarshalJSONB[map[string]any](t, out.Logs[0].Event)
+		_ = ev
+	}
+
 	var tok tokenV1Domain.Token
 	unmarshalState(t, out.States[0].Object, &tok)
+
+	// validações fortes do token criado
+	require.NotEmpty(t, tok.Address, "token address empty")
+	require.Equal(t, ownerPub, tok.Owner, "token owner mismatch")
+	require.Equal(t, decimals, tok.Decimals, "token decimals mismatch")
+	require.Equal(t, tokenType, tok.TokenType, "token type mismatch")
+	require.Equal(t, stablecoin, tok.Stablecoin, "token stablecoin mismatch")
+
+	require.NotEmpty(t, tok.Symbol)
+	require.NotEmpty(t, tok.Name)
+	require.Equal(t, symbol, tok.Symbol)
+	require.Equal(t, name, tok.Name)
+
+	if tokenType == tokenV1Domain.NON_FUNGIBLE {
+		require.Equal(t, "1", tok.TotalSupply)
+	} else {
+		require.Equal(t, amt(1_000_000, decimals), tok.TotalSupply)
+	}
+
+	if tok.AccessPolicy.Mode != "" {
+		require.Equal(t, accessPolicy.Mode, tok.AccessPolicy.Mode)
+		require.NotNil(t, tok.AccessPolicy.Users)
+		require.True(t, tok.AccessPolicy.Users[ownerPub], "access policy must include owner")
+	}
+
+	if requireFee {
+		require.NotEmpty(t, tok.FeeTiersList, "fee tiers list empty")
+		require.Equal(t, feeAddress, tok.FeeAddress, "fee address mismatch")
+	}
+
 	if tok.Address == "" {
 		t.Fatalf("token address empty")
 	}
