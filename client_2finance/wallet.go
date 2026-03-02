@@ -39,8 +39,6 @@ func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput,
 	data := map[string]interface{}{
 		"address":    address,
 		"public_key": pubKey,
-		//TODO REMOVER
-		"amount":     "0",
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -62,7 +60,7 @@ func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput,
 	return contractOutput, nil
 }
 
-func (c *networkClient) GetWallet(pubKey string) (types.ContractOutput, error) {
+func (c *networkClient) GetWalletByPublicKey(pubKey string) (types.ContractOutput, error) {
 	
 	if pubKey == "" {
 		return types.ContractOutput{}, fmt.Errorf("public key not set")
@@ -86,66 +84,24 @@ func (c *networkClient) GetWallet(pubKey string) (types.ContractOutput, error) {
 	return contractOutput, nil
 }
 
-func (c *networkClient) TransferWallet(to, amount string, decimals int) (types.ContractOutput, error) {
-	if c.publicKey == "" {
-		return types.ContractOutput{}, fmt.Errorf("public key not set")
+func (c *networkClient) GetWalletByAddress(address string) (types.ContractOutput, error) {
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("contract address not set")
 	}
-	if to == "" {
-		return types.ContractOutput{}, fmt.Errorf("to address not set")
-	}
-	if to == c.publicKey {
-		return types.ContractOutput{}, fmt.Errorf("cannot transfer to the same address")
-	}
-	if err := keys.ValidateEDDSAPublicKeyHex(to); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid to address: %w", err)
-	}
-	if amount == "" {
-		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	err := keys.ValidateEDDSAPublicKeyHex(address)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid contract address: %w", err)
 	}
 
-	if decimals != 0 {
-		amountConverted, err := utils.RescaleDecimalString(amount, 0, decimals)
-		if err != nil {
-			return types.ContractOutput{}, fmt.Errorf("failed to convert amount to big int: %w", err)
-		}
-		amount = amountConverted
-	}
-	from := c.publicKey
-	method := walletV1.METHOD_TRANSFER_WALLET
+	method := walletV1.METHOD_GET_WALLET_BY_ADDRESS
 	data := map[string]interface{}{
-		"from":    from,
-		"to":      to,
-		"amount":  amount,
+		"address": address,
 	}
-	version := uint8(1)
-	uuid7, err := utils.NewUUID7()
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
-	}
-	contractOutput, err := c.SignAndSendTransaction(
-		c.chainId,
-		from,
-		to,
-		method,
-		data,
-		version,
-		uuid7)
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
-	}
-	
-	//TODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-	// transferOutput.Transfer = contractOutput.States[0].Object.(*domain.Transfer)
-	// transferOutput.EventTransfer = &contractOutput.Events[0]
-	// transferOutput.LogTypeTransfer = &contractOutput.LogTypes[0]
-	
-	// transferOutput.WalletSender = contractOutput.States[1].Object.(*domain.Wallet)
-	// transferOutput.EventSender = &contractOutput.Events[1]
-	// transferOutput.LogTypeSender = &contractOutput.LogTypes[1]
 
-	// transferOutput.WalletReceiver = contractOutput.States[2].Object.(*domain.Wallet)
-	// transferOutput.EventReceiver = &contractOutput.Events[2]
-	// transferOutput.LogTypeReceiver = &contractOutput.LogTypes[2]
+	contractOutput, err := c.GetState(address, method, data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
+	}
 
 	return contractOutput, nil
 }

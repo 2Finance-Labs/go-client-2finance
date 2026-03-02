@@ -5,13 +5,14 @@ module github.com/2Finance-Labs/go-client-2finance
 
 go 1.24.7
 
-// replace gitlab.com/2finance/2finance-network => /home/luiz/myrepo/2finance-network
+replace gitlab.com/2finance/2finance-network => /home/luiz/myrepo/2finance-network
 
 // replace gitlab.com/2finance/2finance-network => /home/ghausmann/Trabalho/2finance-network
 
 require (
 	github.com/google/uuid v1.6.0
-	gitlab.com/2finance/2finance-network v0.0.0-20260201191645-4801344a0461
+	github.com/stretchr/testify v1.11.1
+	gitlab.com/2finance/2finance-network v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -30,6 +31,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.38.6 // indirect
 	github.com/aws/smithy-go v1.23.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.5.0 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
@@ -47,6 +49,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.11.2 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/smarty/assertions v1.16.0 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
@@ -60,6 +63,7 @@ require (
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
 	gorm.io/gorm v1.30.0 // indirect
 	stathat.com/c/consistent v1.0.0 // indirect

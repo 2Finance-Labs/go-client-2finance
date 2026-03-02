@@ -2,44 +2,113 @@ package e2e_test
 
 
 import (
-	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	walletDomain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/log"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 	"testing"
-	"fmt"
 )
 
-// createWallet generates a keypair, registers the wallet and returns the parsed state + priv.
-func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (walletDomain.Wallet, string) {
+func TestWalletWorkflow(t *testing.T) {
 	t.Helper()
+	c := setupClient(t)
+
 	pub, priv := genKey(t, c)
 	c.SetPrivateKey(priv)
-	contractState := models.ContractStateModel{}
+
 	deployedContract, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
-	if err != nil { t.Fatalf("DeployContract: %v", err) }
-	unmarshalState(t, deployedContract.States[0].Object, &contractState)	
-	fmt.Println("Deployed wallet contract at:", contractState.Address)
-	wOut, err := c.AddWallet(contractState.Address, pub)
-	if err != nil { t.Fatalf("AddWallet: %v", err) }
-	var w walletDomain.Wallet
-	unmarshalState(t, wOut.States[0].Object, &w)
-	if w.PublicKey == "" { t.Fatalf("wallet public key empty") }
-	return w, priv
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
+	if len(deployedContract.Logs) == 0 {
+		t.Fatalf("DeployContract returned no logs")
+	}
+
+	// 1) Unmarshal first deploy log
+	contractLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (DeployContract.Logs[0]): %v", err)
+	}
+
+	// 2) Decode deploy event -> Contract
+	contractDomain, err := utils.UnmarshalEvent[domain.Contract](contractLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (DeployContract.Logs[0]): %v", err)
+	}
+	if contractDomain.Address == "" {
+		t.Fatalf("contract address empty (event=%s)", string(contractLog.Event))
+	}
+
+	// 3) AddWallet
+	wOut, err := c.AddWallet(contractDomain.Address, pub)
+	if err != nil {
+		t.Fatalf("AddWallet: %v", err)
+	}
+	if len(wOut.Logs) == 0 {
+		t.Fatalf("AddWallet returned no logs")
+	}
+
+	// 4) Unmarshal first add-wallet log
+	walletLog, err := utils.UnmarshalLog[log.Log](wOut.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (AddWallet.Logs[0]): %v", err)
+	}
+
+	// 5) Decode add-wallet event -> Wallet
+	wallet, err := utils.UnmarshalEvent[walletDomain.Wallet](walletLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (AddWallet.Logs[0]): %v", err)
+	}
+	if wallet.PublicKey == "" {
+		t.Fatalf("wallet public key empty (event=%s)", string(walletLog.Event))
+	}
+
+	wState, err := c.GetWalletByAddress(contractDomain.Address)
+	if err != nil {
+		t.Fatalf("GetWallet: %v", err)
+	}
+	if len(wState.Logs) != 0 {
+		t.Fatalf("GetWallet returned logs")
+	}
+
+	if wState.States == nil || len(wState.States) == 0 {
+		t.Fatalf("GetWallet returned no states")
+	}
+
+	walletState := walletDomain.Wallet{}
+	err = utils.UnmarshalState[walletDomain.Wallet](wState.States[0].Object, &walletState)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetWallet.States[0]): %v", err)
+	}
+	if walletState.PublicKey == "" {
+		t.Fatalf("wallet state public key empty (state=%s)", wState.States[0].Object)
+	}
+	if walletState.PublicKey != wallet.PublicKey {
+		t.Fatalf("wallet state public key mismatch: expected %s, got %s", wallet.PublicKey, walletState.PublicKey)
+	}
+
+	wStateByPub, err := c.GetWalletByPublicKey(wallet.PublicKey)
+	if err != nil {
+		t.Fatalf("GetWalletByPublicKey: %v", err)
+	}
+	if len(wStateByPub.Logs) != 0 {
+		t.Fatalf("GetWalletByPublicKey returned logs")
+	}
+	if wStateByPub.States == nil || len(wStateByPub.States) == 0 {
+		t.Fatalf("GetWalletByPublicKey returned no states")
+	}
+
+	walletStateByPub := walletDomain.Wallet{}
+	err = utils.UnmarshalState[walletDomain.Wallet](wStateByPub.States[0].Object, &walletStateByPub)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetWalletByPublicKey.States[0]): %v", err)
+	}
+	if walletStateByPub.PublicKey == "" {
+		t.Fatalf("wallet state public key empty (state=%s)", wStateByPub.States[0].Object)
+	}
+	if walletStateByPub.PublicKey != wallet.PublicKey {
+		t.Fatalf("wallet state public key mismatch: expected %s, got %s", wallet.PublicKey, walletStateByPub.PublicKey)
+	}
+
 }
-
-
-// import "testing"
-
-
-// func TestWalletTransferOptional(t *testing.T) {
-// 	c := setupClient(t)
-// 	sender, senderPriv := createWallet(t, c)
-// 	rec, _ := createWallet(t, c)
-// 	c.SetPrivateKey(senderPriv)
-
-// 	if _, err := c.TransferWallet(rec.PublicKey, "1", 0); err != nil {
-// 		// Depending on your implementation this may be unsupported; don't fail the suite.
-// 		t.Skipf("TransferWallet not enabled or failed: %v", err)
-// 	}
-// }
