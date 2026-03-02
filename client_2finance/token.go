@@ -164,14 +164,6 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, token
 		return types.ContractOutput{}, fmt.Errorf("invalid mint to address: %w", err)
 	}
 
-	if decimals != 0 {
-		amountConverted, err := utils.RescaleDecimalString(amount, 0, decimals)
-		if err != nil {
-			return types.ContractOutput{}, fmt.Errorf("failed to convert amount to big int: %w", err)
-		}
-		amount = amountConverted
-	}
-
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -227,14 +219,6 @@ func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType str
 		if uuid == "" {
 			return types.ContractOutput{}, fmt.Errorf("uuid not set")
 		}
-	}
-
-	if decimals != 0 {
-		amountConverted, err := utils.RescaleDecimalString(amount, 0, decimals)
-		if err != nil {
-			return types.ContractOutput{}, fmt.Errorf("failed to convert amount to big int: %w", err)
-		}
-		amount = amountConverted
 	}
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
@@ -294,14 +278,6 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	}
 	if from == transferTo {
 		return types.ContractOutput{}, fmt.Errorf("from and to addresses are the same")
-	}
-
-	if decimals != 0 {
-		amountConverted, err := utils.RescaleDecimalString(amount, 0, decimals)
-		if err != nil {
-			return types.ContractOutput{}, fmt.Errorf("failed to convert amount to big int: %w", err)
-		}
-		amount = amountConverted
 	}
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {

@@ -8,6 +8,8 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 	"testing"
+	"github.com/stretchr/testify/assert"
+
 )
 
 func TestWalletWorkflow(t *testing.T) {
@@ -30,7 +32,7 @@ func TestWalletWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (DeployContract.Logs[0]): %v", err)
 	}
-
+	assert.Equal(t, contractLog.LogType, domain.DEPLOYED_CONTRACT_LOG, "deploy log type mismatch")
 	// 2) Decode deploy event -> Contract
 	contractDomain, err := utils.UnmarshalEvent[domain.Contract](contractLog.Event)
 	if err != nil {
@@ -54,16 +56,15 @@ func TestWalletWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddWallet.Logs[0]): %v", err)
 	}
-
+	assert.Equal(t, walletLog.LogType, walletDomain.WALLET_CREATED_LOG, "add-wallet log type mismatch")
 	// 5) Decode add-wallet event -> Wallet
 	wallet, err := utils.UnmarshalEvent[walletDomain.Wallet](walletLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddWallet.Logs[0]): %v", err)
 	}
-	if wallet.PublicKey == "" {
-		t.Fatalf("wallet public key empty (event=%s)", string(walletLog.Event))
-	}
-
+	assert.Equal(t, wallet.PublicKey, pub, "wallet public key mismatch")
+	
+	// 6) GetWallet by address
 	wState, err := c.GetWalletByAddress(contractDomain.Address)
 	if err != nil {
 		t.Fatalf("GetWallet: %v", err)
@@ -87,6 +88,7 @@ func TestWalletWorkflow(t *testing.T) {
 	if walletState.PublicKey != wallet.PublicKey {
 		t.Fatalf("wallet state public key mismatch: expected %s, got %s", wallet.PublicKey, walletState.PublicKey)
 	}
+	
 
 	wStateByPub, err := c.GetWalletByPublicKey(wallet.PublicKey)
 	if err != nil {
@@ -104,11 +106,6 @@ func TestWalletWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetWalletByPublicKey.States[0]): %v", err)
 	}
-	if walletStateByPub.PublicKey == "" {
-		t.Fatalf("wallet state public key empty (state=%s)", wStateByPub.States[0].Object)
-	}
-	if walletStateByPub.PublicKey != wallet.PublicKey {
-		t.Fatalf("wallet state public key mismatch: expected %s, got %s", wallet.PublicKey, walletStateByPub.PublicKey)
-	}
+	assert.Equal(t, walletStateByPub.PublicKey, walletState.PublicKey, "wallet state public key mismatch between GetWallet and GetWalletByPublicKey")
 
 }

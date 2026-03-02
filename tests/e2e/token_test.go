@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 	//"strconv"
+	//"fmt"
 
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
@@ -18,19 +19,23 @@ func TestTokenFlowFungible(t *testing.T) {
 	_, ownerPub, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 
+	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
+	contractLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (AddWallet.Logs[0]): %v", err)
+	}
+	address := contractLog.ContractAddress
+
 	decimals := 6
 	tokenType := tokenV1Domain.FUNGIBLE
-
 	stablecoin := false
-
 	symbol := "2F" + randSuffix(4)
 	name := "2Finance"
 	var totalSupply string
-	if tokenType == tokenV1Domain.NON_FUNGIBLE {
-		totalSupply = "1"
-	} else {
-		totalSupply = amt(1_000_000, decimals)
-	}
+	totalSupply = "100000000"
 	description := "e2e token created by tests"
 	image := "https://example.com/image.png"
 	website := "https://example.com"
@@ -59,24 +64,12 @@ func TestTokenFlowFungible(t *testing.T) {
 			},
 		}
 	}
-
 	feeAddress := ownerPub
 	freezeAuthorityRevoked := false
 	mintAuthorityRevoked := false
 	updateAuthorityRevoked := false
 	paused := false
 	expiredAt := time.Time{}
-
-	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
-	if err != nil {
-		t.Fatalf("DeployContract: %v", err)
-	}
-	contractLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
-	if err != nil {
-		t.Fatalf("UnmarshalLog (AddWallet.Logs[0]): %v", err)
-	}
-	address := contractLog.ContractAddress
-
 	assetGLBUri := "https://example.com/asset.glb"
 	transferable := true
 
@@ -113,18 +106,76 @@ func TestTokenFlowFungible(t *testing.T) {
 		t.Fatalf("AddToken: %v", err)
 	}
 
-	unmarshalLog, err := utils.UnmarshalLog[log.Log](out.Logs[0])
+	unmarshalLogToken, err := utils.UnmarshalLog[log.Log](out.Logs[0])
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddToken.Logs[0]): %v", err)
 	}
-	tok, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLog.Event)
+	assert.Equal(t, unmarshalLogToken.LogType, tokenV1Domain.TOKEN_CREATED_LOG, "add-token log type mismatch")
+	tok, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogToken.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddToken.Logs[0]): %v", err)
 	}
 
-	if tok.Address == "" {
-		t.Fatalf("token address empty (event=%s)", string(unmarshalLog.Event))
+	assert.Equal(t, tok.Address, address, "token address mismatch")
+	assert.Equal(t, tok.Symbol, symbol, "token symbol mismatch")
+	assert.Equal(t, tok.Name, name, "token name mismatch")
+	assert.Equal(t, tok.Decimals, decimals, "token decimals mismatch")
+	assert.Equal(t, tok.TotalSupply, totalSupply, "token total supply mismatch")
+	assert.Equal(t, tok.Description, description, "token description mismatch")
+	assert.Equal(t, tok.Image, image, "token image mismatch")
+	assert.Equal(t, tok.Website, website, "token website mismatch")
+	assert.Equal(t, tok.TagsSocialMedia["twitter"], tagsSocial["twitter"], "token tags social mismatch")
+	assert.Equal(t, tok.TagsCategory["category"], tagsCat["category"], "token tags category mismatch")
+	assert.Equal(t, tok.Tags["tag1"], tags["tag1"], "token tags mismatch")
+	assert.Equal(t, tok.Creator, creator, "token creator mismatch")
+	assert.Equal(t, tok.CreatorWebsite, creatorWebsite, "token creator website mismatch")
+	assert.Equal(t, tok.AccessPolicy.Mode, accessPolicy.Mode, "token access policy mode mismatch")
+	assert.Equal(t, tok.AccessPolicy.Users[ownerPub], accessPolicy.Users[ownerPub], "token access policy users mismatch")
+	assert.Equal(t, tok.FrozenAccounts[ownerPub], frozenAccounts[ownerPub], "token frozen accounts mismatch")
+	// Skipping fee tiers deep equality for simplicity
+	assert.Equal(t, tok.FeeAddress, feeAddress, "token fee address mismatch")
+	assert.Equal(t, tok.FreezeAuthorityRevoked, freezeAuthorityRevoked, "token freeze authority revoked mismatch")
+	assert.Equal(t, tok.MintAuthorityRevoked, mintAuthorityRevoked, "token mint authority revoked mismatch")
+	assert.Equal(t, tok.UpdateAuthorityRevoked, updateAuthorityRevoked, "token update authority revoked mismatch")
+	assert.Equal(t, tok.Paused, paused, "token paused mismatch")
+	// Skipping expiredAt deep equality for simplicity
+	assert.Equal(t, tok.AssetGLBUri, assetGLBUri, "token asset GLB URI mismatch")
+	assert.Equal(t, tok.TokenType, tokenType, "token type mismatch")
+	assert.Equal(t, tok.Transferable, transferable, "token transferable mismatch")
+	assert.Equal(t, tok.Stablecoin, stablecoin, "token stablecoin mismatch")
+
+	unmarshalLogMint, err := utils.UnmarshalLog[log.Log](out.Logs[1])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (AddToken.Logs[1]): %v", err)
 	}
+	assert.Equal(t, unmarshalLogMint.LogType, tokenV1Domain.TOKEN_MINTED_LOG, "mint log type mismatch")
+	mint, err := utils.UnmarshalEvent[tokenV1Domain.Mint](unmarshalLogMint.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (AddToken.Logs[1]): %v", err)
+	}
+
+	assert.Equal(t, mint.TokenAddress, tok.Address, "mint to address mismatch")
+	assert.Equal(t, mint.MintTo, ownerPub, "mint to address mismatch")
+	assert.Equal(t, mint.Amount, totalSupply, "mint amount mismatch")
+	assert.Equal(t, mint.TokenType, tokenType, "mint token type mismatch")
+	assert.Equal(t, mint.TokenUUIDList, []string(nil), "mint token UUID list mismatch") // Should be nil for fungible tokens
+
+	unmarshalLogBalance, err := utils.UnmarshalLog[log.Log](out.Logs[2])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (AddToken.Logs[2]): %v", err)
+	}
+	assert.Equal(t, unmarshalLogBalance.LogType, tokenV1Domain.TOKEN_BALANCE_INCREASED_LOG, "balance log type mismatch")
+
+	balance, err := utils.UnmarshalEvent[tokenV1Domain.Balance](unmarshalLogBalance.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (AddToken.Logs[2]): %v", err)
+	}
+
+	assert.Equal(t, balance.TokenAddress, tok.Address, "balance token address mismatch")
+	assert.Equal(t, balance.OwnerAddress, ownerPub, "balance wallet address mismatch")
+	assert.Equal(t, balance.Amount, totalSupply, "balance amount mismatch")
+	assert.Equal(t, balance.TokenType, tokenType, "balance token type mismatch")
+	assert.Equal(t, balance.TokenUUIDList, []string(nil), "balance token UUID list mismatch") // Should be nil for fungible tokens
 
 	getTokenOut, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -165,14 +216,77 @@ func TestTokenFlowFungible(t *testing.T) {
 	assert.Equal(t, tokenState.Transferable, transferable, "token transferable mismatch")
 	assert.Equal(t, tokenState.Stablecoin, stablecoin, "token stablecoin mismatch")
 
+	mintAmount := "1000000"
+	// Mint & Burn
+	mintToken, err := c.MintToken(tok.Address, ownerPub, mintAmount, decimals, tok.TokenType)
+	if err != nil {
+		t.Fatalf("MintToken: %v", err)
+	}
 
+	unmarshalLogMint2, err := utils.UnmarshalLog[log.Log](mintToken.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (MintToken.Logs[0]): %v", err)
+	}
+	assert.Equal(t, unmarshalLogMint2.LogType, tokenV1Domain.TOKEN_MINTED_LOG, "mint log type mismatch")
+	mint2, err := utils.UnmarshalEvent[tokenV1Domain.Mint](unmarshalLogMint2.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (MintToken.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, mint2.TokenAddress, tok.Address, "mint to address mismatch")
+	assert.Equal(t, mint2.MintTo, ownerPub, "mint to address mismatch")
+	assert.Equal(t, mint2.Amount, mintAmount, "mint amount mismatch")
+	assert.Equal(t, mint2.TokenType, tokenType, "mint token type mismatch")
+	assert.Equal(t, mint2.TokenUUIDList, []string(nil), "mint token UUID list mismatch") // Should be nil for fungible tokens
+
+	unmmarshalLogSupply, err := utils.UnmarshalLog[log.Log](mintToken.Logs[1])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (MintToken.Logs[1]): %v", err)
+	}
+	assert.Equal(t, unmmarshalLogSupply.LogType, tokenV1Domain.TOKEN_TOTAL_SUPPLY_INCREASED_LOG, "supply log type mismatch")
+	supply, err := utils.UnmarshalEvent[tokenV1Domain.Supply](unmmarshalLogSupply.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (MintToken.Logs[1]): %v", err)
+	}
+	assert.Equal(t, supply.TokenAddress, tok.Address, "supply token address mismatch")
+	assert.Equal(t, supply.Amount, mintAmount, "total supply mismatch after mint")
+
+	unmarshalLogBalance2, err := utils.UnmarshalLog[log.Log](mintToken.Logs[2])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (MintToken.Logs[2]): %v", err)
+	}
+	assert.Equal(t, unmarshalLogBalance2.LogType, tokenV1Domain.TOKEN_BALANCE_INCREASED_LOG, "balance log type mismatch")
+	balance2, err := utils.UnmarshalEvent[tokenV1Domain.Balance](unmarshalLogBalance2.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (MintToken.Logs[2]): %v", err)
+	}
+
+	assert.Equal(t, balance2.TokenAddress, tok.Address, "balance token address mismatch")
+	assert.Equal(t, balance2.OwnerAddress, ownerPub, "balance wallet address mismatch")
+	assert.Equal(t, balance2.Amount, mintAmount, "balance amount mismatch after mint")
+	assert.Equal(t, balance2.TokenType, tokenType, "balance token type mismatch")
+	assert.Equal(t, balance2.TokenUUIDList, []string(nil), "balance token UUID list mismatch") // Should be nil for fungible tokens
 
 	
+	getTokenOut2, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
+	
+	var tokenState2 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut2.States[0].Object, &tokenState2)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
 
-	// Mint & Burn
-	// if _, err := c.MintToken(tok.Address, owner.PublicKey, amt(35, decimals), decimals, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken: %v", err)
-	// }
+	sumTotalSupply, err := utils.AddBigIntStrings(totalSupply, mintAmount)
+	if err != nil {
+		t.Fatalf("AddBigIntStrings: %v", err)
+	}
+
+	assert.Equal(t, tokenState2.TotalSupply, sumTotalSupply, "token total supply mismatch after mint")
+	
+	
 	// if _, err := c.BurnToken(tok.Address, amt(12, decimals), decimals, tok.TokenType, ""); err != nil {
 	// 	t.Fatalf("BurnToken: %v", err)
 	// }
