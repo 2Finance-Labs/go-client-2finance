@@ -69,8 +69,8 @@ type Client2FinanceNetwork interface {
 
 	// WALLET
 	AddWallet(address, pubKey string) (types.ContractOutput, error)
-	GetWallet(pubKey string) (types.ContractOutput, error)
-	TransferWallet(to, amount string, decimals int) (types.ContractOutput, error)
+	GetWalletByPublicKey(pubKey string) (types.ContractOutput, error)
+	GetWalletByAddress(address string) (types.ContractOutput, error)
 
 	// TOKEN
 	AddToken(

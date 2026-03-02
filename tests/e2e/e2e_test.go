@@ -1,18 +1,22 @@
 package e2e_test
 
 import (
+	"testing"
+
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
+	//"encoding/json"
 	"fmt"
 	"math/big"
 	"os"
-	"testing"
 	"time"
 
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	"gitlab.com/2finance/2finance-network/config"
+	// "gitlab.com/2finance/2finance-network/blockchain/log"
+
+	
 )
 
 // ----------------------------------------------------------------------------
@@ -43,17 +47,6 @@ func randSuffix(n int) string {
 	return hex.EncodeToString(b)[:n]
 }
 
-// unmarshalState decodes an arbitrary state object into a typed struct.
-func unmarshalState[T any](t *testing.T, obj any, out *T) {
-	t.Helper()
-	by, err := json.Marshal(obj)
-	if err != nil {
-		t.Fatalf("marshal state: %v", err)
-	}
-	if err := json.Unmarshal(by, out); err != nil {
-		t.Fatalf("unmarshal state: %v", err)
-	}
-}
 
 // amt builds integer string respecting decimals (unscaled * 10^decimals)
 func amt(unscaled int64, decimals int) string {
