@@ -820,7 +820,6 @@ func (c *networkClient) DeployContract1(contractVersion string) (types.ContractO
 	}
 
 	to := types.DEPLOY_CONTRACT_ADDRESS
-
 	method := contractV1.METHOD_DEPLOY_CONTRACT
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
@@ -850,10 +849,13 @@ func (c *networkClient) DeployContract2(contractVersion, contractAddress string)
 	if contractVersion == "" {
 		return types.ContractOutput{}, fmt.Errorf("contract version is required")
 	}
-	to := ""
-	if contractAddress != "" {
-		to = contractAddress
+	if contractAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("contract address is required")
 	}
+	if err := keys.ValidateEDDSAPublicKeyHex(contractAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid contract address: %w", err)
+	}
+	to := contractAddress
 	method := contractV1.METHOD_DEPLOY_CONTRACT2
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
