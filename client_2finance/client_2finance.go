@@ -850,7 +850,7 @@ func (c *networkClient) DeployContract2(contractVersion, contractAddress string)
 	if contractVersion == "" {
 		return types.ContractOutput{}, fmt.Errorf("contract version is required")
 	}
-	to := types.DEPLOY_CONTRACT_ADDRESS
+	to := ""
 	if contractAddress != "" {
 		to = contractAddress
 	}
