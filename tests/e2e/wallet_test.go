@@ -3,13 +3,13 @@ package e2e_test
 
 import (
 	walletDomain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
+	walletModels "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/models"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 	"testing"
 	"github.com/stretchr/testify/assert"
-
 )
 
 func TestWalletWorkflow(t *testing.T) {
@@ -63,6 +63,7 @@ func TestWalletWorkflow(t *testing.T) {
 		t.Fatalf("UnmarshalEvent (AddWallet.Logs[0]): %v", err)
 	}
 	assert.Equal(t, wallet.PublicKey, pub, "wallet public key mismatch")
+	assert.Equal(t, wallet.Address, contractDomain.Address, "wallet address mismatch with contract address")
 	
 	// 6) GetWallet by address
 	wState, err := c.GetWalletByAddress(contractDomain.Address)
@@ -101,11 +102,13 @@ func TestWalletWorkflow(t *testing.T) {
 		t.Fatalf("GetWalletByPublicKey returned no states")
 	}
 
-	walletStateByPub := walletDomain.Wallet{}
-	err = utils.UnmarshalState[walletDomain.Wallet](wStateByPub.States[0].Object, &walletStateByPub)
+	walletStateByPub := walletModels.WalletStateModel{}
+	err = utils.UnmarshalState[walletModels.WalletStateModel](wStateByPub.States[0].Object, &walletStateByPub)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetWalletByPublicKey.States[0]): %v", err)
 	}
 	assert.Equal(t, walletStateByPub.PublicKey, walletState.PublicKey, "wallet state public key mismatch between GetWallet and GetWalletByPublicKey")
-
+	assert.Equal(t, walletStateByPub.Address, walletState.Address, "wallet state address mismatch between GetWallet and GetWalletByPublicKey")
+	assert.NotEmpty(t, walletStateByPub.CreatedAt, "wallet state CreatedAt should not be empty")
+	assert.NotEmpty(t, walletStateByPub.UpdatedAt, "wallet state UpdatedAt should not be empty")
 }
