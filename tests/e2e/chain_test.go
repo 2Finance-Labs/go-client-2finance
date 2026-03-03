@@ -7,39 +7,72 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	// "gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
-	// "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
+	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"encoding/json"
 	"time"
+	"github.com/stretchr/testify/assert"
 )
 
 
-func TestChainBasics(t *testing.T) {
-	// c := setupClient(t)
-	// w, _ := createWallet(t, c)
+func TestContractDeployment1(t *testing.T) {
+	c := setupClient(t)
+	_, priv := createWallet(t, c)
+	c.SetPrivateKey(priv)
 
-	// _, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
-    // if err != nil {
-    //     t.Fatalf("DeployContract wallet: %v", err)
-    // }
+	contractOutput, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
+    if err != nil {
+        t.Fatalf("DeployContract wallet: %v", err)
+    }
 
-	// if got, err := c.GetWallet(w.PublicKey); err != nil {
-	// t.Fatalf("GetWallet: %v", err)
-	// } else {
-	// var w2 struct{ PublicKey string `json:"public_key"` }
-	// unmarshalState(t, got.States[0].Object, &w2)
-	// if w2.PublicKey != w.PublicKey { t.Fatalf("wallet mismatch: %s != %s", w2.PublicKey, w.PublicKey) }
-	// }
+	unmarshaledLog, err := utils.UnmarshalLog[log.Log](contractOutput.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog: %v", err)
+	}
 
-	// // Transactions / Logs (best effort – may be zero depending on backend retention)
-	// if txs, err := c.ListTransactions(w.PublicKey, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
-	// _, _ = c.ListLogs([]string{"wallet_created"}, 0, txs[0].Hash, nil, "", 1, 10, true)
-	// }
+	unmarshaledEvent, err := utils.UnmarshalEvent[domain.Contract](unmarshaledLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent: %v", err)
+	}
 
+	assert.NotEmpty(t, unmarshaledEvent.Address, "deployed contract address should not be empty")
+	assert.Equal(t, unmarshaledEvent.ContractVersion, walletV1.WALLET_CONTRACT_V1, "deployed contract version mismatch")
 
-	// // Blocks (best effort)
-	// _, _ = c.ListBlocks(0, time.Time{}, "", "", "", 1, 5, true)
+	if txs, err := c.ListTransactions(unmarshaledEvent.Address, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
+		_, _ = c.ListLogs([]string{"deploy contract"}, 0, txs[0].Hash, nil, "", 1, 10, true)
+	}
 }
 
+func TestContractDeployment2(t *testing.T) {
+	c := setupClient(t)
+	_, priv := createWallet(t, c)
+	c.SetPrivateKey(priv)
+
+	genKeyPub, _ := genKey(t, c)
+
+	contractOutput, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, genKeyPub)
+	if err != nil {
+		t.Fatalf("DeployContract2 wallet: %v", err)
+	}
+
+	unmarshaledLog, err := utils.UnmarshalLog[log.Log](contractOutput.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog: %v", err)
+	}
+
+	unmarshaledEvent, err := utils.UnmarshalEvent[domain.Contract](unmarshaledLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent: %v", err)
+	}
+
+	assert.NotEmpty(t, unmarshaledEvent.Address, "deployed contract address should not be empty")
+	assert.Equal(t, unmarshaledEvent.ContractVersion, walletV1.WALLET_CONTRACT_V1, "deployed contract version mismatch")
+
+	if txs, err := c.ListTransactions(unmarshaledEvent.Address, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
+		_, _ = c.ListLogs([]string{"deploy contract"}, 0, txs[0].Hash, nil, "", 1, 10, true)
+	}
+}
 
 func Test_SetPrivateKey_Getters(t *testing.T) {
 	c := setupClient(t)
@@ -143,54 +176,68 @@ func Test_SignTransaction(t *testing.T) {
 }
 
 func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
-	// c := setupClient(t)
+	c := setupClient(t)
 
-	// // without SetPrivateKey -> no public key in client
-	// if _, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1); err == nil {
-	// 	t.Fatalf("expected error when from address is not set")
-	// }
+	// without SetPrivateKey -> no public key in client
+	if _, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1); err == nil {
+		t.Fatalf("expected error when from address is not set")
+	}
 
-	// // set signer
-	// _, priv := genKey(t, c)
-	// c.SetPrivateKey(priv)
+	// set signer
+	_, priv := genKey(t, c)
+	c.SetPrivateKey(priv)
 
-	// // empty contract version
-	// if _, err := c.DeployContract1(""); err == nil {
-	// 	t.Fatalf("expected error when contract version is empty")
-	// }
+	// empty contract version
+	if _, err := c.DeployContract1(""); err == nil {
+		t.Fatalf("expected error when contract version is empty")
+	}
 
-	// // happy path: deploy wallet contract
-	// deployed, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
-	// if err != nil {
-	// 	t.Fatalf("DeployContract: %v", err)
-	// }
-	// var cs models.ContractStateModel
-	// unmarshalState(t, deployed.States[0].Object, &cs)
-	// if cs.Address == "" {
-	// 	t.Fatalf("deployed contract state has empty address")
-	// }
+	// happy path: deploy wallet contract
+	deployedContract, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
 
-	// pub, priv := genKey(t, c)
+	contractLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (AddWallet.Logs[0]): %v", err)
+	}
 
-	// deployed2, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, pub)
-	// if err != nil {
-	// 	t.Fatalf("DeployContract: %v", err)
-	// }
-	// unmarshalState(t, deployed2.States[0].Object, &cs)
-	// if cs.Address != pub {
-	// 	t.Fatalf("deployed contract address mismatch: want %s, got %s", pub, cs.Address)
-	// }
+	contractDomain, err := utils.UnmarshalEvent[domain.Contract](contractLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (AddWallet.Logs[0]): %v", err)
+	}
+
+	assert.NotEmpty(t, contractDomain.Address, "deployed contract address should not be empty")
+	assert.Equal(t, contractDomain.ContractVersion, walletV1.WALLET_CONTRACT_V1, "deployed contract version mismatch")
+
+	pub, priv := genKey(t, c)
+
+	deployed2, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, pub)
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
+	contractLog2, err := utils.UnmarshalLog[log.Log](deployed2.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (DeployContract2.Logs[0]): %v", err)
+	}
+	contractDomain2, err := utils.UnmarshalEvent[domain.Contract](contractLog2.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (DeployContract2.Logs[0]): %v", err)
+	}
+	assert.NotEmpty(t, contractDomain2.Address, "deployed contract address should not be empty")
+	assert.Equal(t, contractDomain2.ContractVersion, walletV1.WALLET_CONTRACT_V1, "deployed contract version mismatch")
 }
 
 func Test_EndToEnd_MinimalFlow(t *testing.T) {
 	c := setupClient(t)
 
 	// create a wallet (deploys + sends tx)
-	_, pubKey, priv := createWallet(t, c)
+	w, priv := createWallet(t, c)
 	c.SetPrivateKey(priv)
 
 	// Best-effort: transactions/logs/blocks (may be empty depending on backend retention)
-	if txs, err := c.ListTransactions(pubKey, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
+	if txs, err := c.ListTransactions(w.PublicKey, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
 		_, _ = c.ListLogs([]string{"wallet_created"}, 0, txs[0].Hash, nil, "", 1, 10, true)
 	}
 	_, _ = c.ListBlocks(0, time.Time{}, "", "", "", 1, 5, true)

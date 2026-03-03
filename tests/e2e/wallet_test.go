@@ -78,17 +78,15 @@ func TestWalletWorkflow(t *testing.T) {
 		t.Fatalf("GetWallet returned no states")
 	}
 
-	walletState := walletDomain.Wallet{}
-	err = utils.UnmarshalState[walletDomain.Wallet](wState.States[0].Object, &walletState)
+	walletState := walletModels.WalletStateModel{}
+	err = utils.UnmarshalState[walletModels.WalletStateModel](wState.States[0].Object, &walletState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetWallet.States[0]): %v", err)
 	}
-	if walletState.PublicKey == "" {
-		t.Fatalf("wallet state public key empty (state=%s)", wState.States[0].Object)
-	}
-	if walletState.PublicKey != wallet.PublicKey {
-		t.Fatalf("wallet state public key mismatch: expected %s, got %s", wallet.PublicKey, walletState.PublicKey)
-	}
+	assert.Equal(t, walletState.PublicKey, wallet.PublicKey, "wallet state public key mismatch between GetWallet and AddWallet event")
+	assert.Equal(t, walletState.Address, wallet.Address, "wallet state address mismatch between GetWallet and AddWallet event")
+	assert.NotEmpty(t, walletState.CreatedAt, "wallet state CreatedAt should not be empty")
+	assert.NotEmpty(t, walletState.UpdatedAt, "wallet state UpdatedAt should not be empty")
 	
 
 	wStateByPub, err := c.GetWalletByPublicKey(wallet.PublicKey)
