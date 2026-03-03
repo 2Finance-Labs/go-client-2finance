@@ -16,7 +16,7 @@ import (
 
 func TestTokenFlowFungible(t *testing.T) {
 	c := setupClient(t)
-	_, ownerPub, ownerPriv := createWallet(t, c)
+	owner, ownerPriv := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 
 	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
@@ -47,7 +47,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	accessPolicy := tokenV1Domain.AccessPolicy{
 		Mode: tokenV1Domain.ALLOW,
 		Users: map[string]bool{
-			ownerPub: true,
+			owner.PublicKey: true,
 		},
 	}
 	frozenAccounts := map[string]bool{}
@@ -64,7 +64,7 @@ func TestTokenFlowFungible(t *testing.T) {
 			},
 		}
 	}
-	feeAddress := ownerPub
+	feeAddress := owner.PublicKey
 	freezeAuthorityRevoked := false
 	mintAuthorityRevoked := false
 	updateAuthorityRevoked := false
@@ -80,7 +80,7 @@ func TestTokenFlowFungible(t *testing.T) {
 		decimals,
 		totalSupply,
 		description,
-		ownerPub,
+		owner.PublicKey,
 		image,
 		website,
 		tagsSocial,
@@ -130,8 +130,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	assert.Equal(t, tok.Creator, creator, "token creator mismatch")
 	assert.Equal(t, tok.CreatorWebsite, creatorWebsite, "token creator website mismatch")
 	assert.Equal(t, tok.AccessPolicy.Mode, accessPolicy.Mode, "token access policy mode mismatch")
-	assert.Equal(t, tok.AccessPolicy.Users[ownerPub], accessPolicy.Users[ownerPub], "token access policy users mismatch")
-	assert.Equal(t, tok.FrozenAccounts[ownerPub], frozenAccounts[ownerPub], "token frozen accounts mismatch")
+	assert.Equal(t, tok.AccessPolicy.Users[owner.PublicKey], accessPolicy.Users[owner.PublicKey], "token access policy users mismatch")
+	assert.Equal(t, tok.FrozenAccounts[owner.PublicKey], frozenAccounts[owner.PublicKey], "token frozen accounts mismatch")
 	// Skipping fee tiers deep equality for simplicity
 	assert.Equal(t, tok.FeeAddress, feeAddress, "token fee address mismatch")
 	assert.Equal(t, tok.FreezeAuthorityRevoked, freezeAuthorityRevoked, "token freeze authority revoked mismatch")
@@ -155,7 +155,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	assert.Equal(t, mint.TokenAddress, tok.Address, "mint to address mismatch")
-	assert.Equal(t, mint.MintTo, ownerPub, "mint to address mismatch")
+	assert.Equal(t, mint.MintTo, owner.PublicKey, "mint to address mismatch")
 	assert.Equal(t, mint.Amount, totalSupply, "mint amount mismatch")
 	assert.Equal(t, mint.TokenType, tokenType, "mint token type mismatch")
 	assert.Equal(t, mint.TokenUUIDList, []string(nil), "mint token UUID list mismatch") // Should be nil for fungible tokens
@@ -172,7 +172,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	assert.Equal(t, balance.TokenAddress, tok.Address, "balance token address mismatch")
-	assert.Equal(t, balance.OwnerAddress, ownerPub, "balance wallet address mismatch")
+	assert.Equal(t, balance.OwnerAddress, owner.PublicKey, "balance wallet address mismatch")
 	assert.Equal(t, balance.Amount, totalSupply, "balance amount mismatch")
 	assert.Equal(t, balance.TokenType, tokenType, "balance token type mismatch")
 	assert.Equal(t, balance.TokenUUIDList, []string(nil), "balance token UUID list mismatch") // Should be nil for fungible tokens
@@ -202,8 +202,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	assert.Equal(t, tokenState.Creator, creator, "token creator mismatch")
 	assert.Equal(t, tokenState.CreatorWebsite, creatorWebsite, "token creator website mismatch")
 	assert.Equal(t, tokenState.AccessPolicy.Mode, accessPolicy.Mode, "token access policy mode mismatch")
-	assert.Equal(t, tokenState.AccessPolicy.Users[ownerPub], accessPolicy.Users[ownerPub], "token access policy users mismatch")
-	assert.Equal(t, tokenState.FrozenAccounts[ownerPub], frozenAccounts[ownerPub], "token frozen accounts mismatch")
+	assert.Equal(t, tokenState.AccessPolicy.Users[owner.PublicKey], accessPolicy.Users[owner.PublicKey], "token access policy users mismatch")
+	assert.Equal(t, tokenState.FrozenAccounts[owner.PublicKey], frozenAccounts[owner.PublicKey], "token frozen accounts mismatch")
 	// Skipping fee tiers deep equality for simplicity
 	assert.Equal(t, tokenState.FeeAddress, feeAddress, "token fee address mismatch")
 	assert.Equal(t, tokenState.FreezeAuthorityRevoked, freezeAuthorityRevoked, "token freeze authority revoked mismatch")
@@ -218,7 +218,7 @@ func TestTokenFlowFungible(t *testing.T) {
 
 	mintAmount := "1000000"
 	// Mint & Burn
-	mintToken, err := c.MintToken(tok.Address, ownerPub, mintAmount, decimals, tok.TokenType)
+	mintToken, err := c.MintToken(tok.Address, owner.PublicKey, mintAmount, decimals, tok.TokenType)
 	if err != nil {
 		t.Fatalf("MintToken: %v", err)
 	}
@@ -234,7 +234,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	assert.Equal(t, mint2.TokenAddress, tok.Address, "mint to address mismatch")
-	assert.Equal(t, mint2.MintTo, ownerPub, "mint to address mismatch")
+	assert.Equal(t, mint2.MintTo, owner.PublicKey, "mint to address mismatch")
 	assert.Equal(t, mint2.Amount, mintAmount, "mint amount mismatch")
 	assert.Equal(t, mint2.TokenType, tokenType, "mint token type mismatch")
 	assert.Equal(t, mint2.TokenUUIDList, []string(nil), "mint token UUID list mismatch") // Should be nil for fungible tokens
@@ -262,7 +262,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	assert.Equal(t, balance2.TokenAddress, tok.Address, "balance token address mismatch")
-	assert.Equal(t, balance2.OwnerAddress, ownerPub, "balance wallet address mismatch")
+	assert.Equal(t, balance2.OwnerAddress, owner.PublicKey, "balance wallet address mismatch")
 	assert.Equal(t, balance2.Amount, mintAmount, "balance amount mismatch after mint")
 	assert.Equal(t, balance2.TokenType, tokenType, "balance token type mismatch")
 	assert.Equal(t, balance2.TokenUUIDList, []string(nil), "balance token UUID list mismatch") // Should be nil for fungible tokens

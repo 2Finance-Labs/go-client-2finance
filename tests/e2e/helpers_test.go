@@ -15,7 +15,7 @@ import (
 
 )
 
-func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (contractAddress string, walletPubKey string, walletPrivateKey string) {
+func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (wallet walletV1Domain.Wallet, walletPrivateKey string) {
 	t.Helper()
 
 	pub, priv := genKey(t, c)
@@ -76,7 +76,7 @@ func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (contractAddre
 		t.Fatalf("wallet event not found in AddWallet logs")
 	}
 
-	return w.Address, w.PublicKey, priv
+	return w, priv
 }
 
 // createBasicToken creates a minimal token owned by ownerPub.
