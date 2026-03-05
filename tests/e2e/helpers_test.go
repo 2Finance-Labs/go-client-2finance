@@ -1,18 +1,18 @@
 package e2e_test
 
 import (
+	"fmt"
+	"testing"
+	"time"
+
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
-	walletV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
+	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
+	walletV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
-	"time"
-	"testing"
-	"fmt"
-
 )
 
 func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (contractAddress string, walletPubKey string, walletPrivateKey string) {
@@ -107,11 +107,9 @@ func createBasicToken(
 	tags := map[string]string{"tag1": "DeFi", "tag2": "Blockchain"}
 	creator := "2Finance Test"
 	creatorWebsite := "https://creator.example"
-	accessPolicy := tokenV1Domain.AccessPolicy{
-		Mode: tokenV1Domain.ALLOW,
-		Users: map[string]bool{
-			ownerPub: true,
-		},
+	accessMode := tokenV1Domain.ALLOW_ACCESS_MODE
+	accessUsers := map[string]bool{
+		ownerPub: true,
 	}
 	frozenAccounts := map[string]bool{}
 	feeTiers := []map[string]interface{}{}
@@ -163,7 +161,8 @@ func createBasicToken(
 		tags,
 		creator,
 		creatorWebsite,
-		accessPolicy,
+		accessMode,
+		accessUsers,
 		frozenAccounts,
 		feeTiers,
 		feeAddress,
