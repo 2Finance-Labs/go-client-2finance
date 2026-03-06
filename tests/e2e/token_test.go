@@ -362,7 +362,6 @@ func TestTokenFlowFungible(t *testing.T) {
 	// ------------------
 	// CHANGE ACCESS MODE
 	// ------------------
-
 	changeAccessMode, err := c.ChangeAccessMode(tok.Address, tokenV1Domain.ALLOW_ACCESS_MODE)
 	if err != nil {
 		t.Fatalf("ChangeAccessMode: %v", err)
@@ -476,7 +475,6 @@ func TestTokenFlowFungible(t *testing.T) {
 	// ------------------
 	// CHANGE ACCESS MODE
 	// ------------------
-
 	changeAccessMode2, err := c.ChangeAccessMode(tok.Address, tokenV1Domain.DENY_ACCESS_MODE)
 	if err != nil {
 		t.Fatalf("ChangeAccessMode: %v", err)
@@ -582,7 +580,9 @@ func TestTokenFlowFungible(t *testing.T) {
 	_, exists2 := tokenState9.AccessUsers[receiverPub]
 	assert.False(t, exists2, "user should have been removed from token access users")
 
-	// Transfer
+	// ------------------
+	//   TRANSFER TOKEN
+	// ------------------
 	// transferAmount := "500000"
 	// transferToken, err := c.TransferToken(tok.Address, receiverPub, transferAmount, decimals, tok.TokenType, "")
 	// if err != nil {
@@ -623,13 +623,13 @@ func TestTokenFlowFungible(t *testing.T) {
 	// assert.Equal(t, balance4.TokenType, tokenType, "balance token type mismatch")
 	// assert.Equal(t, balance4.TokenUUIDList, []string(nil), "balance token UUID list mismatch") // Should be nil for fungible tokens
 
-	// getTokenOut5, err := c.GetToken(tok.Address, "", "")
+	// getTokenOut10, err := c.GetToken(tok.Address, "", "")
 	// if err != nil {
 	// 	t.Fatalf("GetToken: %v", err)
 	// }
 
-	// var tokenState5 tokenV1Models.TokenStateModel
-	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut5.States[0].Object, &tokenState5)
+	// var tokenState10 tokenV1Models.TokenStateModel
+	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut10.States[0].Object, &tokenState10)
 	// if err != nil {
 	// 	t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	// }
@@ -639,70 +639,81 @@ func TestTokenFlowFungible(t *testing.T) {
 	// 	t.Fatalf("SubBigIntStrings: %v", err)
 	// }
 
-	// assert.Equal(t, tokenState5.TotalSupply, subTotalSupply, "token total supply mismatch after transfer")
+	// assert.Equal(t, tokenState10.TotalSupply, subTotalSupply, "token total supply mismatch after transfer")
 
-	// // Pause Token
-	// pauseToken, err := c.PauseToken(tok.Address, true)
-	// if err != nil {
-	// 	t.Fatalf("PauseToken: %v", err)
-	// }
+	// ------------------
+	//       PAUSE
+	// ------------------
+	pauseToken, err := c.PauseToken(tok.Address, true)
+	if err != nil {
+		t.Fatalf("PauseToken: %v", err)
+	}
 
-	// unmarshalLogPause, err := utils.UnmarshalLog[log.Log](pauseToken.Logs[0])
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalLog (PauseToken.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, unmarshalLogPause.LogType, tokenV1Domain.TOKEN_PAUSED_LOG, "pause token log type mismatch")
-	// pause, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogPause.Event)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalEvent (PauseToken.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, pause.Address, tok.Address, "pause token address mismatch")
-	// assert.Equal(t, pause.Paused, true, "token paused state mismatch after pause")
+	unmarshalLogPause, err := utils.UnmarshalLog[log.Log](pauseToken.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (PauseToken.Logs[0]): %v", err)
+	}
+	assert.Equal(t, tokenV1Domain.TOKEN_PAUSED_LOG, unmarshalLogPause.LogType, "pause token log type mismatch")
 
-	// getTokenOut6, err := c.GetToken(tok.Address, "", "")
-	// if err != nil {
-	// 	t.Fatalf("GetToken: %v", err)
-	// }
+	pause, err := utils.UnmarshalEvent[tokenV1Domain.PausePolicy](unmarshalLogPause.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (PauseToken.Logs[0]): %v", err)
+	}
+	assert.Equal(t, tok.Address, pause.TokenAddress, "pause token address mismatch")
+	assert.Equal(t, true, pause.Enabled, "token paused state mismatch after pause")
 
-	// var tokenState6 tokenV1Models.TokenStateModel
-	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut6.States[0].Object, &tokenState6)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
-	// }
+	getTokenOut11, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
 
-	// assert.Equal(t, tokenState6.Paused, true, "token paused state mismatch after pause")
+	var tokenState11 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut11.States[0].Object, &tokenState11)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
 
-	// // Unpause Token
-	// unpauseToken, err := c.UnpauseToken(tok.Address, false)
-	// if err != nil {
-	// 	t.Fatalf("UnpauseToken: %v", err)
-	// }
-	// unmarshalLogUnpause, err := utils.UnmarshalLog[log.Log](unpauseToken.Logs[0])
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalLog (UnpauseToken.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, unmarshalLogUnpause.LogType, tokenV1Domain.TOKEN_UNPAUSED_LOG, "unpause token log type mismatch")
-	// unpause, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogUnpause.Event)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalEvent (UnpauseToken.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, unpause.Address, tok.Address, "unpause token address mismatch")
-	// assert.Equal(t, unpause.Paused, false, "token paused state mismatch after unpause")
+	assert.Equal(t, true, tokenState11.Paused, "token paused state mismatch after pause")
 
-	// getTokenOut7, err := c.GetToken(tok.Address, "", "")
-	// if err != nil {
-	// 	t.Fatalf("GetToken: %v", err)
-	// }
+	// ------------------
+	//      UNPAUSE
+	// ------------------
+	unpauseToken, err := c.UnpauseToken(tok.Address, false)
+	if err != nil {
+		t.Fatalf("UnpauseToken: %v", err)
+	}
 
-	// var tokenState7 tokenV1Models.TokenStateModel
-	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut7.States[0].Object, &tokenState7)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
-	// }
+	unmarshalLogUnpause, err := utils.UnmarshalLog[log.Log](unpauseToken.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (UnpauseToken.Logs[0]): %v", err)
+	}
 
-	// assert.Equal(t, tokenState7.Paused, false, "token paused state mismatch after unpause")
+	assert.Equal(t, tokenV1Domain.TOKEN_UNPAUSED_LOG, unmarshalLogUnpause.LogType, "unpause token log type mismatch")
 
-	// // Fee tiers
+	unpause, err := utils.UnmarshalEvent[tokenV1Domain.PausePolicy](unmarshalLogUnpause.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (UnpauseToken.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, tok.Address, unpause.TokenAddress, "unpause token address mismatch")
+	assert.Equal(t, false, unpause.Enabled, "token paused state mismatch after unpause")
+
+	getTokenOut12, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
+
+	var tokenState12 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut12.States[0].Object, &tokenState12)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
+
+	assert.Equal(t, false, tokenState12.Paused, "token paused state mismatch after unpause")
+
+	// ------------------
+	//     FEE TIERS
+	// ------------------
 	// updateFeeTiers, er := c.UpdateFeeTiers(tok.Address, []map[string]interface{}{
 	// 	{
 	// 		"min_amount": "0",
@@ -732,198 +743,6 @@ func TestTokenFlowFungible(t *testing.T) {
 	// assert.Equal(t, feeTiersEvent.FeeTiersList[0].MaxVolume, amt(100_000, decimals), "fee tiers max volume mismatch")
 	// assert.Equal(t, feeTiersEvent.FeeTiersList[0].FeeBps, 50, "fee tiers bps mismatch")
 
-	// getTokenOut8, err := c.GetToken(tok.Address, "", "")
-	// if err != nil {
-	// 	t.Fatalf("GetToken: %v", err)
-	// }
-
-	// var tokenState8 tokenV1Models.TokenStateModel
-	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut8.States[0].Object, &tokenState8)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
-	// }
-
-	// assert.Equal(t, tokenState8.FeeTiersList[0].MinAmount, "0", "token state fee tiers min amount mismatch")
-	// assert.Equal(t, tokenState8.FeeTiersList[0].MaxAmount, amt(10_000, decimals), "token state fee tiers max amount mismatch")
-	// assert.Equal(t, tokenState8.FeeTiersList[0].MinVolume, "0", "token state fee tiers min volume mismatch")
-	// assert.Equal(t, tokenState8.FeeTiersList[0].MaxVolume, amt(100_000, decimals), "token state fee tiers max volume mismatch")
-	// assert.Equal(t, tokenState8.FeeTiersList[0].FeeBps, 50, "token state fee tiers bps mismatch")
-
-	// // Fee address
-	// updateFeeAddress, er := c.UpdateFeeAddress(tok.Address, feeAddress)
-	// if er != nil {
-	// 	t.Fatalf("UpdateFeeAddress: %v", er)
-	// }
-
-	// unmarshalLogFeeAddress, err := utils.UnmarshalLog[log.Log](updateFeeAddress.Logs[0])
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalLog (UpdateFeeAddress.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, unmarshalLogFeeAddress.LogType, tokenV1Domain.TOKEN_FEE_ADDRESS_UPDATED_LOG, "update fee address log type mismatch")
-
-	// feeAddressEvent, err := utils.UnmarshalEvent[tokenV1Domain.Fee](unmarshalLogFeeAddress.Event)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalEvent (UpdateFeeAddress.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, feeAddressEvent.TokenAddress, tok.Address, "fee address event token address mismatch")
-	// assert.Equal(t, feeAddressEvent.FeeAddress, feeAddress, "fee address event fee address mismatch")
-
-	// getTokenOut9, err := c.GetToken(tok.Address, "", "")
-	// if err != nil {
-	// 	t.Fatalf("GetToken: %v", err)
-	// }
-
-	// var tokenState9 tokenV1Models.TokenStateModel
-	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut9.States[0].Object, &tokenState9)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
-	// }
-
-	// assert.Equal(t, tokenState9.FeeAddress, feeAddress, "token state fee address mismatch")
-
-	// // Metadata
-	// updateMetadata, err := c.UpdateMetadata(
-	// 	tok.Address,
-	// 	"2F-NEW"+randSuffix(4),
-	// 	"2Finance New",
-	// 	decimals,
-	// 	"Updated by tests",
-	// 	"https://example.com/img.png",
-	// 	"https://example.com",
-	// 	map[string]string{"twitter": "https://x.com/2f"},
-	// 	map[string]string{"category": "DeFi"},
-	// 	map[string]string{"tag1": "e2e"},
-	// 	creator,
-	// 	"https://creator",
-	// 	time.Now().Add(30*24*time.Hour),
-	// )
-	// if err != nil {
-	// 	t.Fatalf("UpdateMetadata: %v", err)
-	// }
-
-	// unmarshalLogMetadata, err := utils.UnmarshalLog[log.Log](updateMetadata.Logs[0])
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalLog (UpdateMetadata.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, unmarshalLogMetadata.LogType, tokenV1Domain.TOKEN_METADATA_UPDATED_LOG, "update metadata log type mismatch")
-
-	// metadataEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogMetadata.Event)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalEvent (UpdateMetadata.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, metadataEvent.Address, tok.Address, "update metadata event token address mismatch")
-	// assert.Equal(t, metadataEvent.Symbol, "2F-NEW"+randSuffix(4), "update metadata event token symbol mismatch")
-	// assert.Equal(t, metadataEvent.Name, "2Finance New", "update metadata event token name mismatch")
-	// assert.Equal(t, metadataEvent.Decimals, decimals, "update metadata event token decimals mismatch")
-	// assert.Equal(t, metadataEvent.Description, "Updated by tests", "update metadata event token description mismatch")
-	// assert.Equal(t, metadataEvent.Image, "https://example.com/img.png", "update metadata event token image mismatch")
-	// assert.Equal(t, metadataEvent.Website, "https://example.com", "update metadata event token website mismatch")
-	// assert.Equal(t, metadataEvent.TagsSocialMedia["twitter"], "https://x.com/2f", "update metadata event token tags social mismatch")
-	// assert.Equal(t, metadataEvent.TagsCategory["category"], "DeFi", "update metadata event token tags category mismatch")
-	// assert.Equal(t, metadataEvent.Tags["tag1"], "e2e", "update metadata event token tags mismatch")
-	// assert.Equal(t, metadataEvent.Creator, creator, "update metadata event token creator mismatch")
-	// assert.Equal(t, metadataEvent.CreatorWebsite, "https://creator", "update metadata event token creator website mismatch")
-
-	// getTokenOut10, err := c.GetToken(tok.Address, "", "")
-	// if err != nil {
-	// 	t.Fatalf("GetToken: %v", err)
-	// }
-
-	// var tokenState10 tokenV1Models.TokenStateModel
-	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut10.States[0].Object, &tokenState10)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
-	// }
-	// assert.Equal(t, tokenState10.Symbol, "2F-NEW"+randSuffix(4), "token symbol mismatch after metadata update")
-	// assert.Equal(t, tokenState10.Name, "2Finance New", "token name mismatch after metadata update")
-	// assert.Equal(t, tokenState10.Description, "Updated by tests", "token description mismatch after metadata update")
-	// assert.Equal(t, tokenState10.Image, "https://example.com/img.png", "token image mismatch after metadata update")
-	// assert.Equal(t, tokenState10.Website, "https://example.com", "token website mismatch after metadata update")
-	// assert.Equal(t, tokenState10.TagsSocialMedia["twitter"], "https://x.com/2f", "token tags social mismatch after metadata update")
-	// assert.Equal(t, tokenState10.TagsCategory["category"], "DeFi", "token tags category mismatch after metadata update")
-	// assert.Equal(t, tokenState10.Tags["tag1"], "e2e", "token tags mismatch after metadata update")
-	// assert.Equal(t, tokenState10.Creator, creator, "token creator mismatch after metadata update")
-	// assert.Equal(t, tokenState10.CreatorWebsite, "https://creator", "token creator website mismatch after metadata update")
-
-	// // Revoke authorities
-	// revokeMint, err := c.RevokeMintAuthority(tok.Address, true)
-	// if err != nil {
-	// 	t.Fatalf("RevokeMintAuthority: %v", err)
-	// }
-
-	// unmarshalLogRevokeMint, err := utils.UnmarshalLog[log.Log](revokeMint.Logs[0])
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalLog (RevokeMintAuthority.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, unmarshalLogRevokeMint.LogType, tokenV1Domain.TOKEN_MINT_AUTHORITY_REVOKED_LOG, "revoke mint authority log type mismatch")
-
-	// revokeMintEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogRevokeMint.Event)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalEvent (RevokeMintAuthority.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, revokeMintEvent.Address, tok.Address, "revoke mint authority event token address mismatch")
-	// assert.Equal(t, revokeMintEvent.MintAuthorityRevoked, true, "revoke mint authority event mint authority revoked mismatch")
-
-	// getTokenOut11, err := c.GetToken(tok.Address, "", "")
-	// if err != nil {
-	// 	t.Fatalf("GetToken: %v", err)
-	// }
-
-	// var tokenState11 tokenV1Models.TokenStateModel
-	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut11.States[0].Object, &tokenState11)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
-	// }
-	// assert.Equal(t, tokenState11.MintAuthorityRevoked, true, "token mint authority revoked mismatch after revoke")
-
-	// revokeUpdate, err := c.RevokeUpdateAuthority(tok.Address, true)
-	// if err != nil {
-	// 	t.Fatalf("RevokeUpdateAuthority: %v", err)
-	// }
-
-	// unmarshalLogRevokeUpdate, err := utils.UnmarshalLog[log.Log](revokeUpdate.Logs[0])
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalLog (RevokeUpdateAuthority.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, unmarshalLogRevokeUpdate.LogType, tokenV1Domain.TOKEN_UPDATE_AUTHORITY_REVOKED_LOG, "revoke update authority log type mismatch")
-
-	// revokeUpdateEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogRevokeUpdate.Event)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalEvent (RevokeUpdateAuthority.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, revokeUpdateEvent.Address, tok.Address, "revoke update authority event token address mismatch")
-	// assert.Equal(t, revokeUpdateEvent.UpdateAuthorityRevoked, true, "revoke update authority event update authority revoked mismatch")
-
-	// getTokenOut12, err := c.GetToken(tok.Address, "", "")
-	// if err != nil {
-	// 	t.Fatalf("GetToken: %v", err)
-	// }
-
-	// var tokenState12 tokenV1Models.TokenStateModel
-	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut12.States[0].Object, &tokenState12)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
-	// }
-	// assert.Equal(t, tokenState12.UpdateAuthorityRevoked, true, "token update authority revoked mismatch after revoke")
-
-	// // Freeze
-	// freezeWallet, err := c.FreezeWallet(tok.Address, ownerPub)
-	// if err != nil {
-	// 	t.Fatalf("FreezeWallet: %v", err)
-	// }
-
-	// unmarshalLogFreeze, err := utils.UnmarshalLog[log.Log](freezeWallet.Logs[0])
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalLog (FreezeWallet.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, unmarshalLogFreeze.LogType, tokenV1Domain.TOKEN_FREEZE_ACCOUNT_LOG, "freeze wallet log type mismatch")
-	// freezeEvent, err := utils.UnmarshalEvent[tokenV1Domain.Freeze](unmarshalLogFreeze.Event)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalEvent (FreezeWallet.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, freezeEvent.TokenAddress, tok.Address, "freeze wallet event token address mismatch")
-	// assert.Equal(t, freezeEvent.FrozenAccounts[ownerPub], ownerPub, "freeze wallet event wallet address mismatch")
-
 	// getTokenOut13, err := c.GetToken(tok.Address, "", "")
 	// if err != nil {
 	// 	t.Fatalf("GetToken: %v", err)
@@ -934,121 +753,363 @@ func TestTokenFlowFungible(t *testing.T) {
 	// if err != nil {
 	// 	t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	// }
-	// assert.Equal(t, tokenState13.FrozenAccounts[ownerPub], ownerPub, "token frozen accounts mismatch after freeze")
 
-	// // Unfreeze
-	// unfreezeWallet, err := c.UnfreezeWallet(tok.Address, ownerPub)
+	// assert.Equal(t, tokenState13.FeeTiersList[0].MinAmount, "0", "token state fee tiers min amount mismatch")
+	// assert.Equal(t, tokenState13.FeeTiersList[0].MaxAmount, amt(10_000, decimals), "token state fee tiers max amount mismatch")
+	// assert.Equal(t, tokenState13.FeeTiersList[0].MinVolume, "0", "token state fee tiers min volume mismatch")
+	// assert.Equal(t, tokenState13.FeeTiersList[0].MaxVolume, amt(100_000, decimals), "token state fee tiers max volume mismatch")
+	// assert.Equal(t, tokenState13.FeeTiersList[0].FeeBps, 50, "token state fee tiers bps mismatch")
+
+	// ------------------
+	//    FEE ADDRESS
+	// ------------------
+	updateFeeAddress, er := c.UpdateFeeAddress(tok.Address, feeAddress)
+	if er != nil {
+		t.Fatalf("UpdateFeeAddress: %v", er)
+	}
+
+	unmarshalLogFeeAddress, err := utils.UnmarshalLog[log.Log](updateFeeAddress.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (UpdateFeeAddress.Logs[0]): %v", err)
+	}
+	assert.Equal(t, unmarshalLogFeeAddress.LogType, tokenV1Domain.TOKEN_FEE_ADDRESS_UPDATED_LOG, "update fee address log type mismatch")
+
+	feeAddressEvent, err := utils.UnmarshalEvent[tokenV1Domain.Fee](unmarshalLogFeeAddress.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (UpdateFeeAddress.Logs[0]): %v", err)
+	}
+	assert.Equal(t, feeAddressEvent.TokenAddress, tok.Address, "fee address event token address mismatch")
+	assert.Equal(t, feeAddressEvent.FeeAddress, feeAddress, "fee address event fee address mismatch")
+
+	getTokenOut14, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
+
+	var tokenState14 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut14.States[0].Object, &tokenState14)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
+
+	assert.Equal(t, tokenState14.FeeAddress, feeAddress, "token state fee address mismatch")
+
+	// ------------------
+	//  METADATA UPDATE
+	// ------------------
+	newSymbol := "2F-NEW" + randSuffix(4)
+
+	updateMetadata, err := c.UpdateMetadata(
+		tok.Address,
+		newSymbol,
+		"2Finance New",
+		decimals,
+		"Updated by tests",
+		"https://example.com/img.png",
+		"https://example.com",
+		map[string]string{"twitter": "https://x.com/2f"},
+		map[string]string{"category": "DeFi"},
+		map[string]string{"tag1": "e2e"},
+		creator,
+		"https://creator",
+		time.Now().Add(30*24*time.Hour),
+	)
+	if err != nil {
+		t.Fatalf("UpdateMetadata: %v", err)
+	}
+
+	unmarshalLogMetadata, err := utils.UnmarshalLog[log.Log](updateMetadata.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (UpdateMetadata.Logs[0]): %v", err)
+	}
+	assert.Equal(t, tokenV1Domain.TOKEN_METADATA_UPDATED_LOG, unmarshalLogMetadata.LogType, "update metadata log type mismatch")
+
+	metadataEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogMetadata.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (UpdateMetadata.Logs[0]): %v", err)
+	}
+	assert.Equal(t, tok.Address, metadataEvent.Address, "update metadata event token address mismatch")
+	assert.Equal(t, newSymbol, metadataEvent.Symbol, "update metadata event token symbol mismatch")
+	assert.Equal(t, "2Finance New", metadataEvent.Name, "update metadata event token name mismatch")
+	assert.Equal(t, decimals, metadataEvent.Decimals, "update metadata event token decimals mismatch")
+	assert.Equal(t, "Updated by tests", metadataEvent.Description, "update metadata event token description mismatch")
+	assert.Equal(t, "https://example.com/img.png", metadataEvent.Image, "update metadata event token image mismatch")
+	assert.Equal(t, "https://example.com", metadataEvent.Website, "update metadata event token website mismatch")
+	assert.Equal(t, "https://x.com/2f", metadataEvent.TagsSocialMedia["twitter"], "update metadata event token tags social mismatch")
+	assert.Equal(t, "DeFi", metadataEvent.TagsCategory["category"], "update metadata event token tags category mismatch")
+	assert.Equal(t, "e2e", metadataEvent.Tags["tag1"], "update metadata event token tags mismatch")
+	assert.Equal(t, creator, metadataEvent.Creator, "update metadata event token creator mismatch")
+	assert.Equal(t, "https://creator", metadataEvent.CreatorWebsite, "update metadata event token creator website mismatch")
+
+	getTokenOut15, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
+
+	var tokenState15 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut15.States[0].Object, &tokenState15)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
+	assert.Equal(t, newSymbol, tokenState15.Symbol, "token symbol mismatch after metadata update")
+	assert.Equal(t, "2Finance New", tokenState15.Name, "token name mismatch after metadata update")
+	assert.Equal(t, "Updated by tests", tokenState15.Description, "token description mismatch after metadata update")
+	assert.Equal(t, "https://example.com/img.png", tokenState15.Image, "token image mismatch after metadata update")
+	assert.Equal(t, "https://example.com", tokenState15.Website, "token website mismatch after metadata update")
+	assert.Equal(t, "https://x.com/2f", tokenState15.TagsSocialMedia["twitter"], "token tags social mismatch after metadata update")
+	assert.Equal(t, "DeFi", tokenState15.TagsCategory["category"], "token tags category mismatch after metadata update")
+	assert.Equal(t, "e2e", tokenState15.Tags["tag1"], "token tags mismatch after metadata update")
+	assert.Equal(t, creator, tokenState15.Creator, "token creator mismatch after metadata update")
+	assert.Equal(t, "https://creator", tokenState15.CreatorWebsite, "token creator website mismatch after metadata update")
+
+	// ------------------
+	//      FREEZE
+	// ------------------
+	freezeWallet, err := c.FreezeWallet(tok.Address, ownerPub)
+	if err != nil {
+		t.Fatalf("FreezeWallet: %v", err)
+	}
+
+	unmarshalLogFreeze, err := utils.UnmarshalLog[log.Log](freezeWallet.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (FreezeWallet.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, tokenV1Domain.TOKEN_FREEZE_ACCOUNT_LOG, unmarshalLogFreeze.LogType, "freeze wallet log type mismatch")
+
+	freezeEvent, err := utils.UnmarshalEvent[tokenV1Domain.Freeze](unmarshalLogFreeze.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (FreezeWallet.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, tok.Address, freezeEvent.TokenAddress, "freeze wallet event token address mismatch")
+	assert.Equal(t, true, freezeEvent.FrozenAccounts[ownerPub], "freeze wallet event wallet address mismatch")
+
+	getTokenOut16, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
+
+	var tokenState16 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut16.States[0].Object, &tokenState16)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
+
+	assert.Equal(t, true, tokenState16.FrozenAccounts[ownerPub], "token frozen accounts mismatch after freeze")
+
+	// ------------------
+	//      UNFREEZE
+	// ------------------
+	unfreezeWallet, err := c.UnfreezeWallet(tok.Address, ownerPub)
+	if err != nil {
+		t.Fatalf("UnfreezeWallet: %v", err)
+	}
+
+	unmarshalLogUnfreeze, err := utils.UnmarshalLog[log.Log](unfreezeWallet.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (UnfreezeWallet.Logs[0]): %v", err)
+	}
+	assert.Equal(t, tokenV1Domain.TOKEN_UNFREEZE_ACCOUNT_LOG, unmarshalLogUnfreeze.LogType, "unfreeze wallet log type mismatch")
+
+	unfreezeEvent, err := utils.UnmarshalEvent[tokenV1Domain.Freeze](unmarshalLogUnfreeze.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (UnfreezeWallet.Logs[0]): %v", err)
+	}
+	assert.Equal(t, tok.Address, unfreezeEvent.TokenAddress, "unfreeze wallet event token address mismatch")
+	assert.Equal(t, false, unfreezeEvent.FrozenAccounts[ownerPub], "unfreeze wallet event wallet address mismatch")
+
+	getTokenOut17, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
+
+	var tokenState17 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut17.States[0].Object, &tokenState17)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
+
+	_, exists3 := tokenState17.FrozenAccounts[ownerPub]
+	assert.False(t, exists3, "token frozen accounts mismatch after unfreeze")
+
+	// ------------------
+	//     UPDATE GLB
+	// ------------------
+	newGLB := "https://example.com/assets/token.glb"
+	updateGlbFile, err := c.UpdateGlbFile(tok.Address, newGLB)
+	if err != nil {
+		t.Fatalf("UpdateGlbFile: %v", err)
+	}
+
+	unmarshalLogUpdateGlbFile, err := utils.UnmarshalLog[log.Log](updateGlbFile.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (UpdateGlbFile.Logs[0]): %v", err)
+	}
+	assert.Equal(t, tokenV1Domain.TOKEN_UPDATE_GLB_FILE_LOG, unmarshalLogUpdateGlbFile.LogType, "update glb file log type mismatch")
+
+	updateGlbFileEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogUpdateGlbFile.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (UpdateGlbFile.Logs[0]): %v", err)
+	}
+	assert.Equal(t, tok.Address, updateGlbFileEvent.Address, "update glb file token address mismatch")
+	assert.Equal(t, newGLB, updateGlbFileEvent.AssetGLBUri, "update glb file asset uri mismatch")
+
+	getTokenOut18, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
+
+	var tokenState18 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut18.States[0].Object, &tokenState18)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
+	assert.Equal(t, newGLB, tokenState18.AssetGLBUri, "token asset glb uri mismatch after update")
+
+	// ------------------
+	//    TRANSFERABLE
+	// ------------------
+	// transferableToken, err := c.TransferableToken(tok.Address, true)
 	// if err != nil {
-	// 	t.Fatalf("UnfreezeWallet: %v", err)
+	// 	t.Fatalf("TransferableToken: %v", err)
 	// }
 
-	// unmarshalLogUnfreeze, err := utils.UnmarshalLog[log.Log](unfreezeWallet.Logs[0])
+	// unmarshalLogTransferableToken, err := utils.UnmarshalLog[log.Log](transferableToken.Logs[0])
 	// if err != nil {
-	// 	t.Fatalf("UnmarshalLog (UnfreezeWallet.Logs[0]): %v", err)
+	// 	t.Fatalf("UnmarshalLog (TransferableToken.Logs[0]): %v", err)
 	// }
-	// assert.Equal(t, unmarshalLogUnfreeze.LogType, tokenV1Domain.TOKEN_UNFREEZE_ACCOUNT_LOG, "unfreeze wallet log type mismatch")
-	// unfreezeEvent, err := utils.UnmarshalEvent[tokenV1Domain.Freeze](unmarshalLogUnfreeze.Event)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalEvent (UnfreezeWallet.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, unfreezeEvent.TokenAddress, tok.Address, "unfreeze wallet event token address mismatch")
-	// assert.Equal(t, unfreezeEvent.FrozenAccounts[ownerPub], "", "unfreeze wallet event wallet address mismatch")
+	// assert.Equal(t, tokenV1Domain.TOKEN_TRANSFERABLE_LOG, unmarshalLogTransferableToken.LogType, "transferable token log type mismatch")
 
-	// getTokenOut14, err := c.GetToken(tok.Address, "", "")
+	// transferableTokenEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogTransferableToken.Event)
+	// if err != nil {
+	// 	t.Fatalf("UnmarshalEvent (TransferableToken.Logs[0]): %v", err)
+	// }
+	// assert.Equal(t, tok.Address, transferableTokenEvent.Address, "transferable token address mismatch")
+	// assert.Equal(t, true, transferableTokenEvent.Transferable, "token transferable state mismatch after transferable")
+
+	// getTokenOut19, err := c.GetToken(tok.Address, "", "")
 	// if err != nil {
 	// 	t.Fatalf("GetToken: %v", err)
 	// }
 
-	// var tokenState14 tokenV1Models.TokenStateModel
-	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut14.States[0].Object, &tokenState14)
+	// var tokenState19 tokenV1Models.TokenStateModel
+	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut19.States[0].Object, &tokenState19)
 	// if err != nil {
 	// 	t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	// }
-	// assert.Equal(t, tokenState14.FrozenAccounts[ownerPub], "", "token frozen accounts mismatch after unfreeze")
+	// assert.Equal(t, true, tokenState19.Transferable, "token transferable mismatch after transferable update")
 
-	// // Balances / Listings
-	// if _, err := c.GetTokenBalance(tok.Address, owner.PublicKey); err != nil {
-	// 	t.Fatalf("GetTokenBalance(owner): %v", err)
-	// }
-	// if _, err := c.ListTokenBalances(tok.Address, "", 1, 10, true); err != nil {
-	// 	t.Fatalf("ListTokenBalances: %v", err)
-	// }
-	// if _, err := c.ListTokens("", "", "", 1, 10, true); err != nil {
-	// 	t.Fatalf("ListTokens: %v", err)
-	// }
+	// ------------------
+	// REVOKE AUTHORITIES
+	// ------------------
+	// Revoke freeze authority
+	revokeFreezeAuthority, err := c.RevokeFreezeAuthority(tok.Address, true)
+	if err != nil {
+		t.Fatalf("RevokeFreezeAuthority: %v", err)
+	}
+
+	unmarshalLogRevokeFreezeAuthority, err := utils.UnmarshalLog[log.Log](revokeFreezeAuthority.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (RevokeFreezeAuthority.Logs[0]): %v", err)
+	}
+	assert.Equal(t, tokenV1Domain.TOKEN_FREEZE_AUTHORITY_REVOKED_LOG, unmarshalLogRevokeFreezeAuthority.LogType, "revoke freeze authority log type mismatch")
+
+	revokeFreezeAuthorityEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogRevokeFreezeAuthority.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (RevokeFreezeAuthority.Logs[0]): %v", err)
+	}
+	assert.Equal(t, tok.Address, revokeFreezeAuthorityEvent.Address, "revoke freeze authority token address mismatch")
+	assert.Equal(t, true, revokeFreezeAuthorityEvent.FreezeAuthorityRevoked, "revoke freeze authority state mismatch")
+
+	getTokenOut20, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
+
+	var tokenState20 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut20.States[0].Object, &tokenState20)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
+	assert.Equal(t, true, tokenState20.FreezeAuthorityRevoked, "token revoked freeze authority mismatch after revoke")
+
+	// Revoke mint authority
+	revokeMint, err := c.RevokeMintAuthority(tok.Address, true)
+	if err != nil {
+		t.Fatalf("RevokeMintAuthority: %v", err)
+	}
+
+	unmarshalLogRevokeMint, err := utils.UnmarshalLog[log.Log](revokeMint.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (RevokeMintAuthority.Logs[0]): %v", err)
+	}
+	assert.Equal(t, unmarshalLogRevokeMint.LogType, tokenV1Domain.TOKEN_MINT_AUTHORITY_REVOKED_LOG, "revoke mint authority log type mismatch")
+
+	revokeMintEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogRevokeMint.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (RevokeMintAuthority.Logs[0]): %v", err)
+	}
+	assert.Equal(t, revokeMintEvent.Address, tok.Address, "revoke mint authority event token address mismatch")
+	assert.Equal(t, revokeMintEvent.MintAuthorityRevoked, true, "revoke mint authority event mint authority revoked mismatch")
+
+	getTokenOut21, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
+
+	var tokenState21 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut21.States[0].Object, &tokenState21)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
+	assert.Equal(t, tokenState21.MintAuthorityRevoked, true, "token mint authority revoked mismatch after revoke")
+
+	// Revoke update authority
+	revokeUpdate, err := c.RevokeUpdateAuthority(tok.Address, true)
+	if err != nil {
+		t.Fatalf("RevokeUpdateAuthority: %v", err)
+	}
+
+	unmarshalLogRevokeUpdate, err := utils.UnmarshalLog[log.Log](revokeUpdate.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (RevokeUpdateAuthority.Logs[0]): %v", err)
+	}
+	assert.Equal(t, unmarshalLogRevokeUpdate.LogType, tokenV1Domain.TOKEN_UPDATE_AUTHORITY_REVOKED_LOG, "revoke update authority log type mismatch")
+
+	revokeUpdateEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogRevokeUpdate.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (RevokeUpdateAuthority.Logs[0]): %v", err)
+	}
+	assert.Equal(t, revokeUpdateEvent.Address, tok.Address, "revoke update authority event token address mismatch")
+	assert.Equal(t, revokeUpdateEvent.UpdateAuthorityRevoked, true, "revoke update authority event update authority revoked mismatch")
+
+	getTokenOut22, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
+
+	var tokenState22 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut22.States[0].Object, &tokenState22)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
+	assert.Equal(t, tokenState22.UpdateAuthorityRevoked, true, "token update authority revoked mismatch after revoke")
+
+	// ------------------
+	// GETTERS | LISTINGS
+	// ------------------
+	if _, err := c.GetTokenBalance(tok.Address, ownerPub); err != nil {
+		t.Fatalf("GetTokenBalance(owner): %v", err)
+	}
+	if _, err := c.ListTokenBalances(tok.Address, "", 1, 10, true); err != nil {
+		t.Fatalf("ListTokenBalances: %v", err)
+	}
+	if _, err := c.ListTokens("", "", "", 1, 10, true); err != nil {
+		t.Fatalf("ListTokens: %v", err)
+	}
 }
 
 func TestTokenFlowNonFungible(t *testing.T) {
-	// c := setupClient(t)
-	// owner, ownerPriv := createWallet(t, c)
-	// c.SetPrivateKey(ownerPriv)
-
-	// dec := 0
-	// tokenType := tokenV1Domain.NON_FUNGIBLE
-
-	// stablecoin := false
-
-	// tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType, stablecoin)
-
-	// amount := "35"
-
-	// // Mint NFT
-	// mintOut, err := c.MintToken(tok.Address, owner.PublicKey, amount, dec, tok.TokenType)
-	// if err != nil {
-	// 	t.Fatalf("MintToken NFT: %v", err)
-	// }
-
-	// var mint tokenV1Domain.Mint
-	// unmarshalState(t, mintOut.States[0].Object, &mint)
-
-	// amountInt, _ := strconv.Atoi(amount)
-	// if len(mint.TokenUUIDList) != amountInt {
-	// 	t.Fatalf("expected %d uuid, got %d", amountInt, len(mint.TokenUUIDList))
-	// }
-
-	// if _, err := c.BurnToken(
-	// 	tok.Address,
-	// 	amt(1, dec),
-	// 	dec,
-	// 	tok.TokenType,
-	// 	mint.TokenUUIDList[0],
-	// ); err != nil {
-	// 	t.Fatalf("BurnToken: %v", err)
-	// }
-
-	// // Transfer NFT
-	// receiver, _ := createWallet(t, c)
-	// c.SetPrivateKey(ownerPriv)
-
-	// // ✅ NECESSÁRIO em ALLOW
-	// if _, err := c.AllowUsers(tok.Address, map[string]bool{
-	// 	receiver.PublicKey: true,
-	// }); err != nil {
-	// 	t.Fatalf("AllowUsers: %v", err)
-	// }
-
-	// trOut, err := c.TransferToken(
-	// 	tok.Address,
-	// 	receiver.PublicKey,
-	// 	amt(1, dec),
-	// 	dec,
-	// 	tok.TokenType,
-	// 	mint.TokenUUIDList[0],
-	// )
-	// if err != nil {
-	// 	t.Fatalf("Transfer NFT: %v", err)
-	// }
-
-	// if _, err := c.FreezeWallet(tok.Address, owner.PublicKey); err != nil {
-	// 	t.Fatalf("FreezeWallet: %v", err)
-	// }
-	// if _, err := c.UnfreezeWallet(tok.Address, owner.PublicKey); err != nil {
-	// 	t.Fatalf("UnfreezeWallet: %v", err)
-	// }
-
-	// var tr tokenV1Domain.Transfer
-	// unmarshalState(t, trOut.States[0].Object, &tr)
-	// if tr.ToAddress != receiver.PublicKey {
-	// 	t.Fatalf("transfer mismatch: %s != %s", tr.ToAddress, receiver.PublicKey)
-	// }
+	
 }
