@@ -622,6 +622,51 @@ func (c *networkClient) RemoveDenyUsers(tokenAddress string, accessMode string, 
 
 }
 
+func (c *networkClient) ChangeAccessMode(tokenAddress string, accessMode string) (types.ContractOutput, error) {
+	from := c.publicKey
+
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if accessMode == "" {
+		return types.ContractOutput{}, fmt.Errorf("access mode not set")
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+
+	method := tokenV1.METHOD_CHANGE_ACCESS_MODE
+	data := map[string]interface{}{
+		"access_mode": accessMode,
+	}
+
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
+		from,
+		tokenAddress,
+		method,
+		data,
+		version,
+		uuid7,
+	)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
 func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error) {
 	from := c.publicKey
 
