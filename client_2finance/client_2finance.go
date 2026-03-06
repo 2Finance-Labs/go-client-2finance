@@ -107,6 +107,7 @@ type Client2FinanceNetwork interface {
 	RemoveAllowUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
 	AddDenyUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
 	RemoveDenyUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
+	ChangeAccessMode(tokenAddress string, accessMode string) (types.ContractOutput, error)
 	RevokeFreezeAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)
 	RevokeMintAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)
 	RevokeUpdateAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)
