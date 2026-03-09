@@ -8,7 +8,6 @@ import (
 
 	"gitlab.com/2finance/2finance-network/blockchain/block"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
@@ -88,7 +87,8 @@ type Client2FinanceNetwork interface {
 		tags map[string]string,
 		creator string,
 		creatorWebsite string,
-		accessPolicy domain.AccessPolicy,
+		accessMode string,
+		accessUsers map[string]bool,
 		frozenAccounts map[string]bool,
 		feeTiersList []map[string]interface{},
 		feeAddress string,
@@ -103,17 +103,18 @@ type Client2FinanceNetwork interface {
 	MintToken(to, mintTo, amount string, decimals int, tokenType string) (types.ContractOutput, error)
 	BurnToken(to, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
 	TransferToken(tokenAddress, transferTo, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
-	AllowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
-	DisallowUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
-	BlockUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
-	UnblockUsers(tokenAddress string, users map[string]bool) (types.ContractOutput, error)
+	AddAllowUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
+	RemoveAllowUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
+	AddDenyUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
+	RemoveDenyUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
+	ChangeAccessMode(tokenAddress string, accessMode string) (types.ContractOutput, error)
 	RevokeFreezeAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)
 	RevokeMintAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)
 	RevokeUpdateAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)
 	UpdateMetadata(tokenAddress, symbol, name string, decimals int, description, image, website string,
 		tagsSocialMedia, tagsCategory, tags map[string]string,
 		creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error)
-	
+
 	FreezeWallet(tokenAddress string, wallet string) (types.ContractOutput, error)
 	UnfreezeWallet(tokenAddress string, wallet string) (types.ContractOutput, error)
 
