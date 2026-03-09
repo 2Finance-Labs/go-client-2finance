@@ -132,8 +132,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	assert.Equal(t, tok.Creator, creator, "token creator mismatch")
 	assert.Equal(t, tok.CreatorWebsite, creatorWebsite, "token creator website mismatch")
 	assert.Equal(t, tok.AccessMode, accessMode, "token access policy mode mismatch")
-	assert.Equal(t, tok.AccessUsers[ownerPub], accessUsers[ownerPub], "token access policy users mismatch")
-	assert.Equal(t, tok.FrozenAccounts[ownerPub], frozenAccounts[ownerPub], "token frozen accounts mismatch")
+	assert.Equal(t, tok.AccessUsers[owner.PublicKey], accessUsers[owner.PublicKey], "token access policy users mismatch")
+	assert.Equal(t, tok.FrozenAccounts[owner.PublicKey], frozenAccounts[owner.PublicKey], "token frozen accounts mismatch")
 	// Skipping fee tiers deep equality for simplicity
 	assert.Equal(t, tok.FeeAddress, feeAddress, "token fee address mismatch")
 	assert.Equal(t, tok.FreezeAuthorityRevoked, freezeAuthorityRevoked, "token freeze authority revoked mismatch")
@@ -204,8 +204,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	assert.Equal(t, tokenState.Creator, creator, "token creator mismatch")
 	assert.Equal(t, tokenState.CreatorWebsite, creatorWebsite, "token creator website mismatch")
 	assert.Equal(t, tokenState.AccessMode, accessMode, "token access policy mode mismatch")
-	assert.Equal(t, tokenState.AccessUsers[ownerPub], accessUsers[ownerPub], "token access policy users mismatch")
-	assert.Equal(t, tokenState.FrozenAccounts[ownerPub], frozenAccounts[ownerPub], "token frozen accounts mismatch")
+	assert.Equal(t, tokenState.AccessUsers[owner.PublicKey], accessUsers[owner.PublicKey], "token access policy users mismatch")
+	assert.Equal(t, tokenState.FrozenAccounts[owner.PublicKey], frozenAccounts[owner.PublicKey], "token frozen accounts mismatch")
 	// Skipping fee tiers deep equality for simplicity
 	assert.Equal(t, tokenState.FeeAddress, feeAddress, "token fee address mismatch")
 	assert.Equal(t, tokenState.FreezeAuthorityRevoked, freezeAuthorityRevoked, "token freeze authority revoked mismatch")
@@ -222,7 +222,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	//        MINT
 	// ------------------
 	mintAmount := "1000000"
-	mintToken, err := c.MintToken(tok.Address, ownerPub, mintAmount, decimals, tok.TokenType)
+	mintToken, err := c.MintToken(tok.Address, owner.PublicKey, mintAmount, decimals, tok.TokenType)
 	if err != nil {
 		t.Fatalf("MintToken: %v", err)
 	}
@@ -308,7 +308,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	assert.Equal(t, burn.TokenAddress, tok.Address, "burn token address mismatch")
-	assert.Equal(t, burn.BurnFrom, ownerPub, "burn from address mismatch")
+	assert.Equal(t, burn.BurnFrom, owner.PublicKey, "burn from address mismatch")
 	assert.Equal(t, burn.Amount, mintAmount, "burn amount mismatch")
 	assert.Equal(t, burn.TokenType, tokenType, "burn token type mismatch")
 	assert.Equal(t, burn.UUID, "", "burn token UUID mismatch") // Should be nil for fungible tokens
@@ -336,7 +336,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	assert.Equal(t, balance3.TokenAddress, tok.Address, "balance token address mismatch")
-	assert.Equal(t, balance3.OwnerAddress, ownerPub, "balance wallet address mismatch")
+	assert.Equal(t, balance3.OwnerAddress, owner.PublicKey, "balance wallet address mismatch")
 	assert.Equal(t, balance3.Amount, totalSupply, "balance amount mismatch after burn")
 	assert.Equal(t, balance3.TokenType, tokenType, "balance token type mismatch")
 	assert.Equal(t, balance3.TokenUUIDList, []string(nil), "balance token UUID list mismatch") // Should be nil for fungible tokens
@@ -396,11 +396,11 @@ func TestTokenFlowFungible(t *testing.T) {
 	// ------------------
 
 	// Add allow users
-	_, receiverPub, _ := createWallet(t, c)
+	receiver, _ := createWallet(t, c)
 	c.SetPrivateKey(ownerPriv)
 
 	allowUsers, err := c.AddAllowUsers(tok.Address, domain.ALLOW_ACCESS_MODE, map[string]bool{
-		receiverPub: true,
+		receiver.PublicKey: true,
 	})
 	if err != nil {
 		t.Fatalf("AllowUsers: %v", err)
@@ -418,7 +418,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 	assert.Equal(t, allow.Address, tok.Address, "access policy token address mismatch")
 	assert.Equal(t, allow.AccessMode, tokenV1Domain.ALLOW_ACCESS_MODE, "access policy mode mismatch after allow")
-	assert.Equal(t, allow.AccessUsers[receiverPub], true, "access policy users mismatch after allow")
+	assert.Equal(t, allow.AccessUsers[receiver.PublicKey], true, "access policy users mismatch after allow")
 
 	getTokenOut5, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -432,11 +432,11 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	assert.Equal(t, tokenState5.AccessMode, tokenV1Domain.ALLOW_ACCESS_MODE, "token access mode mismatch after allow")
-	assert.Equal(t, tokenState5.AccessUsers[receiverPub], true, "token access users mismatch after allow")
+	assert.Equal(t, tokenState5.AccessUsers[receiver.PublicKey], true, "token access users mismatch after allow")
 
 	// Remove allow users
 	removeAllowUsers, err := c.RemoveAllowUsers(tok.Address, domain.ALLOW_ACCESS_MODE, map[string]bool{
-		receiverPub: true,
+		receiver.PublicKey: true,
 	})
 	if err != nil {
 		t.Fatalf("RemoveAllowUsers: %v", err)
@@ -454,8 +454,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 	assert.Equal(t, tok.Address, removeAllow.Address, "access policy token address mismatch")
 	assert.Equal(t, tokenV1Domain.ALLOW_ACCESS_MODE, removeAllow.AccessMode, "access policy mode mismatch after remove allow")
-	assert.Contains(t, removeAllow.AccessUsers, receiverPub, "removed user should be present in remove event payload")
-	assert.True(t, removeAllow.AccessUsers[receiverPub], "removed user payload should be true in remove event")
+	assert.Contains(t, removeAllow.AccessUsers, receiver.PublicKey, "removed user should be present in remove event payload")
+	assert.True(t, removeAllow.AccessUsers[receiver.PublicKey], "removed user payload should be true in remove event")
 
 	getTokenOut6, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -469,7 +469,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 	assert.Equal(t, tokenV1Domain.ALLOW_ACCESS_MODE, tokenState6.AccessMode, "token access mode mismatch after remove allow")
 
-	_, exists := tokenState6.AccessUsers[receiverPub]
+	_, exists := tokenState6.AccessUsers[receiver.PublicKey]
 	assert.False(t, exists, "user should have been removed from token access users")
 
 	// ------------------
@@ -510,7 +510,7 @@ func TestTokenFlowFungible(t *testing.T) {
 
 	// Add deny users
 	denyUsers, err := c.AddDenyUsers(tok.Address, tokenV1Domain.DENY_ACCESS_MODE, map[string]bool{
-		receiverPub: true,
+		receiver.PublicKey: true,
 	})
 	if err != nil {
 		t.Fatalf("AddDenyUsers: %v", err)
@@ -528,7 +528,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 	assert.Equal(t, deny.Address, tok.Address, "access policy token address mismatch")
 	assert.Equal(t, deny.AccessMode, tokenV1Domain.DENY_ACCESS_MODE, "access policy mode mismatch after add deny")
-	assert.Equal(t, deny.AccessUsers[receiverPub], true, "access policy users mismatch after add deny")
+	assert.Equal(t, deny.AccessUsers[receiver.PublicKey], true, "access policy users mismatch after add deny")
 
 	getTokenOut8, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -541,11 +541,11 @@ func TestTokenFlowFungible(t *testing.T) {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
 	assert.Equal(t, tokenState8.AccessMode, tokenV1Domain.DENY_ACCESS_MODE, "token access mode mismatch after add deny")
-	assert.Equal(t, tokenState8.AccessUsers[receiverPub], true, "token access users mismatch after add deny")
+	assert.Equal(t, tokenState8.AccessUsers[receiver.PublicKey], true, "token access users mismatch after add deny")
 
 	// Remove deny users
 	removeDenyUsers, err := c.RemoveDenyUsers(tok.Address, tokenV1Domain.DENY_ACCESS_MODE, map[string]bool{
-		receiverPub: true,
+		receiver.PublicKey: true,
 	})
 	if err != nil {
 		t.Fatalf("RemoveDenyUsers: %v", err)
@@ -563,8 +563,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 	assert.Equal(t, removeDeny.Address, tok.Address, "access policy token address mismatch")
 	assert.Equal(t, removeDeny.AccessMode, tokenV1Domain.DENY_ACCESS_MODE, "access policy mode mismatch after remove deny")
-	assert.Contains(t, removeDeny.AccessUsers, receiverPub, "removed user should be present in remove event payload")
-	assert.True(t, removeDeny.AccessUsers[receiverPub], "removed user payload should be true in remove event")
+	assert.Contains(t, removeDeny.AccessUsers, receiver.PublicKey, "removed user should be present in remove event payload")
+	assert.True(t, removeDeny.AccessUsers[receiver.PublicKey], "removed user payload should be true in remove event")
 
 	getTokenOut9, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -577,14 +577,14 @@ func TestTokenFlowFungible(t *testing.T) {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
 	assert.Equal(t, tokenState9.AccessMode, tokenV1Domain.DENY_ACCESS_MODE, "token access mode mismatch after remove deny")
-	_, exists2 := tokenState9.AccessUsers[receiverPub]
+	_, exists2 := tokenState9.AccessUsers[receiver.PublicKey]
 	assert.False(t, exists2, "user should have been removed from token access users")
 
 	// // ------------------
 	// //   TRANSFER TOKEN
 	// // ------------------
 	// transferAmount := "500000"
-	// transferToken, err := c.TransferToken(tok.Address, receiverPub, transferAmount, decimals, tok.TokenType, "")
+	// transferToken, err := c.TransferToken(tok.Address, receiver.PublicKey, transferAmount, decimals, tok.TokenType, "")
 	// if err != nil {
 	// 	t.Fatalf("TransferToken: %v", err)
 	// }
@@ -600,8 +600,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	// }
 
 	// assert.Equal(t, transfer.TokenAddress, tok.Address, "transfer token address mismatch")
-	// assert.Equal(t, transfer.FromAddress, ownerPub, "transfer from address mismatch")
-	// assert.Equal(t, transfer.ToAddress, receiverPub, "transfer to address mismatch")
+	// assert.Equal(t, transfer.FromAddress, owner.PublicKey, "transfer from address mismatch")
+	// assert.Equal(t, transfer.ToAddress, receiver.PublicKey, "transfer to address mismatch")
 	// assert.Equal(t, transfer.Amount, transferAmount, "transfer amount mismatch")
 	// assert.Equal(t, transfer.TokenType, tokenType, "transfer token type mismatch")
 	// assert.Equal(t, transfer.UUID, "", "transfer UUID mismatch") // Should be nil for fungible tokens
@@ -618,7 +618,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	// }
 
 	// assert.Equal(t, balance4.TokenAddress, tok.Address, "balance token address mismatch")
-	// assert.Equal(t, balance4.OwnerAddress, ownerPub, "balance wallet address mismatch")
+	// assert.Equal(t, balance4.OwnerAddress, owner.PublicKey, "balance wallet address mismatch")
 	// assert.Equal(t, balance4.Amount, mintAmount, "balance amount mismatch after transfer")
 	// assert.Equal(t, balance4.TokenType, tokenType, "balance token type mismatch")
 	// assert.Equal(t, balance4.TokenUUIDList, []string(nil), "balance token UUID list mismatch") // Should be nil for fungible tokens
@@ -865,7 +865,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	// ------------------
 	//      FREEZE
 	// ------------------
-	freezeWallet, err := c.FreezeWallet(tok.Address, ownerPub)
+	freezeWallet, err := c.FreezeWallet(tok.Address, owner.PublicKey)
 	if err != nil {
 		t.Fatalf("FreezeWallet: %v", err)
 	}
@@ -883,7 +883,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	assert.Equal(t, tok.Address, freezeEvent.TokenAddress, "freeze wallet event token address mismatch")
-	assert.Equal(t, true, freezeEvent.FrozenAccounts[ownerPub], "freeze wallet event wallet address mismatch")
+	assert.Equal(t, true, freezeEvent.FrozenAccounts[owner.PublicKey], "freeze wallet event wallet address mismatch")
 
 	getTokenOut16, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -896,12 +896,12 @@ func TestTokenFlowFungible(t *testing.T) {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
 
-	assert.Equal(t, true, tokenState16.FrozenAccounts[ownerPub], "token frozen accounts mismatch after freeze")
+	assert.Equal(t, true, tokenState16.FrozenAccounts[owner.PublicKey], "token frozen accounts mismatch after freeze")
 
 	// ------------------
 	//      UNFREEZE
 	// ------------------
-	unfreezeWallet, err := c.UnfreezeWallet(tok.Address, ownerPub)
+	unfreezeWallet, err := c.UnfreezeWallet(tok.Address, owner.PublicKey)
 	if err != nil {
 		t.Fatalf("UnfreezeWallet: %v", err)
 	}
@@ -917,7 +917,7 @@ func TestTokenFlowFungible(t *testing.T) {
 		t.Fatalf("UnmarshalEvent (UnfreezeWallet.Logs[0]): %v", err)
 	}
 	assert.Equal(t, tok.Address, unfreezeEvent.TokenAddress, "unfreeze wallet event token address mismatch")
-	assert.Equal(t, false, unfreezeEvent.FrozenAccounts[ownerPub], "unfreeze wallet event wallet address mismatch")
+	assert.Equal(t, false, unfreezeEvent.FrozenAccounts[owner.PublicKey], "unfreeze wallet event wallet address mismatch")
 
 	getTokenOut17, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -930,7 +930,7 @@ func TestTokenFlowFungible(t *testing.T) {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
 
-	_, exists3 := tokenState17.FrozenAccounts[ownerPub]
+	_, exists3 := tokenState17.FrozenAccounts[owner.PublicKey]
 	assert.False(t, exists3, "token frozen accounts mismatch after unfreeze")
 
 	// ------------------
@@ -1099,7 +1099,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	// ------------------
 	// GETTERS | LISTINGS
 	// ------------------
-	if _, err := c.GetTokenBalance(tok.Address, ownerPub); err != nil {
+	if _, err := c.GetTokenBalance(tok.Address, owner.PublicKey); err != nil {
 		t.Fatalf("GetTokenBalance(owner): %v", err)
 	}
 	if _, err := c.ListTokenBalances(tok.Address, "", 1, 10, true); err != nil {
