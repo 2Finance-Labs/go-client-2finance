@@ -580,9 +580,9 @@ func TestTokenFlowFungible(t *testing.T) {
 	_, exists2 := tokenState9.AccessUsers[receiverPub]
 	assert.False(t, exists2, "user should have been removed from token access users")
 
-	// ------------------
-	//   TRANSFER TOKEN
-	// ------------------
+	// // ------------------
+	// //   TRANSFER TOKEN
+	// // ------------------
 	// transferAmount := "500000"
 	// transferToken, err := c.TransferToken(tok.Address, receiverPub, transferAmount, decimals, tok.TokenType, "")
 	// if err != nil {
@@ -610,7 +610,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	// if err != nil {
 	// 	t.Fatalf("UnmarshalLog (TransferToken.Logs[1]): %v", err)
 	// }
-	// assert.Equal(t, unmarshalLogBalance4.LogType, tokenV1Domain.TOKEN_BALANCE_INCREASED_LOG, "balance increased log type mismatch")
+	// assert.Equal(t, unmarshalLogBalance4.LogType, tokenV1Domain.TOKEN_BALANCE_DECREASED_LOG, "balance decreased log type mismatch")
 
 	// balance4, err := utils.UnmarshalEvent[tokenV1Domain.Balance](unmarshalLogBalance4.Event)
 	// if err != nil {
@@ -714,51 +714,51 @@ func TestTokenFlowFungible(t *testing.T) {
 	// ------------------
 	//     FEE TIERS
 	// ------------------
-	// updateFeeTiers, er := c.UpdateFeeTiers(tok.Address, []map[string]interface{}{
-	// 	{
-	// 		"min_amount": "0",
-	// 		"max_amount": amt(10_000, decimals),
-	// 		"min_volume": "0",
-	// 		"max_volume": amt(100_000, decimals),
-	// 		"fee_bps":    50,
-	// 	},
-	// })
-	// if er != nil {
-	// 	t.Fatalf("UpdateFeeTiers: %v", er)
-	// }
+	updateFeeTiers, er := c.UpdateFeeTiers(tok.Address, []map[string]interface{}{
+		{
+			"min_amount": "0",
+			"max_amount": amt(10_000, decimals),
+			"min_volume": "0",
+			"max_volume": amt(100_000, decimals),
+			"fee_bps":    50,
+		},
+	})
+	if er != nil {
+		t.Fatalf("UpdateFeeTiers: %v", er)
+	}
 
-	// unmarshalLogFeeTiers, err := utils.UnmarshalLog[log.Log](updateFeeTiers.Logs[0])
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalLog (UpdateFeeTiers.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, unmarshalLogFeeTiers.LogType, tokenV1Domain.TOKEN_FEE_UPDATED_LOG, "update fee tiers log type mismatch")
+	unmarshalLogFeeTiers, err := utils.UnmarshalLog[log.Log](updateFeeTiers.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (UpdateFeeTiers.Logs[0]): %v", err)
+	}
+	assert.Equal(t, unmarshalLogFeeTiers.LogType, tokenV1Domain.TOKEN_FEE_UPDATED_LOG, "update fee tiers log type mismatch")
 
-	// feeTiersEvent, err := utils.UnmarshalEvent[tokenV1Domain.FeeTiers](unmarshalLogFeeTiers.Event)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalEvent (UpdateFeeTiers.Logs[0]): %v", err)
-	// }
-	// assert.Equal(t, feeTiersEvent.FeeTiersList[0].MinAmount, "0", "fee tiers min amount mismatch")
-	// assert.Equal(t, feeTiersEvent.FeeTiersList[0].MaxAmount, amt(10_000, decimals), "fee tiers max amount mismatch")
-	// assert.Equal(t, feeTiersEvent.FeeTiersList[0].MinVolume, "0", "fee tiers min volume mismatch")
-	// assert.Equal(t, feeTiersEvent.FeeTiersList[0].MaxVolume, amt(100_000, decimals), "fee tiers max volume mismatch")
-	// assert.Equal(t, feeTiersEvent.FeeTiersList[0].FeeBps, 50, "fee tiers bps mismatch")
+	feeTiersEvent, err := utils.UnmarshalEvent[tokenV1Domain.FeeTiers](unmarshalLogFeeTiers.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (UpdateFeeTiers.Logs[0]): %v", err)
+	}
+	assert.Equal(t, feeTiersEvent.FeeTiersList[0].MinAmount, "0", "fee tiers min amount mismatch")
+	assert.Equal(t, feeTiersEvent.FeeTiersList[0].MaxAmount, amt(10_000, decimals), "fee tiers max amount mismatch")
+	assert.Equal(t, feeTiersEvent.FeeTiersList[0].MinVolume, "0", "fee tiers min volume mismatch")
+	assert.Equal(t, feeTiersEvent.FeeTiersList[0].MaxVolume, amt(100_000, decimals), "fee tiers max volume mismatch")
+	assert.Equal(t, feeTiersEvent.FeeTiersList[0].FeeBps, 50, "fee tiers bps mismatch")
 
-	// getTokenOut13, err := c.GetToken(tok.Address, "", "")
-	// if err != nil {
-	// 	t.Fatalf("GetToken: %v", err)
-	// }
+	getTokenOut13, err := c.GetToken(tok.Address, "", "")
+	if err != nil {
+		t.Fatalf("GetToken: %v", err)
+	}
 
-	// var tokenState13 tokenV1Models.TokenStateModel
-	// err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut13.States[0].Object, &tokenState13)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
-	// }
+	var tokenState13 tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut13.States[0].Object, &tokenState13)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
+	}
 
-	// assert.Equal(t, tokenState13.FeeTiersList[0].MinAmount, "0", "token state fee tiers min amount mismatch")
-	// assert.Equal(t, tokenState13.FeeTiersList[0].MaxAmount, amt(10_000, decimals), "token state fee tiers max amount mismatch")
-	// assert.Equal(t, tokenState13.FeeTiersList[0].MinVolume, "0", "token state fee tiers min volume mismatch")
-	// assert.Equal(t, tokenState13.FeeTiersList[0].MaxVolume, amt(100_000, decimals), "token state fee tiers max volume mismatch")
-	// assert.Equal(t, tokenState13.FeeTiersList[0].FeeBps, 50, "token state fee tiers bps mismatch")
+	assert.Equal(t, tokenState13.FeeTiersList[0].MinAmount, "0", "token state fee tiers min amount mismatch")
+	assert.Equal(t, tokenState13.FeeTiersList[0].MaxAmount, amt(10_000, decimals), "token state fee tiers max amount mismatch")
+	assert.Equal(t, tokenState13.FeeTiersList[0].MinVolume, "0", "token state fee tiers min volume mismatch")
+	assert.Equal(t, tokenState13.FeeTiersList[0].MaxVolume, amt(100_000, decimals), "token state fee tiers max volume mismatch")
+	assert.Equal(t, tokenState13.FeeTiersList[0].FeeBps, 50, "token state fee tiers bps mismatch")
 
 	// ------------------
 	//    FEE ADDRESS
