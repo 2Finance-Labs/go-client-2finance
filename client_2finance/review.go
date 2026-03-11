@@ -300,7 +300,6 @@ func (c *networkClient) GetReview(address string) (types.ContractOutput, error) 
 
 // ListReviews queries reviews with filters + pagination.
 func (c *networkClient) ListReviews(
-	owner,
 	reviewer, reviewee, subjectType, subjectID string,
 	includeHidden *bool,
 	minRating, maxRating, page, limit int,
@@ -313,11 +312,6 @@ func (c *networkClient) ListReviews(
 	}
 
 	// Optional address validations
-	if owner != "" {
-		if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
-			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
-		}
-	}
 	if reviewer != "" {
 		if err := keys.ValidateEDDSAPublicKeyHex(reviewer); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid reviewer address: %w", err)

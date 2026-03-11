@@ -455,7 +455,12 @@ type Client2FinanceNetwork interface {
 	ModerateReview(address, action, note string) (types.ContractOutput, error)
 
 	GetReview(address string) (types.ContractOutput, error)
-	ListReviews(owner, reviewer, reviewee, subjectType, subjectID string, includeHidden *bool, minRating, maxRating, page, limit int, asc bool) (types.ContractOutput, error)
+	ListReviews(
+		reviewer, reviewee, subjectType, subjectID string,
+		includeHidden *bool,
+		minRating, maxRating, page, limit int,
+		asc bool,
+	) (types.ContractOutput, error)
 
 	AddRaffle(address, owner, tokenAddress, ticketPrice string, maxEntries, maxEntriesPerUser int, startAt, expiredAt time.Time, paused bool, seedCommitHex string, metadata map[string]string) (types.ContractOutput, error)
 	UpdateRaffle(address, tokenAddress, ticketPrice string, maxEntries, maxEntriesPerUser int, startAt, expiredAt *time.Time, seedCommitHex string, metadata map[string]string) (types.ContractOutput, error)
