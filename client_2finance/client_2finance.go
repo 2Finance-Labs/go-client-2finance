@@ -100,9 +100,9 @@ type Client2FinanceNetwork interface {
 		assetGLBUri string,
 		tokenType string,
 		transferable, stablecoin bool) (types.ContractOutput, error)
-	MintToken(to, mintTo, amount string, decimals int, tokenType string) (types.ContractOutput, error)
-	BurnToken(to, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
-	TransferToken(tokenAddress, transferTo, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
+	MintToken(to, mintTo, amount string) (types.ContractOutput, error)
+	BurnToken(to, amount string, tokenUUIDList []string) (types.ContractOutput, error)
+	TransferToken(tokenAddress, transferTo, amount string, tokenUUIDList []string) (types.ContractOutput, error)
 	AddAllowUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
 	RemoveAllowUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
 	AddDenyUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
