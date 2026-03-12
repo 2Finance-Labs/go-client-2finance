@@ -1276,13 +1276,88 @@ func TestTokenFlowFungible(t *testing.T) {
 	// ------------------
 	// GETTERS | LISTINGS
 	// ------------------
-	if _, err := c.GetTokenBalance(tok.Address, owner.PublicKey); err != nil {
-		t.Fatalf("GetTokenBalance(owner): %v", err)
+
+	getTokenOutBalanceOwner, err := c.GetTokenBalance(tok.Address, owner.PublicKey)
+	if err != nil {
+		t.Fatalf("GetTokenBalance: %v", err)
 	}
-	if _, err := c.ListTokenBalances(tok.Address, "", 1, 10, true); err != nil {
+	var balanceStateOwner tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](getTokenOutBalanceOwner.States[0].Object, &balanceStateOwner)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetTokenBalance.States[0]): %v", err)
+	}
+
+	amount := "99898500"
+	assert.Equal(t, balanceStateOwner.TokenAddress, tok.Address, "token address mismatch in balance state for owner")
+	assert.Equal(t, balanceStateOwner.OwnerAddress, owner.PublicKey, "owner address mismatch in balance state for owner")
+	assert.Equal(t, balanceStateOwner.Amount, amount, "token amount mismatch in balance state for owner")
+	assert.NotNil(t, balanceStateOwner.CreatedAt, "created at is nil for owner")
+	assert.NotNil(t, balanceStateOwner.UpdatedAt, "updated at is nil for owner")
+	assert.Equal(t, balanceStateOwner.TokenUUID, "", "token uuid mismatch in balance state for owner")
+
+	listOfBalances, err := c.ListTokenBalances("", "", domain.FUNGIBLE, 1, 10, true)
+	if err != nil {
 		t.Fatalf("ListTokenBalances: %v", err)
 	}
-	if _, err := c.ListTokens("", "", "", 1, 10, true); err != nil {
+
+	require.NotEmpty(t, listOfBalances.States, "expected at least one state in ListTokenBalances response")
+	var balanceStateList []tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[[]tokenV1Models.BalanceStateModel](listOfBalances.States[0].Object, &balanceStateList)
+	if err != nil {
+		t.Fatalf("UnmarshalState (ListTokenBalances.States[0].Object): %v", err)
+	}
+
+	require.NotEmpty(t, balanceStateList, "expected at least one balance in list")
+	require.Equal(t, 10, len(balanceStateList), "expected exactly ten balances in list")
+	require.NotNil(t, balanceStateList[0].TokenAddress, "token address is nil for balance in list")
+	require.NotNil(t, balanceStateList[0].OwnerAddress, "owner address is nil for balance in list")
+	require.NotNil(t, balanceStateList[0].Amount, "amount is nil for balance in list")
+	require.NotNil(t, balanceStateList[0].TokenUUID, "token uuid is nil for balance in list")
+	require.NotNil(t, balanceStateList[0].CreatedAt, "created at is nil for balance in list")
+	require.NotNil(t, balanceStateList[0].UpdatedAt, "updated at is nil for balance in list")
+
+
+	listTokens, err := c.ListTokens("", "", "", domain.FUNGIBLE, 1, 10, true);
+	if err != nil {
 		t.Fatalf("ListTokens: %v", err)
 	}
+
+	require.NotEmpty(t, listTokens.States, "expected at least one state in ListTokens response")
+	var tokenStateList []tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[[]tokenV1Models.TokenStateModel](listTokens.States[0].Object, &tokenStateList)
+	if err != nil {
+		t.Fatalf("UnmarshalState (ListTokens.States[0].Object): %v", err)
+	}
+
+	require.NotEmpty(t, tokenStateList, "expected at least one token in list")
+	require.Equal(t, 10, len(tokenStateList), "expected exactly ten tokens in list")
+	require.NotNil(t, tokenStateList[0].Address, "token address is nil for token in list")
+	require.NotNil(t, tokenStateList[0].Symbol, "token symbol is nil for token in list")
+	require.NotNil(t, tokenStateList[0].Name, "token name is nil for token in list")
+	require.NotNil(t, tokenStateList[0].Decimals, "token decimals is nil for token in list")
+	require.NotNil(t, tokenStateList[0].TotalSupply, "token total supply is nil for token in list")
+	require.NotNil(t, tokenStateList[0].Description, "token description is nil for token in list")
+	require.NotNil(t, tokenStateList[0].Image, "token image is nil for token in list")
+	require.NotNil(t, tokenStateList[0].Website, "token website is nil for token in list")
+	require.NotNil(t, tokenStateList[0].TagsSocialMedia, "token tags social media is nil for token in list")
+	require.NotNil(t, tokenStateList[0].TagsCategory, "token tags category is nil for token in list")
+	require.NotNil(t, tokenStateList[0].Tags, "token tags is nil for token in list")
+	require.NotNil(t, tokenStateList[0].Creator, "token creator is nil for token in list")
+	require.NotNil(t, tokenStateList[0].CreatorWebsite, "token creator website is nil for token in list")
+	require.NotNil(t, tokenStateList[0].AccessMode, "token access mode is nil for token in list")
+	require.Nil(t, tokenStateList[0].AccessUsers, "token access users is nil for token in list")
+	require.NotNil(t, tokenStateList[0].FrozenAccounts, "token frozen accounts is nil for token in list")
+	require.NotNil(t, tokenStateList[0].FeeTiersList, "token fee tiers list is nil for token in list")
+	require.NotNil(t, tokenStateList[0].FeeAddress, "token fee address is nil for token in list")
+	require.NotNil(t, tokenStateList[0].FreezeAuthorityRevoked, "token freeze authority revoked is nil for token in list")
+	require.NotNil(t, tokenStateList[0].MintAuthorityRevoked, "token mint authority revoked is nil for token in list")
+	require.NotNil(t, tokenStateList[0].UpdateAuthorityRevoked, "token update authority revoked is nil for token in list")
+	require.NotNil(t, tokenStateList[0].Paused, "token paused is nil for token in list")
+	require.NotNil(t, tokenStateList[0].AssetGLBUri, "token asset GLB URI is nil for token in list")
+	require.NotNil(t, tokenStateList[0].TokenType, "token type is nil for token in list")
+	require.NotNil(t, tokenStateList[0].Transferable, "token transferable is nil for token in list")
+	require.NotNil(t, tokenStateList[0].Stablecoin, "token stablecoin is nil for token in list")
+	require.NotNil(t, tokenStateList[0].CreatedAt, "created at is nil for token in list")
+	require.NotNil(t, tokenStateList[0].UpdatedAt, "updated at is nil for token in list")
+
 }

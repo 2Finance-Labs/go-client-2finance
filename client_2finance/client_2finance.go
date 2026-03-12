@@ -128,10 +128,10 @@ type Client2FinanceNetwork interface {
 	UntransferableToken(tokenAddress string, transferable bool) (types.ContractOutput, error)
 
 	GetToken(tokenAddress string, symbol string, name string) (types.ContractOutput, error)
-	ListTokens(ownerAddress, symbol, name string, page, limit int, ascending bool) (types.ContractOutput, error)
+	ListTokens(ownerAddress, symbol, name, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	GetTokenBalance(tokenAddress, ownerAddress string) (types.ContractOutput, error)
-	ListTokenBalances(tokenAddress, ownerAddress string, page, limit int, ascending bool) (types.ContractOutput, error)
+	ListTokenBalances(tokenAddress, ownerAddress, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	// FAUCET
 	AddFaucet(

@@ -1159,7 +1159,7 @@ func (c *networkClient) GetToken(tokenAddress string, symbol string, name string
 	return contractOutput, nil
 }
 
-func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limit int, ascending bool) (types.ContractOutput, error) {
+func (c *networkClient) ListTokens(ownerAddress, symbol, name, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if ownerAddress != "" {
@@ -1181,6 +1181,10 @@ func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limi
 		"limit":            limit,
 		"ascending":        ascending,
 		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
+	}
+
+	if tokenType != "" {
+		data["token_type"] = tokenType
 	}
 
 	contractOutput, err := c.GetState("", method, data)
@@ -1226,7 +1230,7 @@ func (c *networkClient) GetTokenBalance(tokenAddress, ownerAddress string) (type
 	return contractOutput, nil
 }
 
-func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress string, page, limit int, ascending bool) (types.ContractOutput, error) {
+func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
@@ -1253,6 +1257,9 @@ func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress string, pag
 		"ascending":        ascending,
 		"token_address":    tokenAddress,
 		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
+	}
+	if tokenType != "" {
+		data["token_type"] = tokenType
 	}
 
 	contractOutput, err := c.GetState("", method, data)
