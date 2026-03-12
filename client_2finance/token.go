@@ -1230,6 +1230,45 @@ func (c *networkClient) GetTokenBalance(tokenAddress, ownerAddress string) (type
 	return contractOutput, nil
 }
 
+func (c *networkClient) GetTokenBalanceNFT(tokenAddress string, ownerAddress string, tokenUUID string) (types.ContractOutput, error) {
+	from := c.publicKey
+
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if ownerAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("owner address not set")
+	}
+	if tokenUUID == "" {
+		return types.ContractOutput{}, fmt.Errorf("token UUID not set")
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(ownerAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
+	}
+
+	method := tokenV1.METHOD_GET_TOKEN_BALANCE_NFT
+	data := map[string]interface{}{
+		"owner_address": ownerAddress,
+		"token_uuid":    tokenUUID,
+	}
+
+	contractOutput, err := c.GetState(tokenAddress, method, data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
 func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error) {
 	from := c.publicKey
 

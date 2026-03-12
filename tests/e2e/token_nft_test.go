@@ -297,6 +297,22 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	require.Len(t, balanceTo.TokenUUIDList, 1, "receiver balance token uuid list mismatch")
 	assert.Equal(t, mintedUUID, balanceTo.TokenUUIDList[0], "receiver balance token uuid mismatch")
 
+	getBalanceReceiver, err := c.GetTokenBalanceNFT(tok.Address, receiver.PublicKey, mintedUUID)
+	if err != nil {
+		t.Fatalf("GetTokenBalance (receiver): %v", err)
+	}
+	var balanceReceiver tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](getBalanceReceiver.States[0].Object, &balanceReceiver)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetTokenBalance receiver): %v", err)
+	}
+	assert.Equal(t, tok.Address, balanceReceiver.TokenAddress, "receiver balance token address mismatch")
+	assert.Equal(t, receiver.PublicKey, balanceReceiver.OwnerAddress, "receiver balance owner mismatch")
+	assert.Equal(t, mintedUUID, balanceReceiver.TokenUUID, "receiver balance token UUID mismatch after transfer")
+	assert.Equal(t, "1", balanceReceiver.Amount, "receiver balance amount mismatch after transfer")
+	assert.NotNil(t, balanceReceiver.CreatedAt, "receiver balance created at should not be nil")
+	assert.NotNil(t, balanceReceiver.UpdatedAt, "receiver balance updated at should not be nil")
+	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, balanceReceiver.TokenType, "receiver balance token type mismatch after transfer")
 	// ------------------
 	//        BURN
 	// ------------------
@@ -371,6 +387,11 @@ func TestTokenFlowNonFungible(t *testing.T) {
 
 	assert.Equal(t, sumTotalSupply, tokenState2.TotalSupply, "token total supply mismatch after mint")
 
+	_, err = c.GetTokenBalanceNFT(tok.Address, receiver.PublicKey, mintedUUID)
+	assert.Error(t, err, "expected error when getting balance of burned token")
+	assert.ErrorContains(t, err, "record not found")
+
+	
 	// ------------------
 	// CHANGE ACCESS MODE
 	// ------------------
@@ -947,16 +968,19 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	// GETTERS | LISTINGS
 	// ------------------
-	// if _, err := c.GetTokenBalance(tok.Address, owner.PublicKey); err != nil {
-	// 	t.Fatalf("GetTokenBalance(owner): %v", err)
-	// }
-	// if _, err := c.GetTokenBalance(tok.Address, receiver.PublicKey); err != nil {
-	// 	t.Fatalf("GetTokenBalance(receiver): %v", err)
-	// }
-	// if _, err := c.ListTokenBalances(tok.Address, "", 1, 10, true); err != nil {
-	// 	t.Fatalf("ListTokenBalances: %v", err)
-	// }
-	// if _, err := c.ListTokens("", "", "", 1, 10, true); err != nil {
-	// 	t.Fatalf("ListTokens: %v", err)
-	// }
+	uuid := mint.TokenUUIDList[1]
+	balanceNFT, err := c.GetTokenBalanceNFT(tok.Address, owner.PublicKey, uuid)
+	if err != nil {
+		t.Fatalf("GetTokenBalance(owner): %v", err)
+	}
+
+	var balanceNFTState tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](balanceNFT.States[0].Object, &balanceNFTState)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetTokenBalanceNFT.States[0]): %v", err)
+	}
+	assert.Equal(t, tok.Address, balanceNFTState.TokenAddress, "balance token address mismatch")
+	assert.Equal(t, owner.PublicKey, balanceNFTState.OwnerAddress, "balance wallet address mismatch")
+	assert.Equal(t, tokenType, balanceNFTState.TokenType, "balance token type mismatch")
+	assert.Equal(t, uuid, balanceNFTState.TokenUUID, "balance token UUID mismatch")
 }

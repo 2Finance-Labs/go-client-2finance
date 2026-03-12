@@ -131,6 +131,7 @@ type Client2FinanceNetwork interface {
 	ListTokens(ownerAddress, symbol, name, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	GetTokenBalance(tokenAddress, ownerAddress string) (types.ContractOutput, error)
+	GetTokenBalanceNFT(tokenAddress, ownerAddress, tokenUUID string) (types.ContractOutput, error)
 	ListTokenBalances(tokenAddress, ownerAddress, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	// FAUCET
