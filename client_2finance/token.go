@@ -145,7 +145,7 @@ func (c *networkClient) AddToken(
 // to is the token address, we are sending transaction to the token contract
 // mintTo is the address that will receive the minted tokens
 // amount is the amount of tokens to mint, it should be in the smallest unit (e.g. wei for ETH)
-func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, tokenType string) (types.ContractOutput, error) {
+func (c *networkClient) MintToken(to, mintTo, amount string) (types.ContractOutput, error) {
 
 	from := c.publicKey
 
@@ -158,10 +158,6 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, token
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("token type not set")
-	}
-
 	if err := keys.ValidateEDDSAPublicKeyHex(mintTo); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid mint to address: %w", err)
 	}
@@ -182,7 +178,6 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, token
 	data := map[string]interface{}{
 		"mint_to":    mintTo,
 		"amount":     amount,
-		"token_type": tokenType,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -205,22 +200,11 @@ func (c *networkClient) MintToken(to, mintTo, amount string, decimals int, token
 	return contractOutput, nil
 }
 
-func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error) {
+func (c *networkClient) BurnToken(to, amount string, tokenUUIDList []string) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if to == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
-	}
-	if amount == "" {
-		return types.ContractOutput{}, fmt.Errorf("amount not set")
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("token type not set")
-	}
-	if tokenType == domain.NON_FUNGIBLE {
-		if uuid == "" {
-			return types.ContractOutput{}, fmt.Errorf("uuid not set")
-		}
 	}
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
@@ -232,10 +216,12 @@ func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType str
 	}
 
 	method := tokenV1.METHOD_BURN_TOKEN
-	data := map[string]interface{}{
-		"amount":     amount,
-		"token_type": tokenType,
-		"uuid":       uuid,
+	data := map[string]interface{}{}
+	if len(tokenUUIDList) > 0 {
+		data["token_uuid_list"] = tokenUUIDList
+	}
+	if amount != "" {
+		data["amount"] = amount
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -258,7 +244,7 @@ func (c *networkClient) BurnToken(to, amount string, decimals int, tokenType str
 	return contractOutput, nil
 }
 
-func (c *networkClient) TransferToken(tokenAddress string, transferTo string, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error) {
+func (c *networkClient) TransferToken(tokenAddress string, transferTo string, amount string, tokenUUIDList []string) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if transferTo == "" {
@@ -267,17 +253,7 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if amount == "" {
-		return types.ContractOutput{}, fmt.Errorf("amount not set")
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("token type not set")
-	}
-	if tokenType == domain.NON_FUNGIBLE {
-		if uuid == "" {
-			return types.ContractOutput{}, fmt.Errorf("uuid not set")
-		}
-	}
+
 	if from == transferTo {
 		return types.ContractOutput{}, fmt.Errorf("from and to addresses are the same")
 	}
@@ -297,9 +273,12 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 	method := tokenV1.METHOD_TRANSFER_TOKEN
 	data := map[string]interface{}{
 		"transfer_to": transferTo,
-		"amount":      amount,
-		"token_type":  tokenType,
-		"uuid":        uuid,
+	}
+	if amount != "" {
+		data["amount"] = amount
+	}
+	if len(tokenUUIDList) > 0 {
+		data["token_uuid_list"] = tokenUUIDList
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -1180,7 +1159,7 @@ func (c *networkClient) GetToken(tokenAddress string, symbol string, name string
 	return contractOutput, nil
 }
 
-func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limit int, ascending bool) (types.ContractOutput, error) {
+func (c *networkClient) ListTokens(ownerAddress, symbol, name, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if ownerAddress != "" {
@@ -1202,6 +1181,10 @@ func (c *networkClient) ListTokens(ownerAddress, symbol, name string, page, limi
 		"limit":            limit,
 		"ascending":        ascending,
 		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
+	}
+
+	if tokenType != "" {
+		data["token_type"] = tokenType
 	}
 
 	contractOutput, err := c.GetState("", method, data)
@@ -1247,7 +1230,46 @@ func (c *networkClient) GetTokenBalance(tokenAddress, ownerAddress string) (type
 	return contractOutput, nil
 }
 
-func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress string, page, limit int, ascending bool) (types.ContractOutput, error) {
+func (c *networkClient) GetTokenBalanceNFT(tokenAddress string, ownerAddress string, tokenUUID string) (types.ContractOutput, error) {
+	from := c.publicKey
+
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if ownerAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("owner address not set")
+	}
+	if tokenUUID == "" {
+		return types.ContractOutput{}, fmt.Errorf("token UUID not set")
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(ownerAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
+	}
+
+	method := tokenV1.METHOD_GET_TOKEN_BALANCE_NFT
+	data := map[string]interface{}{
+		"owner_address": ownerAddress,
+		"token_uuid":    tokenUUID,
+	}
+
+	contractOutput, err := c.GetState(tokenAddress, method, data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
+	}
+
+	return contractOutput, nil
+}
+
+func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
@@ -1274,6 +1296,9 @@ func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress string, pag
 		"ascending":        ascending,
 		"token_address":    tokenAddress,
 		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
+	}
+	if tokenType != "" {
+		data["token_type"] = tokenType
 	}
 
 	contractOutput, err := c.GetState("", method, data)
