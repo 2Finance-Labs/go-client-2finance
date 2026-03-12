@@ -1,7 +1,6 @@
 package e2e_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -42,7 +41,6 @@ func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (wallet wallet
 	if contractDomain.Address == "" {
 		t.Fatalf("contract address empty (event=%s)", string(contractLog.Event))
 	}
-	fmt.Println("Deployed wallet contract at:", contractDomain.Address)
 
 	wOut, err := c.AddWallet(contractDomain.Address, pub)
 	if err != nil {
@@ -107,10 +105,8 @@ func createBasicToken(
 	tags := map[string]string{"tag1": "DeFi", "tag2": "Blockchain"}
 	creator := "2Finance Test"
 	creatorWebsite := "https://creator.example"
-	accessMode := tokenV1Domain.ALLOW_ACCESS_MODE
-	accessUsers := map[string]bool{
-		ownerPub: true,
-	}
+	accessMode := tokenV1Domain.DENY_ACCESS_MODE
+	accessUsers := map[string]bool{}
 	frozenAccounts := map[string]bool{}
 	feeTiers := []map[string]interface{}{}
 
@@ -197,7 +193,7 @@ func createBasicToken(
 	return tok
 }
 
-func createMint(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int, tokenType string) tokenV1Domain.Mint {
+func createMintFT(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int, tokenType string) tokenV1Domain.MintFT {
 	// t.Helper()
 	// out, err := c.MintToken(token.Address, to, amount, decimals, tokenType)
 	// if err != nil {
@@ -209,10 +205,10 @@ func createMint(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Dom
 	// 	t.Fatalf("mint token mismatch: %s != %s", m.TokenAddress, token.Address)
 	// }
 	// return m
-	return tokenV1Domain.Mint{}
+	return tokenV1Domain.MintFT{}
 }
 
-func createBurn(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, amount string, decimals int, tokenType, uuid string) tokenV1Domain.Burn {
+func createBurnFT(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, amount string, decimals int, tokenType, uuid string) tokenV1Domain.BurnFT {
 	// t.Helper()
 	// out, err := c.BurnToken(token.Address, amount, decimals, tokenType, uuid)
 	// if err != nil {
@@ -224,20 +220,20 @@ func createBurn(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Dom
 	// 	t.Fatalf("burn token mismatch: %s != %s", b.TokenAddress, token.Address)
 	// }
 	// return b
-	return tokenV1Domain.Burn{}
+	return tokenV1Domain.BurnFT{}
 }
 
-func createTransfer(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int, tokenType, uuid string) tokenV1Domain.Transfer {
+func createTransferFT(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int, tokenType, uuid string) tokenV1Domain.TransferFT {
 	// t.Helper()
 	// out, err := c.TransferToken(token.Address, to, amount, decimals, tokenType, uuid)
 	// if err != nil {
 	// 	t.Fatalf("TransferToken: %v", err)
 	// }
-	// var tr tokenV1Domain.Transfer
+	// var tr tokenV1Domain.TransferFT
 	// unmarshalState(t, out.States[0].Object, &tr)
 	// if tr.ToAddress != to {
 	// 	t.Fatalf("transfer to mismatch: %s != %s", tr.ToAddress, to)
 	// }
 	// return tr
-	return tokenV1Domain.Transfer{}
+	return tokenV1Domain.TransferFT{}
 }

@@ -100,9 +100,9 @@ type Client2FinanceNetwork interface {
 		assetGLBUri string,
 		tokenType string,
 		transferable, stablecoin bool) (types.ContractOutput, error)
-	MintToken(to, mintTo, amount string, decimals int, tokenType string) (types.ContractOutput, error)
-	BurnToken(to, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
-	TransferToken(tokenAddress, transferTo, amount string, decimals int, tokenType string, uuid string) (types.ContractOutput, error)
+	MintToken(to, mintTo, amount string) (types.ContractOutput, error)
+	BurnToken(to, amount string, tokenUUIDList []string) (types.ContractOutput, error)
+	TransferToken(tokenAddress, transferTo, amount string, tokenUUIDList []string) (types.ContractOutput, error)
 	AddAllowUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
 	RemoveAllowUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
 	AddDenyUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
@@ -128,10 +128,11 @@ type Client2FinanceNetwork interface {
 	UntransferableToken(tokenAddress string, transferable bool) (types.ContractOutput, error)
 
 	GetToken(tokenAddress string, symbol string, name string) (types.ContractOutput, error)
-	ListTokens(ownerAddress, symbol, name string, page, limit int, ascending bool) (types.ContractOutput, error)
+	ListTokens(ownerAddress, symbol, name, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	GetTokenBalance(tokenAddress, ownerAddress string) (types.ContractOutput, error)
-	ListTokenBalances(tokenAddress, ownerAddress string, page, limit int, ascending bool) (types.ContractOutput, error)
+	GetTokenBalanceNFT(tokenAddress, ownerAddress, tokenUUID string) (types.ContractOutput, error)
+	ListTokenBalances(tokenAddress, ownerAddress, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	// FAUCET
 	AddFaucet(
@@ -455,7 +456,12 @@ type Client2FinanceNetwork interface {
 	ModerateReview(address, action, note string) (types.ContractOutput, error)
 
 	GetReview(address string) (types.ContractOutput, error)
-	ListReviews(owner, reviewer, reviewee, subjectType, subjectID string, includeHidden *bool, minRating, maxRating, page, limit int, asc bool) (types.ContractOutput, error)
+	ListReviews(
+		reviewer, reviewee, subjectType, subjectID string,
+		includeHidden *bool,
+		minRating, maxRating, page, limit int,
+		asc bool,
+	) (types.ContractOutput, error)
 
 	AddRaffle(address, owner, tokenAddress, ticketPrice string, maxEntries, maxEntriesPerUser int, startAt, expiredAt time.Time, paused bool, seedCommitHex string, metadata map[string]string) (types.ContractOutput, error)
 	UpdateRaffle(address, tokenAddress, ticketPrice string, maxEntries, maxEntriesPerUser int, startAt, expiredAt *time.Time, seedCommitHex string, metadata map[string]string) (types.ContractOutput, error)
