@@ -26,8 +26,8 @@ func (c *networkClient) AddToken(
 	tags map[string]string,
 	creator string,
 	creatorWebsite string,
-	accessMode string,
-	accessUsers map[string]bool,
+	allowedUsers map[string]bool,
+	blockedUsers map[string]bool,
 	frozenAccounts map[string]bool,
 	feeTiersList []map[string]interface{},
 	feeAddress string,
@@ -77,9 +77,14 @@ func (c *networkClient) AddToken(
 		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 
-	err := domain.ValidateUserMap(accessUsers, "access users")
+	err := domain.ValidateUserMap(allowedUsers, "allowed users")
 	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid access users: %w", err)
+		return types.ContractOutput{}, fmt.Errorf("invalid allowed users: %w", err)
+	}
+
+	err = domain.ValidateUserMap(blockedUsers, "blocked users")
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid blocked users: %w", err)
 	}
 
 	from := c.publicKey
@@ -106,8 +111,8 @@ func (c *networkClient) AddToken(
 		"tags":                     tags,
 		"creator":                  creator,
 		"creator_website":          creatorWebsite,
-		"access_mode":              accessMode,
-		"access_users":             accessUsers,
+		"allowed_users":            allowedUsers,
+		"blocked_users":            blockedUsers,
 		"frozen_accounts":			frozenAccounts,
 		"freeze_authority_revoked": freezeAuthorityRevoked,
 		"mint_authority_revoked":   mintAuthorityRevoked,
@@ -392,17 +397,15 @@ func (c *networkClient) UnfreezeWallet(tokenAddress string, wallet string) (type
 	return contractOutput, nil
 }
 
-func (c *networkClient) AddAllowUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error) {
+func (c *networkClient) AddAllowedUsers(tokenAddress string,allowedUsers map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if accessMode == "" {
-		return types.ContractOutput{}, fmt.Errorf("access mode not set")
-	}
-	if len(accessUsers) == 0 {
-		return types.ContractOutput{}, fmt.Errorf("access users map is empty")
+
+	if len(allowedUsers) == 0 {
+		return types.ContractOutput{}, fmt.Errorf("allowed users map is empty")
 	}
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
@@ -413,15 +416,14 @@ func (c *networkClient) AddAllowUsers(tokenAddress string, accessMode string, ac
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	err := domain.ValidateUserMap(accessUsers, "allow users")
+	err := domain.ValidateUserMap(allowedUsers, "allow users")
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid allow users: %w", err)
 	}
 
-	method := tokenV1.METHOD_ADD_ACCESS_USERS
+	method := tokenV1.METHOD_ADD_ALLOWED_USERS
 	data := map[string]interface{}{
-		"access_mode": accessMode,
-		"access_users": accessUsers,
+		"allowed_users": allowedUsers,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -445,17 +447,14 @@ func (c *networkClient) AddAllowUsers(tokenAddress string, accessMode string, ac
 
 }
 
-func (c *networkClient) RemoveAllowUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error) {
+func (c *networkClient) RemoveAllowedUsers(tokenAddress string, allowedUsers map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if accessMode == "" {
-		return types.ContractOutput{}, fmt.Errorf("access mode not set")
-	}
-	if len(accessUsers) == 0 {
-		return types.ContractOutput{}, fmt.Errorf("access users map is empty")
+	if len(allowedUsers) == 0 {
+		return types.ContractOutput{}, fmt.Errorf("allowed users map is empty")
 	}
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
@@ -466,15 +465,14 @@ func (c *networkClient) RemoveAllowUsers(tokenAddress string, accessMode string,
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	err := domain.ValidateUserMap(accessUsers, "disallow users")
+	err := domain.ValidateUserMap(allowedUsers, "disallow users")
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid disallow users: %w", err)
 	}
 
-	method := tokenV1.METHOD_REMOVE_ACCESS_USERS
+	method := tokenV1.METHOD_REMOVE_ALLOWED_USERS
 	data := map[string]interface{}{
-		"access_mode": accessMode,
-		"access_users": accessUsers,
+		"allowed_users": allowedUsers,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -497,17 +495,14 @@ func (c *networkClient) RemoveAllowUsers(tokenAddress string, accessMode string,
 
 }
 
-func (c *networkClient) AddDenyUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error) {
+func (c *networkClient) AddBlockedUsers(tokenAddress string, blockedUsers map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if accessMode == "" {
-		return types.ContractOutput{}, fmt.Errorf("access mode not set")
-	}
-	if len(accessUsers) == 0 {
-		return types.ContractOutput{}, fmt.Errorf("access users map is empty")
+	if len(blockedUsers) == 0 {
+		return types.ContractOutput{}, fmt.Errorf("blocked users map is empty")
 	}
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
@@ -518,15 +513,14 @@ func (c *networkClient) AddDenyUsers(tokenAddress string, accessMode string, acc
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	err := domain.ValidateUserMap(accessUsers, "block users")
+	err := domain.ValidateUserMap(blockedUsers, "block users")
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid block users: %w", err)
 	}
 
-	method := tokenV1.METHOD_ADD_ACCESS_USERS
+	method := tokenV1.METHOD_ADD_BLOCKED_USERS
 	data := map[string]interface{}{
-		"access_mode": accessMode,
-		"access_users": accessUsers,
+		"blocked_users": blockedUsers,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -549,17 +543,14 @@ func (c *networkClient) AddDenyUsers(tokenAddress string, accessMode string, acc
 
 }
 
-func (c *networkClient) RemoveDenyUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error) {
+func (c *networkClient) RemoveBlockedUsers(tokenAddress string, blockedUsers map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if accessMode == "" {
-		return types.ContractOutput{}, fmt.Errorf("access mode not set")
-	}
-	if len(accessUsers) == 0 {
-		return types.ContractOutput{}, fmt.Errorf("access users map is empty")
+	if len(blockedUsers) == 0 {
+		return types.ContractOutput{}, fmt.Errorf("blocked users map is empty")
 	}
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
@@ -570,15 +561,14 @@ func (c *networkClient) RemoveDenyUsers(tokenAddress string, accessMode string, 
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	err := domain.ValidateUserMap(accessUsers, "unblock users")
+	err := domain.ValidateUserMap(blockedUsers, "unblock users")
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid unblock users: %w", err)
 	}
 
-	method := tokenV1.METHOD_REMOVE_ACCESS_USERS
+	method := tokenV1.METHOD_REMOVE_BLOCKED_USERS
 	data := map[string]interface{}{
-		"access_mode": accessMode,
-		"access_users": accessUsers,
+		"blocked_users": blockedUsers,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -599,51 +589,6 @@ func (c *networkClient) RemoveDenyUsers(tokenAddress string, accessMode string, 
 
 	return contractOutput, nil
 
-}
-
-func (c *networkClient) ChangeAccessMode(tokenAddress string, accessMode string) (types.ContractOutput, error) {
-	from := c.publicKey
-
-	if tokenAddress == "" {
-		return types.ContractOutput{}, fmt.Errorf("token address not set")
-	}
-	if accessMode == "" {
-		return types.ContractOutput{}, fmt.Errorf("access mode not set")
-	}
-
-	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
-	}
-
-	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
-	}
-
-	method := tokenV1.METHOD_CHANGE_ACCESS_MODE
-	data := map[string]interface{}{
-		"access_mode": accessMode,
-	}
-
-	version := uint8(1)
-	uuid7, err := utils.NewUUID7()
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
-	}
-
-	contractOutput, err := c.SignAndSendTransaction(
-		c.chainId,
-		from,
-		tokenAddress,
-		method,
-		data,
-		version,
-		uuid7,
-	)
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
-	}
-
-	return contractOutput, nil
 }
 
 func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error) {

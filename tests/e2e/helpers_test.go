@@ -105,8 +105,8 @@ func createBasicToken(
 	tags := map[string]string{"tag1": "DeFi", "tag2": "Blockchain"}
 	creator := "2Finance Test"
 	creatorWebsite := "https://creator.example"
-	accessMode := tokenV1Domain.DENY_ACCESS_MODE
-	accessUsers := map[string]bool{}
+	allowedUsers := map[string]bool{}
+	blockedUsers := map[string]bool{}
 	frozenAccounts := map[string]bool{}
 	feeTiers := []map[string]interface{}{}
 
@@ -157,8 +157,8 @@ func createBasicToken(
 		tags,
 		creator,
 		creatorWebsite,
-		accessMode,
-		accessUsers,
+		allowedUsers,
+		blockedUsers,
 		frozenAccounts,
 		feeTiers,
 		feeAddress,
