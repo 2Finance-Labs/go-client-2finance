@@ -87,8 +87,8 @@ type Client2FinanceNetwork interface {
 		tags map[string]string,
 		creator string,
 		creatorWebsite string,
-		accessMode string,
-		accessUsers map[string]bool,
+		allowedUsers map[string]bool,
+		blockedUsers map[string]bool,
 		frozenAccounts map[string]bool,
 		feeTiersList []map[string]interface{},
 		feeAddress string,
@@ -103,11 +103,10 @@ type Client2FinanceNetwork interface {
 	MintToken(to, mintTo, amount string) (types.ContractOutput, error)
 	BurnToken(to, amount string, tokenUUIDList []string) (types.ContractOutput, error)
 	TransferToken(tokenAddress, transferTo, amount string, tokenUUIDList []string) (types.ContractOutput, error)
-	AddAllowUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
-	RemoveAllowUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
-	AddDenyUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
-	RemoveDenyUsers(tokenAddress string, accessMode string, accessUsers map[string]bool) (types.ContractOutput, error)
-	ChangeAccessMode(tokenAddress string, accessMode string) (types.ContractOutput, error)
+	AddAllowedUsers(tokenAddress string, allowedUsers map[string]bool) (types.ContractOutput, error)
+	RemoveAllowedUsers(tokenAddress string, allowedUsers map[string]bool) (types.ContractOutput, error)
+	AddBlockedUsers(tokenAddress string, blockedUsers map[string]bool) (types.ContractOutput, error)
+	RemoveBlockedUsers(tokenAddress string, blockedUsers map[string]bool) (types.ContractOutput, error)
 	RevokeFreezeAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)
 	RevokeMintAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)
 	RevokeUpdateAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error)

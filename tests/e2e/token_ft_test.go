@@ -11,6 +11,7 @@ import (
 	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
+	"fmt"
 )
 
 func TestTokenFlowFungible(t *testing.T) {
@@ -46,10 +47,13 @@ func TestTokenFlowFungible(t *testing.T) {
 	tags := map[string]string{"tag1": "DeFi", "tag2": "Blockchain"}
 	creator := "2Finance Test"
 	creatorWebsite := "https://creator.example"
-	accessMode := tokenV1Domain.DENY_ACCESS_MODE
-	userPubAccess, _ := genKey(t, c)
-	accessUsers := map[string]bool{
-		userPubAccess: true,
+	allowedUser, _ := genKey(t, c)
+	allowedUsers := map[string]bool{
+		allowedUser: true,
+	}
+	blockedUser, _ := genKey(t, c)
+	blockedUsers := map[string]bool{
+		blockedUser: true,
 	}
 	userPubFrozenAccount, _ := genKey(t, c)
 	frozenAccounts := map[string]bool{
@@ -74,7 +78,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	expiredAt := time.Time{}
 	assetGLBUri := "https://example.com/asset.glb"
 	transferable := true
-
+	fmt.Printf("Creating token with address: %s\n", address)
 	out, err := c.AddToken(
 		address,
 		symbol,
@@ -90,8 +94,8 @@ func TestTokenFlowFungible(t *testing.T) {
 		tags,
 		creator,
 		creatorWebsite,
-		accessMode,
-		accessUsers,
+		allowedUsers,
+		blockedUsers,
 		frozenAccounts,
 		feeTiers,
 		feeAddress,
@@ -132,8 +136,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	assert.Equal(t, tags["tag1"], tok.Tags["tag1"], "token tags mismatch")
 	assert.Equal(t, creator, tok.Creator, "token creator mismatch")
 	assert.Equal(t, creatorWebsite, tok.CreatorWebsite, "token creator website mismatch")
-	assert.Equal(t, accessMode, tok.AccessMode, "token access policy mode mismatch")
-	assert.Equal(t, accessUsers[owner.PublicKey], tok.AccessUsers[owner.PublicKey], "token access policy users mismatch")
+	assert.Equal(t, allowedUsers[owner.PublicKey], tok.AllowedUsers[owner.PublicKey], "token allowed users mismatch")
+	assert.Equal(t, blockedUsers[owner.PublicKey], tok.BlockedUsers[owner.PublicKey], "token blocked users mismatch")
 	assert.Equal(t, frozenAccounts[owner.PublicKey], tok.FrozenAccounts[owner.PublicKey], "token frozen accounts mismatch")
 	assert.Equal(t, len(feeTiers), len(tok.FeeTiersList), "token fee tiers length mismatch")
 	assert.Equal(t, feeAddress, tok.FeeAddress, "token fee address mismatch")
@@ -202,8 +206,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	assert.Equal(t, tags["tag1"], tokenState.Tags["tag1"], "token tags mismatch")
 	assert.Equal(t, creator, tokenState.Creator, "token creator mismatch")
 	assert.Equal(t, creatorWebsite, tokenState.CreatorWebsite, "token creator website mismatch")
-	assert.Equal(t, accessMode, tokenState.AccessMode, "token access policy mode mismatch")
-	assert.Equal(t, accessUsers[owner.PublicKey], tokenState.AccessUsers[owner.PublicKey], "token access policy users mismatch")
+	assert.Equal(t, allowedUsers[owner.PublicKey], tokenState.AllowedUsers[owner.PublicKey], "token allowed users mismatch")
+	assert.Equal(t, blockedUsers[owner.PublicKey], tokenState.BlockedUsers[owner.PublicKey], "token blocked users mismatch")
 	assert.Equal(t, frozenAccounts[owner.PublicKey], tokenState.FrozenAccounts[owner.PublicKey], "token frozen accounts mismatch")
 	// Skipping fee tiers deep equality for simplicity
 	assert.Equal(t, feeAddress, tokenState.FeeAddress, "token fee address mismatch")
@@ -327,6 +331,11 @@ func TestTokenFlowFungible(t *testing.T) {
 	transferToken, err := c.TransferToken(tok.Address, receiver.PublicKey, transferAmount, []string{})
 	assert.Error(t, err, "insufficient balance:")
 	
+	_, err = c.AddAllowedUsers(tok.Address, map[string]bool{
+		receiver.PublicKey: true,
+	})
+	assert.NoError(t, err, "AddAllowedUsers failed")
+
 	transferAmount = "600000"
 	transferToken, err = c.TransferToken(tok.Address, receiver.PublicKey, transferAmount, []string{})
 	if err != nil {
@@ -483,7 +492,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (BurnToken.Logs[0]): %v", err)
 	}
-	assert.Equal(t, unmarshalLogBurn.LogType, tokenV1Domain.TOKEN_BURNED_FT_LOG, "burn log type mismatch")
+	assert.Equal(t, tokenV1Domain.TOKEN_BURNED_FT_LOG, unmarshalLogBurn.LogType, "burn log type mismatch")
 	burn, err := utils.UnmarshalEvent[tokenV1Domain.BurnFT](unmarshalLogBurn.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (BurnToken.Logs[0]): %v", err)
@@ -549,53 +558,12 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 	expectedBalanceAfterBurn := "100398500"
 	assert.Equal(t, expectedBalanceAfterBurn, balanceStateBurn.Amount, "balance amount mismatch after burn")
-	// ------------------
-	// CHANGE ACCESS MODE
-	// ------------------
-
-	// Remove allow users
-	removeAllowUsers, err := c.RemoveAllowUsers(tok.Address, domain.DENY_ACCESS_MODE, map[string]bool{
-		userPubAccess: true,
-	})
-	if err != nil {
-		t.Fatalf("RemoveAllowUsers: %v", err)
-	}
-
-	changeAccessMode, err := c.ChangeAccessMode(tok.Address, tokenV1Domain.ALLOW_ACCESS_MODE)
-	if err != nil {
-		t.Fatalf("ChangeAccessMode: %v", err)
-	}
-
-	unmarshalLogChangeAccess, err := utils.UnmarshalLog[log.Log](changeAccessMode.Logs[0])
-	if err != nil {
-		t.Fatalf("UnmarshalLog (ChangeAccessMode.Logs[0]): %v", err)
-	}
-	assert.Equal(t, unmarshalLogChangeAccess.LogType, tokenV1Domain.TOKEN_ACCESS_MODE_CHANGED_LOG, "change access mode log type mismatch")
-	changeAccess, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogChangeAccess.Event)
-	if err != nil {
-		t.Fatalf("UnmarshalEvent (ChangeAccessMode.Logs[0]): %v", err)
-	}
-	assert.Equal(t, tok.Address, changeAccess.Address, "access policy token address mismatch")
-	assert.Equal(t, tokenV1Domain.ALLOW_ACCESS_MODE, changeAccess.AccessMode, "access policy mode mismatch after change access mode")
-
-	getTokenOut5, err := c.GetToken(tok.Address, "", "")
-	if err != nil {
-		t.Fatalf("GetToken: %v", err)
-	}
-
-	var tokenState5 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut5.States[0].Object, &tokenState5)
-	if err != nil {
-		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
-	}
-	assert.Equal(t, tokenV1Domain.ALLOW_ACCESS_MODE, tokenState5.AccessMode, "token access mode mismatch after change access mode")
-	assert.Empty(t, tokenState5.AccessUsers, "access users should be empty")	// ------------------
 	//    ALLOW USERS
 	// ------------------
 
 	// Add allow users
 	receiverPub, _ := genKey(t, c)
-	allowUsers, err := c.AddAllowUsers(tok.Address, domain.ALLOW_ACCESS_MODE, map[string]bool{
+	allowUsers, err := c.AddAllowedUsers(tok.Address, map[string]bool{
 		receiverPub: true,
 	})
 	if err != nil {
@@ -606,15 +574,14 @@ func TestTokenFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AllowUsers.Logs[0]): %v", err)
 	}
-	assert.Equal(t, unmarshalLogAllow.LogType, tokenV1Domain.TOKEN_USERS_ADDED_LOG, "allow users log type mismatch")
+	assert.Equal(t, tokenV1Domain.TOKEN_ALLOWED_USERS_ADDED_LOG, unmarshalLogAllow.LogType, "allow users log type mismatch")
 
 	allow, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogAllow.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AllowUsers.Logs[0]): %v", err)
 	}
 	assert.Equal(t, tok.Address, allow.Address, "access policy token address mismatch")
-	assert.Equal(t, tokenV1Domain.ALLOW_ACCESS_MODE, allow.AccessMode, "access policy mode mismatch after allow")
-	assert.Equal(t, true, allow.AccessUsers[receiverPub], "access policy users mismatch after allow")
+	assert.Equal(t, true, allow.AllowedUsers[receiverPub], "access policy users mismatch after allow")
 
 	getTokenOutAllow, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -627,11 +594,10 @@ func TestTokenFlowFungible(t *testing.T) {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
 
-	assert.Equal(t, tokenV1Domain.ALLOW_ACCESS_MODE, tokenStateAllow.AccessMode, "token access mode mismatch after allow")
-	assert.Equal(t, true, tokenStateAllow.AccessUsers[receiverPub], "token access users mismatch after allow")
+	assert.Equal(t, true, tokenStateAllow.AllowedUsers[receiverPub], "token access users mismatch after allow")
 
 	// Remove allow users
-	removeAllowUsers, err = c.RemoveAllowUsers(tok.Address, domain.ALLOW_ACCESS_MODE, map[string]bool{
+	removeAllowUsers, err := c.RemoveAllowedUsers(tok.Address, map[string]bool{
 		receiverPub: true,
 	})
 	if err != nil {
@@ -642,16 +608,15 @@ func TestTokenFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (RemoveAllowUsers.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_USERS_REMOVED_LOG, unmarshalLogRemoveAllow.LogType, "remove allow users log type mismatch")
+	assert.Equal(t, tokenV1Domain.TOKEN_ALLOWED_USERS_REMOVED_LOG, unmarshalLogRemoveAllow.LogType, "remove allow users log type mismatch")
 
 	removeAllow, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogRemoveAllow.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (RemoveAllowUsers.Logs[0]): %v", err)
 	}
 	assert.Equal(t, tok.Address, removeAllow.Address, "access policy token address mismatch")
-	assert.Equal(t, tokenV1Domain.ALLOW_ACCESS_MODE, removeAllow.AccessMode, "access policy mode mismatch after remove allow")
-	assert.Contains(t, removeAllow.AccessUsers, receiverPub, "removed user should be present in remove event payload")
-	assert.True(t, removeAllow.AccessUsers[receiverPub], "removed user payload should be true in remove event")
+	assert.Contains(t, removeAllow.AllowedUsers, receiverPub, "removed user should be present in remove event payload")
+	assert.True(t, removeAllow.AllowedUsers[receiverPub], "removed user payload should be true in remove event")
 
 	getTokenOut6, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -663,68 +628,34 @@ func TestTokenFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.ALLOW_ACCESS_MODE, tokenState6.AccessMode, "token access mode mismatch after remove allow")
 
-	_, exists := tokenState6.AccessUsers[receiver.PublicKey]
+	_, exists := tokenState6.AllowedUsers[receiverPub]
 	assert.False(t, exists, "user should have been removed from token access users")
 
 	// ------------------
-	// CHANGE ACCESS MODE
-	// ------------------
-	changeAccessMode2, err := c.ChangeAccessMode(tok.Address, tokenV1Domain.DENY_ACCESS_MODE)
-	if err != nil {
-		t.Fatalf("ChangeAccessMode: %v", err)
-	}
-
-	unmarshalLogChangeAccess2, err := utils.UnmarshalLog[log.Log](changeAccessMode2.Logs[0])
-	if err != nil {
-		t.Fatalf("UnmarshalLog (ChangeAccessMode.Logs[0]): %v", err)
-	}
-	assert.Equal(t, unmarshalLogChangeAccess2.LogType, tokenV1Domain.TOKEN_ACCESS_MODE_CHANGED_LOG, "change access mode log type mismatch")
-	changeAccess2, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogChangeAccess2.Event)
-	if err != nil {
-		t.Fatalf("UnmarshalEvent (ChangeAccessMode.Logs[0]): %v", err)
-	}
-	assert.Equal(t, tok.Address, changeAccess2.Address, "access policy token address mismatch")
-	assert.Equal(t, tokenV1Domain.DENY_ACCESS_MODE, changeAccess2.AccessMode, "access policy mode mismatch after change access mode")
-
-	getTokenOut7, err := c.GetToken(tok.Address, "", "")
-	if err != nil {
-		t.Fatalf("GetToken: %v", err)
-	}
-
-	var tokenState7 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut7.States[0].Object, &tokenState7)
-	if err != nil {
-		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
-	}
-	assert.Equal(t, tokenState7.AccessMode, tokenV1Domain.DENY_ACCESS_MODE, "token access mode mismatch after change access mode")
-
-	// ------------------
-	//    DENY USERS
+	//    BLOCKED USERS
 	// ------------------
 
-	// Add deny users
-	denyUsers, err := c.AddDenyUsers(tok.Address, tokenV1Domain.DENY_ACCESS_MODE, map[string]bool{
+	// Add blocked users
+	addBlockedUsers, err := c.AddBlockedUsers(tok.Address, map[string]bool{
 		receiver.PublicKey: true,
 	})
 	if err != nil {
-		t.Fatalf("AddDenyUsers: %v", err)
+		t.Fatalf("AddBlockedUsers: %v", err)
 	}
 
-	unmarshalLogDeny, err := utils.UnmarshalLog[log.Log](denyUsers.Logs[0])
+	unmarshalLogBlocked, err := utils.UnmarshalLog[log.Log](addBlockedUsers.Logs[0])
 	if err != nil {
-		t.Fatalf("UnmarshalLog (AddDenyUsers.Logs[0]): %v", err)
+		t.Fatalf("UnmarshalLog (AddBlockedUsers.Logs[0]): %v", err)
 	}
-	assert.Equal(t, unmarshalLogDeny.LogType, tokenV1Domain.TOKEN_USERS_ADDED_LOG, "add deny users log type mismatch")
+	assert.Equal(t, unmarshalLogBlocked.LogType, tokenV1Domain.TOKEN_BLOCKED_USERS_ADDED_LOG, "add blocked users log type mismatch")
 
-	deny, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogDeny.Event)
+	blocked, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogBlocked.Event)
 	if err != nil {
-		t.Fatalf("UnmarshalEvent (AddDenyUsers.Logs[0]): %v", err)
+		t.Fatalf("UnmarshalEvent (AddBlockedUsers.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tok.Address, deny.Address, "access policy token address mismatch")
-	assert.Equal(t, tokenV1Domain.DENY_ACCESS_MODE, deny.AccessMode, "access policy mode mismatch after add deny")
-	assert.Equal(t, true, deny.AccessUsers[receiver.PublicKey], "access policy users mismatch after add deny")
+	assert.Equal(t, tok.Address, blocked.Address, "access policy token address mismatch")
+	assert.Equal(t, true, blocked.BlockedUsers[receiver.PublicKey], "access policy users mismatch after add blocked")
 
 	getTokenOut8, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -736,31 +667,29 @@ func TestTokenFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
-	assert.Equal(t, tokenState8.AccessMode, tokenV1Domain.DENY_ACCESS_MODE, "token access mode mismatch after add deny")
-	assert.Equal(t, tokenState8.AccessUsers[receiver.PublicKey], true, "token access users mismatch after add deny")
+	assert.Equal(t, tokenState8.BlockedUsers[receiver.PublicKey], true, "token access users mismatch after add blocked")
 
-	// Remove deny users
-	removeDenyUsers, err := c.RemoveDenyUsers(tok.Address, tokenV1Domain.DENY_ACCESS_MODE, map[string]bool{
+	// Remove blocked users
+	removeBlockedUsers, err := c.RemoveBlockedUsers(tok.Address, map[string]bool{
 		receiver.PublicKey: true,
 	})
 	if err != nil {
-		t.Fatalf("RemoveDenyUsers: %v", err)
+		t.Fatalf("RemoveBlockedUsers: %v", err)
 	}
 
-	unmarshalLogRemoveDeny, err := utils.UnmarshalLog[log.Log](removeDenyUsers.Logs[0])
+	unmarshalLogRemoveBlocked, err := utils.UnmarshalLog[log.Log](removeBlockedUsers.Logs[0])
 	if err != nil {
-		t.Fatalf("UnmarshalLog (RemoveDenyUsers.Logs[0]): %v", err)
+		t.Fatalf("UnmarshalLog (RemoveBlockedUsers.Logs[0]): %v", err)
 	}
-	assert.Equal(t, unmarshalLogRemoveDeny.LogType, tokenV1Domain.TOKEN_USERS_REMOVED_LOG, "remove deny users log type mismatch")
+	assert.Equal(t, unmarshalLogRemoveBlocked.LogType, tokenV1Domain.TOKEN_BLOCKED_USERS_REMOVED_LOG, "remove blocked users log type mismatch")
 
-	removeDeny, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogRemoveDeny.Event)
+	removeBlocked, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogRemoveBlocked.Event)
 	if err != nil {
-		t.Fatalf("UnmarshalEvent (RemoveDenyUsers.Logs[0]): %v", err)
+		t.Fatalf("UnmarshalEvent (RemoveBlockedUsers.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tok.Address, removeDeny.Address, "access policy token address mismatch")
-	assert.Equal(t, tokenV1Domain.DENY_ACCESS_MODE, removeDeny.AccessMode, "access policy mode mismatch after remove deny")
-	assert.Contains(t, removeDeny.AccessUsers, receiver.PublicKey, "removed user should be present in remove event payload")
-	assert.True(t, removeDeny.AccessUsers[receiver.PublicKey], "removed user payload should be true in remove event")
+	assert.Equal(t, tok.Address, removeBlocked.Address, "access policy token address mismatch")
+	assert.Contains(t, removeBlocked.BlockedUsers, receiver.PublicKey, "removed user should be present in remove event payload")
+	assert.True(t, removeBlocked.BlockedUsers[receiver.PublicKey], "removed user payload should be true in remove event")
 
 	getTokenOut9, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -772,8 +701,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
-	assert.Equal(t, tokenState9.AccessMode, tokenV1Domain.DENY_ACCESS_MODE, "token access mode mismatch after remove deny")
-	_, exists2 := tokenState9.AccessUsers[receiver.PublicKey]
+	_, exists2 := tokenState9.BlockedUsers[receiver.PublicKey]
 	assert.False(t, exists2, "user should have been removed from token access users")
 
 	// ------------------
@@ -1344,8 +1272,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	require.NotNil(t, tokenStateList[0].Tags, "token tags is nil for token in list")
 	require.NotNil(t, tokenStateList[0].Creator, "token creator is nil for token in list")
 	require.NotNil(t, tokenStateList[0].CreatorWebsite, "token creator website is nil for token in list")
-	require.NotNil(t, tokenStateList[0].AccessMode, "token access mode is nil for token in list")
-	require.Nil(t, tokenStateList[0].AccessUsers, "token access users is nil for token in list")
+	require.NotNil(t, tokenStateList[0].AllowedUsers, "token allow users is nil for token in list")
+	require.NotNil(t, tokenStateList[0].BlockedUsers, "token blocked users is nil for token in list")
 	require.NotNil(t, tokenStateList[0].FrozenAccounts, "token frozen accounts is nil for token in list")
 	require.NotNil(t, tokenStateList[0].FeeTiersList, "token fee tiers list is nil for token in list")
 	require.NotNil(t, tokenStateList[0].FeeAddress, "token fee address is nil for token in list")
