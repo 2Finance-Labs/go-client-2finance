@@ -2,600 +2,489 @@ package e2e_test
 
 import (
 	"testing"
-	// "time"
+	"time"
 
-	// "gitlab.com/2finance/2finance-network/blockchain/encryption/seed"
+	"github.com/2Finance-Labs/go-client-2finance/client_2finance"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-	// "gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
-	// raffleV1 "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1"
-	// raffleV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1/domain"
-	// raffleV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1/models"
-	// tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	raffleV1 "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1"
+	raffleV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1/domain"
+	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/seed"
+	"gitlab.com/2finance/2finance-network/blockchain/log"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
-func TestRaffleFlow(t *testing.T) {
-	// c := setupClient(t)
-	// owner, ownerPriv := createWallet(t, c)
+func getFTBalance(
+	t *testing.T,
+	c client_2finance.Client2FinanceNetwork,
+	tokenAddress string,
+	ownerAddress string,
+) tokenV1Models.BalanceStateModel {
+	t.Helper()
 
-	// c.SetPrivateKey(ownerPriv)
-	// dec := 6
-	// stablecoin := false
-	// tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE, stablecoin)
+	out, err := c.GetTokenBalance(tokenAddress, ownerAddress)
+	require.NoError(t, err)
+	require.NotEmpty(t, out.States)
 
-	// bob, bobPriv := createWallet(t, c)
-	// alice, alicePriv := createWallet(t, c)
-	// robert, robertPriv := createWallet(t, c)
-	// alfred, alfredPriv := createWallet(t, c)
-	// luiz, luizPriv := createWallet(t, c)
-	// jorge, jorgePriv := createWallet(t, c)
-	// luigui, luiguiPriv := createWallet(t, c)
-	// superman, supermanPriv := createWallet(t, c)
-	// spiderman, spidermanPriv := createWallet(t, c)
-	// batman, batmanPriv := createWallet(t, c)
-	// wonderwoman, wonderwomanPriv := createWallet(t, c)
+	var state tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](out.States[0].Object, &state)
+	require.NoError(t, err)
 
-	// mapOfPubPriv := map[string]string{
-	// 	bob.PublicKey:         bobPriv,
-	// 	alice.PublicKey:       alicePriv,
-	// 	robert.PublicKey:      robertPriv,
-	// 	alfred.PublicKey:      alfredPriv,
-	// 	luiz.PublicKey:        luizPriv,
-	// 	jorge.PublicKey:       jorgePriv,
-	// 	luigui.PublicKey:      luiguiPriv,
-	// 	superman.PublicKey:    supermanPriv,
-	// 	spiderman.PublicKey:   spidermanPriv,
-	// 	batman.PublicKey:      batmanPriv,
-	// 	wonderwoman.PublicKey: wonderwomanPriv,
-	// }
-
-	// // owner permite participantes no token base
-	// c.SetPrivateKey(ownerPriv)
-	// if _, err := c.AllowUsers(tok.Address, map[string]bool{
-	// 	bob.PublicKey:         true,
-	// 	alice.PublicKey:       true,
-	// 	robert.PublicKey:      true,
-	// 	alfred.PublicKey:      true,
-	// 	luiz.PublicKey:        true,
-	// 	jorge.PublicKey:       true,
-	// 	luigui.PublicKey:      true,
-	// 	superman.PublicKey:    true,
-	// 	spiderman.PublicKey:   true,
-	// 	batman.PublicKey:      true,
-	// 	wonderwoman.PublicKey: true,
-	// }); err != nil {
-	// 	t.Fatalf("AllowUsers(participants): %v", err)
-	// }
-
-	// mintAmt := amt(100, dec)
-	// if _, err := c.MintToken(tok.Address, bob.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken(bob): %v", err)
-	// }
-	// if _, err := c.MintToken(tok.Address, alice.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken(alice): %v", err)
-	// }
-	// if _, err := c.MintToken(tok.Address, robert.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken(robert): %v", err)
-	// }
-	// if _, err := c.MintToken(tok.Address, alfred.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken(alfred): %v", err)
-	// }
-	// if _, err := c.MintToken(tok.Address, luiz.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken(luiz): %v", err)
-	// }
-	// if _, err := c.MintToken(tok.Address, jorge.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken(jorge): %v", err)
-	// }
-	// if _, err := c.MintToken(tok.Address, luigui.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken(luigui): %v", err)
-	// }
-	// if _, err := c.MintToken(tok.Address, superman.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken(superman): %v", err)
-	// }
-	// if _, err := c.MintToken(tok.Address, spiderman.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken(spiderman): %v", err)
-	// }
-	// if _, err := c.MintToken(tok.Address, batman.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken(batman): %v", err)
-	// }
-	// if _, err := c.MintToken(tok.Address, wonderwoman.PublicKey, mintAmt, dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken(wonderwoman): %v", err)
-	// }
-
-	// // merchant cria/gerencia raffle
-	// merchant, merchPriv := createWallet(t, c)
-
-	// // owner do token base permite merchant operar (se aplicável)
-	// c.SetPrivateKey(ownerPriv)
-	// if _, err := c.AllowUsers(tok.Address, map[string]bool{merchant.PublicKey: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(merchant): %v", err)
-	// }
-
-	// c.SetPrivateKey(merchPriv)
-	// start := time.Now().Add(2 * time.Second)
-	// exp := time.Now().Add(24 * time.Hour)
-	// seedPass := "e2e-seed"
-	// commit := seed.CommitSeed(seedPass)
-	// meta := map[string]string{"campaign": "e2e"}
-
-	// contractState := models.ContractStateModel{}
-	// deployedContract, err := c.DeployContract1(raffleV1.RAFFLE_CONTRACT_V1)
-	// if err != nil {
-	// 	t.Fatalf("DeployContract: %v", err)
-	// }
-	// unmarshalState(t, deployedContract.States[0].Object, &contractState)
-	// address := contractState.Address
-
-	// added, err := c.AddRaffle(
-	// 	address,
-	// 	merchant.PublicKey,
-	// 	tok.Address,
-	// 	amt(1, dec),
-	// 	100,
-	// 	5,
-	// 	start,
-	// 	exp,
-	// 	false,
-	// 	commit,
-	// 	meta,
-	// )
-	// if err != nil {
-	// 	t.Fatalf("AddRaffle: %v", err)
-	// }
-	// var rf raffleV1Domain.Raffle
-	// unmarshalState(t, added.States[0].Object, &rf)
-	// if rf.Address == "" {
-	// 	t.Fatalf("raffle addr empty")
-	// }
-
-	// // owner do token base permite o contrato do raffle movimentar o token base (entrada/saída)
-	// c.SetPrivateKey(ownerPriv)
-	// if _, err := c.AllowUsers(tok.Address, map[string]bool{rf.Address: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(raffle -> tok): %v", err)
-	// }
-
-	// // update raffle (merchant)
-	// c.SetPrivateKey(merchPriv)
-	// newStart := time.Now().Add(1 * time.Hour)
-	// newExp := time.Now().Add(26 * time.Hour)
-	// commit2 := seed.CommitSeed(seedPass + "2")
-	// if _, err := c.UpdateRaffle(
-	// 	rf.Address,
-	// 	rf.TokenAddress,
-	// 	amt(2, dec),
-	// 	150,
-	// 	10,
-	// 	&newStart,
-	// 	&newExp,
-	// 	commit2,
-	// 	map[string]string{"k": "v"},
-	// ); err != nil {
-	// 	t.Fatalf("UpdateRaffle: %v", err)
-	// }
-
-	// if _, err := c.PauseRaffle(rf.Address, true); err != nil {
-	// 	t.Fatalf("PauseRaffle: %v", err)
-	// }
-	// if _, err := c.UnpauseRaffle(rf.Address, false); err != nil {
-	// 	t.Fatalf("UnpauseRaffle: %v", err)
-	// }
-
-	// // esperar start e entrar
-	// waitUntil(t, 10*time.Second, func() bool { return time.Now().After(start) })
-
-	// c.SetPrivateKey(bobPriv)
-	// if _, err := c.EnterRaffle(rf.Address, 2, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(bob): %v", err)
-	// }
-	// if _, err := c.EnterRaffle(rf.Address, 7, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(bob): %v", err)
-	// }
-	// if _, err := c.EnterRaffle(rf.Address, 3, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(bob): %v", err)
-	// }
-	// if _, err := c.EnterRaffle(rf.Address, 5, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(bob): %v", err)
-	// }
-
-	// c.SetPrivateKey(alicePriv)
-	// if _, err := c.EnterRaffle(rf.Address, 5, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(alice): %v", err)
-	// }
-
-	// c.SetPrivateKey(robertPriv)
-	// if _, err := c.EnterRaffle(rf.Address, 11, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(robert): %v", err)
-	// }
-
-	// c.SetPrivateKey(alfredPriv)
-	// if _, err := c.EnterRaffle(rf.Address, 13, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(alfred): %v", err)
-	// }
-
-	// c.SetPrivateKey(luizPriv)
-	// if _, err := c.EnterRaffle(rf.Address, 17, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(luiz): %v", err)
-	// }
-
-	// c.SetPrivateKey(jorgePriv)
-	// if _, err := c.EnterRaffle(rf.Address, 19, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(jorge): %v", err)
-	// }
-
-	// c.SetPrivateKey(luiguiPriv)
-	// if _, err := c.EnterRaffle(rf.Address, 23, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(luigui): %v", err)
-	// }
-
-	// c.SetPrivateKey(supermanPriv)
-	// if _, err := c.EnterRaffle(rf.Address, 29, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(superman): %v", err)
-	// }
-	// if _, err := c.EnterRaffle(rf.Address, 31, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(superman): %v", err)
-	// }
-
-	// c.SetPrivateKey(spidermanPriv)
-	// if _, err := c.EnterRaffle(rf.Address, 37, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(spiderman): %v", err)
-	// }
-
-	// c.SetPrivateKey(batmanPriv)
-	// if _, err := c.EnterRaffle(rf.Address, 41, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(batman): %v", err)
-	// }
-
-	// c.SetPrivateKey(wonderwomanPriv)
-	// if _, err := c.EnterRaffle(rf.Address, 43, tok.Address, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("EnterRaffle(wonderwoman): %v", err)
-	// }
-
-	// // ------------------------------------------------------------
-	// // PRÊMIOS: ownerPrize cria tokens separados e deposita no raffle
-	// // ------------------------------------------------------------
-	// ownerPrize, ownerPrizePriv := createWallet(t, c)
-	// mapOfPubPriv[ownerPrize.PublicKey] = ownerPrizePriv
-
-	// c.SetPrivateKey(ownerPrizePriv)
-	// tok1 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE, stablecoin)
-	// tok2 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE, stablecoin)
-	// tok3 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE, stablecoin)
-	// tok4 := createBasicToken(t, c, ownerPrize.PublicKey, 6, false, tokenV1Domain.FUNGIBLE, stablecoin)
-
-	// if _, err := c.AllowUsers(tok1.Address, map[string]bool{rf.Address: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(tok1 -> raffle): %v", err)
-	// }
-	// if _, err := c.AllowUsers(tok2.Address, map[string]bool{rf.Address: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(tok2 -> raffle): %v", err)
-	// }
-	// if _, err := c.AllowUsers(tok3.Address, map[string]bool{rf.Address: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(tok3 -> raffle): %v", err)
-	// }
-	// if _, err := c.AllowUsers(tok4.Address, map[string]bool{rf.Address: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(tok4 -> raffle): %v", err)
-	// }
-
-	// // deposit prizes (ownerPrize assina)
-	// output, err := c.AddRafflePrize(rf.Address, tok1.Address, amt(2, dec), tokenV1Domain.FUNGIBLE, "")
-	// if err != nil {
-	// 	t.Fatalf("AddRafflePrize(tok1): %v", err)
-	// }
-	// output, err = c.AddRafflePrize(rf.Address, tok2.Address, amt(3, dec), tokenV1Domain.FUNGIBLE, "")
-	// if err != nil {
-	// 	t.Fatalf("AddRafflePrize(tok2): %v", err)
-	// }
-	// output, err = c.AddRafflePrize(rf.Address, tok3.Address, amt(4, dec), tokenV1Domain.FUNGIBLE, "")
-	// if err != nil {
-	// 	t.Fatalf("AddRafflePrize(tok3): %v", err)
-	// }
-	// output, err = c.AddRafflePrize(rf.Address, tok4.Address, amt(5, dec), tokenV1Domain.FUNGIBLE, "")
-	// if err != nil {
-	// 	t.Fatalf("AddRafflePrize(tok4): %v", err)
-	// }
-
-	// var rp raffleV1Domain.RafflePrize
-	// unmarshalState(t, output.States[0].Object, &rp)
-
-	// // remove last prize (ownerPrize assina)
-	// if _, err := c.RemoveRafflePrize(rf.Address, tokenV1Domain.FUNGIBLE, rp.UUID); err != nil {
-	// 	t.Fatalf("RemoveRafflePrize: %v", err)
-	// }
-
-	// // draw (merchant assina)
-	// c.SetPrivateKey(merchPriv)
-	// draw, err := c.DrawRaffle(rf.Address, seedPass+"2")
-	// if err != nil {
-	// 	t.Fatalf("DrawRaffle: %v", err)
-	// }
-
-	// var d []raffleV1Models.RafflePrizeModel
-	// unmarshalState(t, draw.States[0].Object, &d)
-
-	// listPrizes, err := c.ListPrizes(rf.Address, 1, 10, true)
-	// if err != nil {
-	// 	t.Fatalf("ListPrizes: %v", err)
-	// }
-	// unmarshalState(t, listPrizes.States[0].Object, &d)
-
-	// // ------------------------------------------------------------
-	// // IMPORTANTÍSSIMO (corrige seu erro atual):
-	// // Winner (assinante do ClaimRaffle) também precisa TER ACESSO ao token do prêmio.
-	// // Então: antes de cada Claim, o ownerPrize (dono dos tokens de prêmio) faz AllowUsers(prize.TokenAddress, winner).
-	// // ------------------------------------------------------------
-	// for index, prize := range d {
-	// 	if prize.Winner != "" {
-	// 		// 1) owner do token do prêmio (ownerPrize) libera o WINNER no token do prêmio
-	// 		c.SetPrivateKey(ownerPrizePriv)
-	// 		if _, err := c.AllowUsers(prize.TokenAddress, map[string]bool{prize.Winner: true}); err != nil {
-	// 			t.Fatalf("AllowUsers(prizeToken -> winner): token=%s winner=%s err=%v", prize.TokenAddress, prize.Winner, err)
-	// 		}
-
-	// 		// 2) winner assina o claim
-	// 		priv, ok := mapOfPubPriv[prize.Winner]
-	// 		if !ok {
-	// 			t.Fatalf("missing private key for winner %s", prize.Winner)
-	// 		}
-	// 		c.SetPrivateKey(priv)
-
-	// 		if _, err := c.ClaimRaffle(rf.Address, prize.Winner, tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 			t.Fatalf("ClaimRaffle: %v", err)
-	// 		}
-	// 	}
-
-	// 	// última iteração: claim duplicado (espera erro)
-	// 	if len(d) == index+1 && prize.Winner != "" {
-	// 		priv, ok := mapOfPubPriv[prize.Winner]
-	// 		if !ok {
-	// 			t.Fatalf("missing private key for winner %s", prize.Winner)
-	// 		}
-	// 		c.SetPrivateKey(priv)
-
-	// 		_, err := c.ClaimRaffle(rf.Address, prize.Winner, tokenV1Domain.FUNGIBLE, "")
-	// 		if err == nil {
-	// 			t.Fatalf("expected error on duplicate claim, got nil")
-	// 		}
-	// 	}
-	// }
-
-	// listPrizesClaimed, err := c.ListPrizes(rf.Address, 1, 10, true)
-	// if err != nil {
-	// 	t.Fatalf("ListPrizes(claimed): %v", err)
-	// }
-
-	// unmarshalState(t, listPrizesClaimed.States[0].Object, &d)
-	// for _, prize := range d {
-	// 	if !prize.Claimed {
-	// 		t.Fatalf("prize must be claimed: %+v", prize)
-	// 	}
-	// }
-
-	// // withdraw leftovers (merchant)
-	// c.SetPrivateKey(merchPriv)
-	// if _, err := c.WithdrawRaffle(rf.Address, tok.Address, amt(1, dec), tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("WithdrawRaffle: %v", err)
-	// }
+	return state
 }
 
-func TestRaffleFlow_NonFungible(t *testing.T) {
-	// c := setupClient(t)
+func TestRaffleFlowFungible(t *testing.T) {
+	c := setupClient(t)
 
-	// // --------------------------------------------------------------------
-	// // Owner + NFT base token (ticket)
-	// // --------------------------------------------------------------------
-	// owner, ownerPriv := createWallet(t, c)
-	// c.SetPrivateKey(ownerPriv)
+	// ------------------
+	//      WALLETS
+	// ------------------
+	owner, ownerPriv := createWallet(t, c)
+	player1, player1Priv := createWallet(t, c)
+	player2, player2Priv := createWallet(t, c)
 
-	// dec := 0
-	// tokenType := tokenV1Domain.NON_FUNGIBLE
-	// stablecoin := false
-	// tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType, stablecoin)
+	// ------------------
+	//      TOKENS
+	// ------------------
+	c.SetPrivateKey(ownerPriv)
+	payToken := createBasicToken(
+		t,
+		c,
+		owner.PublicKey,
+		6,
+		false,
+		tokenV1Domain.FUNGIBLE,
+		false,
+	)
 
-	// // --------------------------------------------------------------------
-	// // Players
-	// // --------------------------------------------------------------------
-	// type player struct {
-	// 	pub  string
-	// 	priv string
-	// 	uuid string
-	// }
+	prizeToken := createBasicToken(
+		t,
+		c,
+		owner.PublicKey,
+		6,
+		false,
+		tokenV1Domain.FUNGIBLE,
+		false,
+	)
 
-	// bob, bobPriv := createWallet(t, c)
-	// alice, alicePriv := createWallet(t, c)
+	// distribui payToken para os participantes
+	_, err := c.TransferToken(payToken.Address, player1.PublicKey, "3000000", []string{})
+	require.NoError(t, err)
 
-	// players := []player{
-	// 	{bob.PublicKey, bobPriv, ""},
-	// 	{alice.PublicKey, alicePriv, ""},
-	// }
+	_, err = c.TransferToken(payToken.Address, player2.PublicKey, "3000000", []string{})
+	require.NoError(t, err)
 
-	// c.SetPrivateKey(ownerPriv)
-	// if _, err := c.AllowUsers(tok.Address, map[string]bool{
-	// 	bob.PublicKey:   true,
-	// 	alice.PublicKey: true,
-	// }); err != nil {
-	// 	t.Fatalf("AllowUsers(players): %v", err)
-	// }
+	player1PayBefore := getFTBalance(t, c, payToken.Address, player1.PublicKey)
+	player2PayBefore := getFTBalance(t, c, payToken.Address, player2.PublicKey)
+	ownerPayBeforeWithdraw := getFTBalance(t, c, payToken.Address, owner.PublicKey)
+	ownerPrizeBefore := getFTBalance(t, c, prizeToken.Address, owner.PublicKey)
 
-	// // --------------------------------------------------------------------
-	// // Mint 1 NFT ticket per player
-	// // --------------------------------------------------------------------
-	// for i := range players {
-	// 	mintOut, err := c.MintToken(
-	// 		tok.Address,
-	// 		players[i].pub,
-	// 		"1",
-	// 		dec,
-	// 		tokenType,
-	// 	)
-	// 	if err != nil {
-	// 		t.Fatalf("MintToken NFT: %v", err)
-	// 	}
+	// ------------------
+	//    DEPLOY RAFFLE
+	// ------------------
+	deployedContract, err := c.DeployContract1(raffleV1.RAFFLE_CONTRACT_V1)
+	require.NoError(t, err)
+	require.NotEmpty(t, deployedContract.Logs)
 
-	// 	var mint tokenV1Domain.Mint
-	// 	unmarshalState(t, mintOut.States[0].Object, &mint)
-	// 	if len(mint.TokenUUIDList) == 0 {
-	// 		t.Fatalf("MintToken NFT returned empty uuid list")
-	// 	}
-	// 	players[i].uuid = mint.TokenUUIDList[0]
-	// }
+	deployLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
+	require.NoError(t, err)
 
-	// // --------------------------------------------------------------------
-	// // Merchant runs raffle
-	// // --------------------------------------------------------------------
-	// merchant, merchPriv := createWallet(t, c)
+	raffleAddress := deployLog.ContractAddress
+	require.NotEmpty(t, raffleAddress)
 
-	// c.SetPrivateKey(ownerPriv)
-	// if _, err := c.AllowUsers(tok.Address, map[string]bool{merchant.PublicKey: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(merchant): %v", err)
-	// }
+	// ------------------
+	//     ADD RAFFLE
+	// ------------------
+	revealSeed := "raffle-secret-seed-fungible-e2e"
+	seedCommitHex := seed.CommitSeed(revealSeed)
 
-	// c.SetPrivateKey(merchPriv)
+	ticketPrice := "1000000"
+	maxEntries := 10
+	maxEntriesPerUser := 3
+	startAt := time.Now().Add(-5 * time.Minute)
+	expiredAt := time.Now().Add(2 * time.Hour)
+	paused := false
 
-	// start := time.Now().Add(2 * time.Second)
-	// exp := time.Now().Add(24 * time.Hour)
+	metadata := map[string]string{
+		"name":        "Raffle Fungible E2E",
+		"description": "raffle flow fungible",
+		"image":       "https://example.com/raffle.png",
+	}
 
-	// seedPass := "e2e-seed-nft"
-	// commit := seed.CommitSeed(seedPass)
-	// meta := map[string]string{"campaign": "e2e-nft"}
+	c.SetPrivateKey(ownerPriv)
+	addRaffleOut, err := c.AddRaffle(
+		raffleAddress,
+		owner.PublicKey,
+		payToken.Address,
+		ticketPrice,
+		maxEntries,
+		maxEntriesPerUser,
+		startAt,
+		expiredAt,
+		paused,
+		seedCommitHex,
+		metadata,
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, addRaffleOut.Logs)
 
-	// var contractState models.ContractStateModel
-	// deployedContract, err := c.DeployContract1(raffleV1.RAFFLE_CONTRACT_V1)
-	// if err != nil {
-	// 	t.Fatalf("DeployContract: %v", err)
-	// }
-	// unmarshalState(t, deployedContract.States[0].Object, &contractState)
+	addRaffleLog, err := utils.UnmarshalLog[log.Log](addRaffleOut.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_ADDED_LOG, addRaffleLog.LogType)
 
-	// added, err := c.AddRaffle(
-	// 	contractState.Address,
-	// 	merchant.PublicKey,
-	// 	tok.Address,
-	// 	"1", // ticket price = 1 NFT
-	// 	10,
-	// 	1,
-	// 	start,
-	// 	exp,
-	// 	false,
-	// 	commit,
-	// 	meta,
-	// )
-	// if err != nil {
-	// 	t.Fatalf("AddRaffle NFT: %v", err)
-	// }
+	addRaffleEvent, err := utils.UnmarshalEvent[raffleV1Domain.Raffle](addRaffleLog.Event)
+	require.NoError(t, err)
 
-	// var rf raffleV1Domain.Raffle
-	// unmarshalState(t, added.States[0].Object, &rf)
-	// if rf.Address == "" {
-	// 	t.Fatalf("raffle addr empty")
-	// }
+	assert.Equal(t, raffleAddress, addRaffleEvent.Address)
+	assert.Equal(t, owner.PublicKey, addRaffleEvent.Owner)
+	assert.Equal(t, payToken.Address, addRaffleEvent.TokenAddress)
+	assert.Equal(t, ticketPrice, addRaffleEvent.TicketPrice)
+	assert.Equal(t, maxEntries, addRaffleEvent.MaxEntries)
+	assert.Equal(t, maxEntriesPerUser, addRaffleEvent.MaxEntriesPerUser)
+	assert.Equal(t, paused, addRaffleEvent.Paused)
+	assert.Equal(t, seedCommitHex, addRaffleEvent.SeedCommitHex)
+	assert.Equal(t, metadata["name"], addRaffleEvent.Metadata["name"])
+	assert.Equal(t, metadata["description"], addRaffleEvent.Metadata["description"])
 
-	// c.SetPrivateKey(ownerPriv)
-	// if _, err := c.AllowUsers(tok.Address, map[string]bool{rf.Address: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(raffle -> ticketToken): %v", err)
-	// }
+	// ------------------
+	//   ADD PRIZE
+	// ------------------
+	prizeAmount := "2500000"
+	prizeUUID := "prize-ft-001"
 
-	// // --------------------------------------------------------------------
-	// // Players enter raffle (UUID obrigatório)
-	// // --------------------------------------------------------------------
-	// waitUntil(t, 10*time.Second, func() bool { return time.Now().After(start) })
+	addPrizeOut, err := c.AddRafflePrize(
+		raffleAddress,
+		prizeToken.Address,
+		prizeAmount,
+		tokenV1Domain.FUNGIBLE,
+		prizeUUID,
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, addPrizeOut.Logs)
 
-	// for _, p := range players {
-	// 	c.SetPrivateKey(p.priv)
-	// 	if _, err := c.EnterRaffle(
-	// 		rf.Address,
-	// 		1,
-	// 		tok.Address,
-	// 		tokenType,
-	// 		p.uuid,
-	// 	); err != nil {
-	// 		t.Fatalf("EnterRaffle NFT: %v", err)
-	// 	}
-	// }
+	addPrizeLog, err := utils.UnmarshalLog[log.Log](addPrizeOut.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_ADDED_PRIZES_LOG, addPrizeLog.LogType)
 
-	// // --------------------------------------------------------------------
-	// // CREATE PRIZES (NFT)
-	// // --------------------------------------------------------------------
-	// prizeOwner, prizePriv := createWallet(t, c)
-	// c.SetPrivateKey(prizePriv)
+	addPrizeEvent, err := utils.UnmarshalEvent[raffleV1Domain.RafflePrize](addPrizeLog.Event)
+	require.NoError(t, err)
 
-	// prizeToken := createBasicToken(t, c, prizeOwner.PublicKey, 0, false, tokenType, stablecoin)
+	assert.Equal(t, raffleAddress, addPrizeEvent.RaffleAddress)
+	assert.Equal(t, owner.PublicKey, addPrizeEvent.Sponsor)
+	assert.Equal(t, prizeToken.Address, addPrizeEvent.TokenAddress)
+	assert.Equal(t, prizeAmount, addPrizeEvent.Amount)
+	assert.NotEmpty(t, addPrizeEvent.UUID)
 
-	// mintPrize, err := c.MintToken(
-	// 	prizeToken.Address,
-	// 	prizeOwner.PublicKey,
-	// 	"1",
-	// 	0,
-	// 	tokenType,
-	// )
-	// if err != nil {
-	// 	t.Fatalf("Mint prize NFT: %v", err)
-	// }
+	rafflePrizeBalanceAfterAdd := getFTBalance(t, c, prizeToken.Address, raffleAddress)
+	assert.Equal(t, prizeAmount, rafflePrizeBalanceAfterAdd.Amount)
 
-	// var prizeMint tokenV1Domain.Mint
-	// unmarshalState(t, mintPrize.States[0].Object, &prizeMint)
-	// if len(prizeMint.TokenUUIDList) == 0 {
-	// 	t.Fatalf("prize mint returned empty uuid list")
-	// }
-	// prizeUUID := prizeMint.TokenUUIDList[0]
+	ownerPrizeAfterAdd := getFTBalance(t, c, prizeToken.Address, owner.PublicKey)
+	expectedOwnerPrizeAfterAdd, err := utils.SubBigIntStrings(ownerPrizeBefore.Amount, prizeAmount)
+	require.NoError(t, err)
+	assert.Equal(t, expectedOwnerPrizeAfterAdd, ownerPrizeAfterAdd.Amount)
 
-	// if _, err := c.AllowUsers(prizeToken.Address, map[string]bool{rf.Address: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(prizeToken -> raffle): %v", err)
-	// }
+	// ------------------
+	//    UPDATE RAFFLE
+	// ------------------
+	newTicketPrice := "500000"
+	newMaxEntries := 20
+	newMaxEntriesPerUser := 5
+	newStartAt := time.Now().Add(-10 * time.Minute)
+	newExpiredAt := time.Now().Add(3 * time.Hour)
+	newMetadata := map[string]string{
+		"name":        "Raffle Fungible E2E Updated",
+		"description": "raffle flow fungible updated",
+	}
 
-	// // deposit prize (prizeOwner assina)
-	// if _, err := c.AddRafflePrize(
-	// 	rf.Address,
-	// 	prizeToken.Address,
-	// 	"1",
-	// 	tokenType,
-	// 	prizeUUID,
-	// ); err != nil {
-	// 	t.Fatalf("AddRafflePrize NFT: %v", err)
-	// }
+	updateRaffleOut, err := c.UpdateRaffle(
+		raffleAddress,
+		payToken.Address,
+		newTicketPrice,
+		newMaxEntries,
+		newMaxEntriesPerUser,
+		&newStartAt,
+		&newExpiredAt,
+		seedCommitHex,
+		newMetadata,
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, updateRaffleOut.Logs)
 
-	// // --------------------------------------------------------------------
-	// // DRAW
-	// // --------------------------------------------------------------------
-	// c.SetPrivateKey(merchPriv)
-	// draw, err := c.DrawRaffle(rf.Address, seedPass)
-	// if err != nil {
-	// 	t.Fatalf("DrawRaffle NFT: %v", err)
-	// }
+	updateRaffleLog, err := utils.UnmarshalLog[log.Log](updateRaffleOut.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_UPDATED_LOG, updateRaffleLog.LogType)
+
+	updateRaffleEvent, err := utils.UnmarshalEvent[raffleV1Domain.Raffle](updateRaffleLog.Event)
+	require.NoError(t, err)
+
+	assert.Equal(t, raffleAddress, updateRaffleEvent.Address)
+	assert.Equal(t, payToken.Address, updateRaffleEvent.TokenAddress)
+	assert.Equal(t, newTicketPrice, updateRaffleEvent.TicketPrice)
+	assert.Equal(t, newMaxEntries, updateRaffleEvent.MaxEntries)
+	assert.Equal(t, newMaxEntriesPerUser, updateRaffleEvent.MaxEntriesPerUser)
+	assert.Equal(t, seedCommitHex, updateRaffleEvent.SeedCommitHex)
+	assert.Equal(t, newMetadata["name"], updateRaffleEvent.Metadata["name"])
+	assert.Equal(t, newMetadata["description"], updateRaffleEvent.Metadata["description"])
+
+	// ------------------
+	//       PAUSE
+	// ------------------
+	pauseOut, err := c.PauseRaffle(raffleAddress, true)
+	require.NoError(t, err)
+	require.NotEmpty(t, pauseOut.Logs)
+
+	pauseLog, err := utils.UnmarshalLog[log.Log](pauseOut.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_PAUSED_LOG, pauseLog.LogType)
+
+	pauseEvent, err := utils.UnmarshalEvent[raffleV1Domain.Raffle](pauseLog.Event)
+	require.NoError(t, err)
+	assert.Equal(t, raffleAddress, pauseEvent.Address)
+	assert.Equal(t, true, pauseEvent.Paused)
+
+	// ------------------
+	//      UNPAUSE
+	// ------------------
+	unpauseOut, err := c.UnpauseRaffle(raffleAddress, false)
+	require.NoError(t, err)
+	require.NotEmpty(t, unpauseOut.Logs)
+
+	unpauseLog, err := utils.UnmarshalLog[log.Log](unpauseOut.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_UNPAUSED_LOG, unpauseLog.LogType)
+
+	unpauseEvent, err := utils.UnmarshalEvent[raffleV1Domain.Raffle](unpauseLog.Event)
+	require.NoError(t, err)
+	assert.Equal(t, raffleAddress, unpauseEvent.Address)
+	assert.Equal(t, false, unpauseEvent.Paused)
+
+	// ------------------
+	//    ENTER RAFFLE
+	// ------------------
+	// player1 compra 2 tickets => 2 * 500000 = 1000000
+	c.SetPrivateKey(player1Priv)
+	enter1Out, err := c.EnterRaffle(
+		raffleAddress,
+		2,
+		payToken.Address,
+		tokenV1Domain.FUNGIBLE,
+		"",
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, enter1Out.Logs)
+
+	enter1Log, err := utils.UnmarshalLog[log.Log](enter1Out.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_ENTERED_LOG, enter1Log.LogType)
+
+	enter1Event, err := utils.UnmarshalEvent[raffleV1Domain.Entry](enter1Log.Event)
+	require.NoError(t, err)
+
+	assert.Equal(t, raffleAddress, enter1Event.RaffleAddress)
+	assert.Equal(t, player1.PublicKey, enter1Event.Entrant)
+	assert.Equal(t, 2, enter1Event.Tickets)
+	assert.Equal(t, payToken.Address, enter1Event.PayTokenAddress)
+	assert.Equal(t, "1000000", enter1Event.Paid)
+	assert.NotEmpty(t, enter1Event.UUID)
+
+	// player2 compra 1 ticket => 1 * 500000 = 500000
+	c.SetPrivateKey(player2Priv)
+	enter2Out, err := c.EnterRaffle(
+		raffleAddress,
+		1,
+		payToken.Address,
+		tokenV1Domain.FUNGIBLE,
+		"",
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, enter2Out.Logs)
+
+	enter2Log, err := utils.UnmarshalLog[log.Log](enter2Out.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_ENTERED_LOG, enter2Log.LogType)
+
+	enter2Event, err := utils.UnmarshalEvent[raffleV1Domain.Entry](enter2Log.Event)
+	require.NoError(t, err)
+
+	assert.Equal(t, raffleAddress, enter2Event.RaffleAddress)
+	assert.Equal(t, player2.PublicKey, enter2Event.Entrant)
+	assert.Equal(t, 1, enter2Event.Tickets)
+	assert.Equal(t, payToken.Address, enter2Event.PayTokenAddress)
+	assert.Equal(t, "500000", enter2Event.Paid)
+	assert.NotEmpty(t, enter2Event.UUID)
+
+	player1PayAfterEnter := getFTBalance(t, c, payToken.Address, player1.PublicKey)
+	player2PayAfterEnter := getFTBalance(t, c, payToken.Address, player2.PublicKey)
+	rafflePayAfterEnter := getFTBalance(t, c, payToken.Address, raffleAddress)
+
+	expectedPlayer1PayAfterEnter, err := utils.SubBigIntStrings(player1PayBefore.Amount, "1000000")
+	require.NoError(t, err)
+	expectedPlayer2PayAfterEnter, err := utils.SubBigIntStrings(player2PayBefore.Amount, "500000")
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedPlayer1PayAfterEnter, player1PayAfterEnter.Amount)
+	assert.Equal(t, expectedPlayer2PayAfterEnter, player2PayAfterEnter.Amount)
+	assert.Equal(t, "1500000", rafflePayAfterEnter.Amount)
+
+	// ------------------
+	//       DRAW
+	// ------------------
+	c.SetPrivateKey(ownerPriv)
+	drawOut, err := c.DrawRaffle(raffleAddress, revealSeed)
+	require.NoError(t, err)
+	require.NotEmpty(t, drawOut.Logs)
+
+	drawLog, err := utils.UnmarshalLog[log.Log](drawOut.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_DRAWN_LOG, drawLog.LogType)
+
+	drawEvent, err := utils.UnmarshalEvent[raffleV1Domain.Draw](drawLog.Event)
+	require.NoError(t, err)
+
+	assert.Equal(t, raffleAddress, drawEvent.Address)
+	assert.Equal(t, revealSeed, drawEvent.RevealSeed)
+	assert.Equal(t, seedCommitHex, drawEvent.SeedCommitHex)
+	assert.Equal(t, 1, drawEvent.WinnerCount)
+	require.Len(t, drawEvent.Winners, 1)
+
+	winner := drawEvent.Winners[0]
+	assert.Contains(t, []string{player1.PublicKey, player2.PublicKey}, winner)
+
+	// ------------------
+	//       CLAIM
+	// ------------------
+	winnerPrizeBefore := getFTBalance(t, c, prizeToken.Address, winner)
+	rafflePrizeBeforeClaim := getFTBalance(t, c, prizeToken.Address, raffleAddress)
+
+	switch winner {
+	case player1.PublicKey:
+		c.SetPrivateKey(player1Priv)
+	case player2.PublicKey:
+		c.SetPrivateKey(player2Priv)
+	default:
+		t.Fatalf("unexpected winner: %s", winner)
+	}
+
+	claimOut, err := c.ClaimRaffle(
+		raffleAddress,
+		winner,
+		tokenV1Domain.FUNGIBLE,
+		prizeUUID,
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, claimOut.Logs)
+
+	claimLog, err := utils.UnmarshalLog[log.Log](claimOut.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_CLAIMED_LOG, claimLog.LogType)
+
+	claimEvent, err := utils.UnmarshalEvent[raffleV1Domain.Claim](claimLog.Event)
+	require.NoError(t, err)
+
+	assert.Equal(t, raffleAddress, claimEvent.Address)
+	assert.Equal(t, winner, claimEvent.Winner)
+
+	winnerPrizeAfter := getFTBalance(t, c, prizeToken.Address, winner)
+	rafflePrizeAfterClaim := getFTBalance(t, c, prizeToken.Address, raffleAddress)
+
+	expectedWinnerPrizeAfter, err := utils.AddBigIntStrings(winnerPrizeBefore.Amount, prizeAmount)
+	require.NoError(t, err)
+	expectedRafflePrizeAfterClaim, err := utils.SubBigIntStrings(rafflePrizeBeforeClaim.Amount, prizeAmount)
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedWinnerPrizeAfter, winnerPrizeAfter.Amount)
+	assert.Equal(t, expectedRafflePrizeAfterClaim, rafflePrizeAfterClaim.Amount)
+
+	// ------------------
+	//      WITHDRAW
+	// ------------------
+	c.SetPrivateKey(ownerPriv)
+
+	withdrawAmount := "500000"
+	withdrawUUID := "withdraw-ft-001"
+
+	withdrawOut, err := c.WithdrawRaffle(
+		raffleAddress,
+		payToken.Address,
+		withdrawAmount,
+		tokenV1Domain.FUNGIBLE,
+		withdrawUUID,
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, withdrawOut.Logs)
+
+	withdrawLog, err := utils.UnmarshalLog[log.Log](withdrawOut.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_WITHDRAWN_LOG, withdrawLog.LogType)
+
+	withdrawEvent, err := utils.UnmarshalEvent[raffleV1Domain.Treasury](withdrawLog.Event)
+	require.NoError(t, err)
+
+	assert.Equal(t, raffleAddress, withdrawEvent.Address)
+	assert.Equal(t, payToken.Address, withdrawEvent.TokenAddress)
+	assert.Equal(t, withdrawAmount, withdrawEvent.Amount)
+	assert.Equal(t, raffleV1Domain.ACTION_WITHDRAW, withdrawEvent.Action)
+	assert.NotZero(t, withdrawEvent.Time)
+
+	ownerPayAfterWithdraw := getFTBalance(t, c, payToken.Address, owner.PublicKey)
+	rafflePayAfterWithdraw := getFTBalance(t, c, payToken.Address, raffleAddress)
+
+	expectedOwnerPayAfterWithdraw, err := utils.AddBigIntStrings(ownerPayBeforeWithdraw.Amount, withdrawAmount)
+	require.NoError(t, err)
+	expectedRafflePayAfterWithdraw, err := utils.SubBigIntStrings("1500000", withdrawAmount)
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedOwnerPayAfterWithdraw, ownerPayAfterWithdraw.Amount)
+	assert.Equal(t, expectedRafflePayAfterWithdraw, rafflePayAfterWithdraw.Amount)
+
+	// ------------------
+	//      GET RAFFLE
+	// ------------------
+	// getRaffleOut, err := c.GetRaffle(raffleAddress)
+	// require.NoError(t, err)
+	// require.NotEmpty(t, getRaffleOut.States)
+
+	// var raffleState raffleV1Models.RaffleStateModel
+	// err = utils.UnmarshalState[raffleV1Models.RaffleStateModel](getRaffleOut.States[0].Object, &raffleState)
+	// require.NoError(t, err)
+
+	// assert.Equal(t, raffleAddress, raffleState.Address)
+	// assert.Equal(t, owner.PublicKey, raffleState.Owner)
+	// assert.Equal(t, payToken.Address, raffleState.TokenAddress)
+	// assert.Equal(t, newTicketPrice, raffleState.TicketPrice)
+	// assert.Equal(t, newMaxEntries, raffleState.MaxEntries)
+	// assert.Equal(t, newMaxEntriesPerUser, raffleState.MaxEntriesPerUser)
+	// assert.Equal(t, false, raffleState.Paused)
+	// assert.Equal(t, seedCommitHex, raffleState.SeedCommitHex)
+	// assert.Equal(t, newMetadata["name"], raffleState.Metadata["name"])
+	// assert.Equal(t, newMetadata["description"], raffleState.Metadata["description"])
+
+	// ------------------
+	//     LIST PRIZES
+	// ------------------
+	// listPrizesOut, err := c.ListRafflePrizes(raffleAddress, 1, 10, true)
+	// require.NoError(t, err)
+	// require.NotEmpty(t, listPrizesOut.States)
 
 	// var prizes []raffleV1Models.RafflePrizeModel
-	// unmarshalState(t, draw.States[0].Object, &prizes)
+	// err = utils.UnmarshalState[[]raffleV1Models.RafflePrizeModel](listPrizesOut.States[0].Object, &prizes)
+	// require.NoError(t, err)
 
-	// // --------------------------------------------------------------------
-	// // Claim prize
-	// // --------------------------------------------------------------------
-	// for _, pz := range prizes {
-	// 	if pz.Winner == "" {
-	// 		continue
-	// 	}
+	// require.NotEmpty(t, prizes)
 
-	// 	c.SetPrivateKey(prizePriv)
-	// 	if _, err := c.AllowUsers(prizeToken.Address, map[string]bool{pz.Winner: true}); err != nil {
-	// 		t.Fatalf("AllowUsers(prizeToken -> winner): %v", err)
-	// 	}
-
-	// 	// winner assina o claim
-	// 	var winnerPriv string
-	// 	for _, p := range players {
-	// 		if p.pub == pz.Winner {
-	// 			winnerPriv = p.priv
-	// 			break
-	// 		}
-	// 	}
-	// 	if winnerPriv == "" {
-	// 		t.Fatalf("winner priv not found for %s", pz.Winner)
-	// 	}
-
-	// 	c.SetPrivateKey(winnerPriv)
-	// 	if _, err := c.ClaimRaffle(
-	// 		rf.Address,
-	// 		pz.Winner,
-	// 		tokenType,
-	// 		pz.UUID, // UUID do prize (seu modelo usa UUID aqui)
-	// 	); err != nil {
-	// 		t.Fatalf("ClaimRaffle NFT: %v", err)
+	// var found bool
+	// for _, p := range prizes {
+	// 	if p.RaffleAddress == raffleAddress && p.TokenAddress == prizeToken.Address && p.Amount == prizeAmount {
+	// 		found = true
+	// 		assert.Equal(t, winner, p.Winner)
+	// 		assert.Equal(t, true, p.Claimed)
+	// 		assert.NotEmpty(t, p.UUID)
+	// 		assert.Equal(t, owner.PublicKey, p.Sponsor)
+	// 		break
 	// 	}
 	// }
+	// assert.True(t, found, "expected to find claimed raffle prize in ListRafflePrizes")
 }
-
