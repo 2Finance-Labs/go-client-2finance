@@ -36,6 +36,43 @@ func getFTBalance(
 	return state
 }
 
+func getFTBalanceOrZero(
+	t *testing.T,
+	c client_2finance.Client2FinanceNetwork,
+	tokenAddress string,
+	ownerAddress string,
+) tokenV1Models.BalanceStateModel {
+	t.Helper()
+
+	out, err := c.GetTokenBalance(tokenAddress, ownerAddress)
+	if err != nil {
+		require.Contains(t, err.Error(), "record not found")
+		return tokenV1Models.BalanceStateModel{
+			TokenAddress: tokenAddress,
+			OwnerAddress: ownerAddress,
+			Amount:       "0",
+		}
+	}
+
+	if len(out.States) == 0 {
+		return tokenV1Models.BalanceStateModel{
+			TokenAddress: tokenAddress,
+			OwnerAddress: ownerAddress,
+			Amount:       "0",
+		}
+	}
+
+	var state tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](out.States[0].Object, &state)
+	require.NoError(t, err)
+
+	if state.Amount == "" {
+		state.Amount = "0"
+	}
+
+	return state
+}
+
 func TestRaffleFlowFungible(t *testing.T) {
 	c := setupClient(t)
 
@@ -50,6 +87,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	//      TOKENS
 	// ------------------
 	c.SetPrivateKey(ownerPriv)
+
 	payToken := createBasicToken(
 		t,
 		c,
@@ -70,17 +108,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		false,
 	)
 
-	// distribui payToken para os participantes
-	_, err := c.TransferToken(payToken.Address, player1.PublicKey, "3000000", []string{})
-	require.NoError(t, err)
-
-	_, err = c.TransferToken(payToken.Address, player2.PublicKey, "3000000", []string{})
-	require.NoError(t, err)
-
-	player1PayBefore := getFTBalance(t, c, payToken.Address, player1.PublicKey)
-	player2PayBefore := getFTBalance(t, c, payToken.Address, player2.PublicKey)
-	ownerPayBeforeWithdraw := getFTBalance(t, c, payToken.Address, owner.PublicKey)
-	ownerPrizeBefore := getFTBalance(t, c, prizeToken.Address, owner.PublicKey)
+	require.Equal(t, tokenV1Domain.FUNGIBLE, payToken.TokenType, "payToken must be fungible")
+	require.Equal(t, tokenV1Domain.FUNGIBLE, prizeToken.TokenType, "prizeToken must be fungible")
 
 	// ------------------
 	//    DEPLOY RAFFLE
@@ -94,6 +123,39 @@ func TestRaffleFlowFungible(t *testing.T) {
 
 	raffleAddress := deployLog.ContractAddress
 	require.NotEmpty(t, raffleAddress)
+
+	// ------------------
+	//   ALLOW USERS
+	// ------------------
+	c.SetPrivateKey(ownerPriv)
+
+	_, err = c.AddAllowedUsers(payToken.Address, map[string]bool{
+		owner.PublicKey:   true,
+		player1.PublicKey: true,
+		player2.PublicKey: true,
+		raffleAddress:     true,
+	})
+	require.NoError(t, err)
+
+	_, err = c.AddAllowedUsers(prizeToken.Address, map[string]bool{
+		owner.PublicKey:   true,
+		player1.PublicKey: true,
+		player2.PublicKey: true,
+		raffleAddress:     true,
+	})
+	require.NoError(t, err)
+
+	// distribui payToken para os participantes
+	_, err = c.TransferToken(payToken.Address, player1.PublicKey, "3000000", []string{})
+	require.NoError(t, err)
+
+	_, err = c.TransferToken(payToken.Address, player2.PublicKey, "3000000", []string{})
+	require.NoError(t, err)
+
+	player1PayBefore := getFTBalance(t, c, payToken.Address, player1.PublicKey)
+	player2PayBefore := getFTBalance(t, c, payToken.Address, player2.PublicKey)
+	ownerPayBeforeWithdraw := getFTBalance(t, c, payToken.Address, owner.PublicKey)
+	ownerPrizeBefore := getFTBalance(t, c, prizeToken.Address, owner.PublicKey)
 
 	// ------------------
 	//     ADD RAFFLE
@@ -159,7 +221,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 		raffleAddress,
 		prizeToken.Address,
 		prizeAmount,
-		tokenV1Domain.FUNGIBLE,
+		prizeToken.TokenType,
 		prizeUUID,
 	)
 	require.NoError(t, err)
@@ -264,13 +326,12 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//    ENTER RAFFLE
 	// ------------------
-	// player1 compra 2 tickets => 2 * 500000 = 1000000
 	c.SetPrivateKey(player1Priv)
 	enter1Out, err := c.EnterRaffle(
 		raffleAddress,
 		2,
 		payToken.Address,
-		tokenV1Domain.FUNGIBLE,
+		payToken.TokenType,
 		"",
 	)
 	require.NoError(t, err)
@@ -290,13 +351,12 @@ func TestRaffleFlowFungible(t *testing.T) {
 	assert.Equal(t, "1000000", enter1Event.Paid)
 	assert.NotEmpty(t, enter1Event.UUID)
 
-	// player2 compra 1 ticket => 1 * 500000 = 500000
 	c.SetPrivateKey(player2Priv)
 	enter2Out, err := c.EnterRaffle(
 		raffleAddress,
 		1,
 		payToken.Address,
-		tokenV1Domain.FUNGIBLE,
+		payToken.TokenType,
 		"",
 	)
 	require.NoError(t, err)
@@ -356,7 +416,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//       CLAIM
 	// ------------------
-	winnerPrizeBefore := getFTBalance(t, c, prizeToken.Address, winner)
+	winnerPrizeBefore := getFTBalanceOrZero(t, c, prizeToken.Address, winner)
 	rafflePrizeBeforeClaim := getFTBalance(t, c, prizeToken.Address, raffleAddress)
 
 	switch winner {
@@ -371,7 +431,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	claimOut, err := c.ClaimRaffle(
 		raffleAddress,
 		winner,
-		tokenV1Domain.FUNGIBLE,
+		prizeToken.TokenType,
 		prizeUUID,
 	)
 	require.NoError(t, err)
@@ -398,6 +458,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	assert.Equal(t, expectedWinnerPrizeAfter, winnerPrizeAfter.Amount)
 	assert.Equal(t, expectedRafflePrizeAfterClaim, rafflePrizeAfterClaim.Amount)
 
+	winnerPrizeAfter = getFTBalance(t, c, prizeToken.Address, winner)
+	rafflePrizeAfterClaim = getFTBalanceOrZero(t, c, prizeToken.Address, raffleAddress)
+
 	// ------------------
 	//      WITHDRAW
 	// ------------------
@@ -410,7 +473,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 		raffleAddress,
 		payToken.Address,
 		withdrawAmount,
-		tokenV1Domain.FUNGIBLE,
+		payToken.TokenType,
 		withdrawUUID,
 	)
 	require.NoError(t, err)
