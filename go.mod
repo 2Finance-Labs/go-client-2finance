@@ -2,7 +2,7 @@ module github.com/2Finance-Labs/go-client-2finance
 
 go 1.24.7
 
-replace gitlab.com/2finance/2finance-network => /home/luiz/myrepo/2finance-network
+// replace gitlab.com/2finance/2finance-network => /home/luiz/myrepo/2finance-network
 
 // replace gitlab.com/2finance/2finance-network => /home/ghausmann/Trabalho/2finance-network
 
