@@ -133,44 +133,7 @@ type Client2FinanceNetwork interface {
 	GetTokenBalanceNFT(tokenAddress, ownerAddress, tokenUUID string) (types.ContractOutput, error)
 	ListTokenBalances(tokenAddress, ownerAddress, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error)
 
-	// FAUCET
-	AddFaucet(
-		address string,
-		owner string,
-		tokenAddress string,
-		startTime time.Time,
-		expireTime time.Time,
-		paused bool,
-		requestLimit int,
-		claimAmount string,
-		claimIntervalDuration time.Duration,
-	) (types.ContractOutput, error)
-	UpdateFaucet(
-		address string,
-		startTime time.Time,
-		expireTime time.Time,
-		requestLimit int,
-		requestsByUser map[string]int,
-		claimAmount string,
-		claimIntervalDuration time.Duration,
-		lastClaimByUser map[string]time.Time,
-	) (types.ContractOutput, error)
-	DepositFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error)
-	WithdrawFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error)
-	PauseFaucet(address string, pause bool) (types.ContractOutput, error)
-	UnpauseFaucet(address string, pause bool) (types.ContractOutput, error)
-	UpdateRequestLimitPerUser(address string, requestLimit int) (types.ContractOutput, error)
-	ClaimFunds(address, tokenType, uuid string) (types.ContractOutput, error)
-
-	GetFaucet(faucetAddress string) (types.ContractOutput, error)
-	ListFaucets(
-		ownerAddress string,
-		page, limit int,
-		ascending bool,
-	) (types.ContractOutput, error)
-
-	// AIRDROP
-	NewAirdrop(
+	NewDrop(
 		address string,
 		owner string,
 		faucetAddress string,
@@ -194,7 +157,7 @@ type Client2FinanceNetwork interface {
 		manualReviewRequired bool,
 	) (types.ContractOutput, error)
 
-	UpdateAirdropMetadata(
+	UpdateDropMetadata(
 		address string,
 		title string,
 		description string,
@@ -219,30 +182,30 @@ type Client2FinanceNetwork interface {
 		oracles map[string]bool,
 	) (types.ContractOutput, error)
 
-	DepositAirdrop(
+	DepositDrop(
 		address string,
 		amount string,
 		tokenType string,
 		uuid string,
 	) (types.ContractOutput, error)
 
-	ClaimAirdrop(
+	ClaimDrop(
 		address string,
 		tokenType string,
 	) (types.ContractOutput, error)
 
-	WithdrawAirdropFunds(
+	WithdrawDrop(
 		address string,
 		amount string,
 		tokenType string,
 		uuid string,
 	) (types.ContractOutput, error)
 
-	PauseAirdrop(
+	PauseDrop(
 		address string,
 	) (types.ContractOutput, error)
 
-	UnpauseAirdrop(
+	UnpauseDrop(
 		address string,
 	) (types.ContractOutput, error)
 
@@ -253,13 +216,13 @@ type Client2FinanceNetwork interface {
 	) (types.ContractOutput, error)
 
 	ManuallyAttestParticipantEligibility(
-		airdropAddress string,
+		dropAddress string,
 		wallet string,
 		approved bool,
 	) (types.ContractOutput, error)
 
-	GetAirdrop(address string) (types.ContractOutput, error)
-	ListAirdrops(
+	GetDrop(address string) (types.ContractOutput, error)
+	ListDrops(
 		owner string,
 		page, limit int,
 		ascending bool,
