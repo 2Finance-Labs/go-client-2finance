@@ -8,57 +8,54 @@ import (
 	// airdropModels "gitlab.com/2finance/2finance-network/blockchain/contract/airdropV1/models"
 	// "gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
 	// "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1"
-	// tokenDomain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	tokenDomain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 )
 
-func TestAirdropFlow(t *testing.T) {
-	// c := setupClient(t)
+func TestDropFlow(t *testing.T) {
+	c := setupClient(t)
 
-	// owner, ownerPriv := createWallet(t, c)
+	owner, ownerPriv := createWallet(t, c)
 	// user, userPriv := createWallet(t, c)
 	// verifier, _ := createWallet(t, c)
 
-	// // --------------------------------------------------------------------
-	// // Token setup
-	// // --------------------------------------------------------------------
-	// c.SetPrivateKey(ownerPriv)
+	// --------------------------------------------------------------------
+	// Token setup
+	// --------------------------------------------------------------------
+	c.SetPrivateKey(ownerPriv)
 
-	// dec := 6
-	// tokenType := tokenDomain.FUNGIBLE
-	// stablecoin := false
-	// tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
+	dec := 6
+	tokenType := tokenDomain.FUNGIBLE
+	stablecoin := false
+	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
+	amount := "10000"
+	if _, err := c.MintToken(tok.Address, owner.PublicKey, amount); err != nil {
+		t.Fatalf("MintToken: %v", err)
+	}
 
-	// if _, err := c.MintToken(tok.Address, owner.PublicKey, amt(10_000, dec), dec, tok.TokenType); err != nil {
-	// 	t.Fatalf("MintToken: %v", err)
-	// }
 
-	// // --------------------------------------------------------------------
-	// // Deploy Faucet contract + Create Faucet (obrigatório agora)
-	// // --------------------------------------------------------------------
-	// faucetContractState := models.ContractStateModel{}
-	// faucetDeployed, err := c.DeployContract1(faucetV1.FAUCET_CONTRACT_V1)
-	// if err != nil {
-	// 	t.Fatalf("DeployContract(Faucet): %v", err)
-	// }
-	// unmarshalState(t, faucetDeployed.States[0].Object, &faucetContractState)
-	// faucetAddress := faucetContractState.Address
+	tokenType = tokenDomain.FUNGIBLE
+	stablecoin = true
+	tok2 := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
+	amount = "10000"
+	if _, err := c.MintToken(tok2.Address, owner.PublicKey, amount); err != nil {
+		t.Fatalf("MintToken: %v", err)
+	}
 
-	// start := time.Now().Add(2 * time.Second)
-	// expire := time.Now().Add(30 * time.Minute)
+	// --------------------------------------------------------------------
+	// Token setup NONFUNGIBLE (NFT)
+	// --------------------------------------------------------------------
+	nonFungibleTokenType := tokenDomain.NON_FUNGIBLE
+	nftAmount := "50"
+	nft := createBasicToken(t, c, owner.PublicKey, 0, false, nonFungibleTokenType, false)
+	if _, err := c.MintToken(nft.Address, owner.PublicKey, nftAmount); err != nil {
+		t.Fatalf("MintToken (NFT): %v", err)
+	}
 
-	// if _, err := c.AddFaucet(
-	// 	faucetAddress,
-	// 	owner.PublicKey,
-	// 	tok.Address,
-	// 	start,
-	// 	expire,
-	// 	false,
-	// 	3,
-	// 	amt(10, dec),
-	// 	2,
-	// ); err != nil {
-	// 	t.Fatalf("NewFaucet: %v", err)
-	// }
+	nftAmount2 := "150"
+	nft2 := createBasicToken(t, c, owner.PublicKey, 0, false, nonFungibleTokenType, false)
+	if _, err := c.MintToken(nft2.Address, owner.PublicKey, nftAmount2); err != nil {
+		t.Fatalf("MintToken (NFT 2): %v", err)
+	}
 
 	// // --------------------------------------------------------------------
 	// // Deploy Airdrop contract

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/airdropV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
-func (c *networkClient) NewAirdrop(
+func (c *networkClient) NewDrop(
 	address string,
 	owner string,
 	faucetAddress string,
@@ -35,7 +35,7 @@ func (c *networkClient) NewAirdrop(
 ) (types.ContractOutput, error) {
 
 	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 	if owner == "" {
 		return types.ContractOutput{}, fmt.Errorf("owner not set")
@@ -73,7 +73,7 @@ func (c *networkClient) NewAirdrop(
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	method := airdropV1.METHOD_NEW_AIRDROP
+	method := dropV1.METHOD_NEW_DROP
 	data := map[string]interface{}{
 		"owner":                  owner,
 		"faucet_address":         faucetAddress,
@@ -105,7 +105,7 @@ func (c *networkClient) NewAirdrop(
 	return c.SignAndSendTransaction(c.chainId, from, address, method, data, version, uuid7)
 }
 
-func (c *networkClient) UpdateAirdropMetadata(
+func (c *networkClient) UpdateDropMetadata(
 	address string,
 	title string,
 	description string,
@@ -121,12 +121,12 @@ func (c *networkClient) UpdateAirdropMetadata(
 ) (types.ContractOutput, error) {
 
 	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 
 	from := c.publicKey
 
-	method := airdropV1.METHOD_UPDATE_AIRDROP_METADATA
+	method := dropV1.METHOD_UPDATE_DROP_METADATA
 	data := map[string]interface{}{
 		"title":                  title,
 		"description":            description,
@@ -151,14 +151,14 @@ func (c *networkClient) UpdateAirdropMetadata(
 
 func (c *networkClient) AllowOracles(address string, oracles map[string]bool) (types.ContractOutput, error) {
 	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 	if len(oracles) == 0 {
 		return types.ContractOutput{}, fmt.Errorf("oracles map is empty")
 	}
 
 	from := c.publicKey
-	method := airdropV1.METHOD_ALLOW_ORACLES
+	method := dropV1.METHOD_ALLOW_ORACLES
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -172,14 +172,14 @@ func (c *networkClient) AllowOracles(address string, oracles map[string]bool) (t
 
 func (c *networkClient) DisallowOracles(address string, oracles map[string]bool) (types.ContractOutput, error) {
 	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 	if len(oracles) == 0 {
 		return types.ContractOutput{}, fmt.Errorf("oracles map is empty")
 	}
 
 	from := c.publicKey
-	method := airdropV1.METHOD_DISALLOW_ORACLES
+	method := dropV1.METHOD_DISALLOW_ORACLES
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -191,7 +191,7 @@ func (c *networkClient) DisallowOracles(address string, oracles map[string]bool)
 	}, version, uuid7)
 }
 
-func (c *networkClient) DepositAirdrop(
+func (c *networkClient) DepositDrop(
 	address string,
 	amount string,
 	tokenType string,
@@ -199,7 +199,7 @@ func (c *networkClient) DepositAirdrop(
 ) (types.ContractOutput, error) {
 
 	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
@@ -209,7 +209,7 @@ func (c *networkClient) DepositAirdrop(
 	}
 
 	from := c.publicKey
-	method := airdropV1.METHOD_DEPOSIT_AIRDROP
+	method := dropV1.METHOD_DEPOSIT_DROP
 	version := uint8(1)
 	
 	uuid7, err := utils.NewUUID7()
@@ -224,16 +224,16 @@ func (c *networkClient) DepositAirdrop(
 	}, version, uuid7)
 }
 
-func (c *networkClient) ClaimAirdrop(address, tokenType string) (types.ContractOutput, error) {
+func (c *networkClient) ClaimDrop(address, tokenType string) (types.ContractOutput, error) {
 	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 	if tokenType == "" {
 		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 
 	from := c.publicKey
-	method := airdropV1.METHOD_CLAIM_AIRDROP
+	method := dropV1.METHOD_CLAIM_DROP
 	version := uint8(1)
 
 	uuid7, err := utils.NewUUID7()
@@ -247,7 +247,7 @@ func (c *networkClient) ClaimAirdrop(address, tokenType string) (types.ContractO
 	}, version, uuid7)
 }
 
-func (c *networkClient) WithdrawAirdropFunds(
+func (c *networkClient) WithdrawDrop(
 	address string,
 	amount string,
 	tokenType string,
@@ -255,14 +255,14 @@ func (c *networkClient) WithdrawAirdropFunds(
 ) (types.ContractOutput, error) {
 
 	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
 
 	from := c.publicKey
-	method := airdropV1.METHOD_WITHDRAW_AIRDROP
+	method := dropV1.METHOD_WITHDRAW_DROP
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -275,9 +275,9 @@ func (c *networkClient) WithdrawAirdropFunds(
 	}, version, uuid7)
 }
 
-func (c *networkClient) PauseAirdrop(airdropAddress string) (types.ContractOutput, error) {
-	if airdropAddress == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+func (c *networkClient) PauseDrop(dropAddress string) (types.ContractOutput, error) {
+	if dropAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 
 	from := c.publicKey
@@ -287,14 +287,14 @@ func (c *networkClient) PauseAirdrop(airdropAddress string) (types.ContractOutpu
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(airdropAddress); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid airdrop address: %w", err)
+	if err := keys.ValidateEDDSAPublicKeyHex(dropAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid drop address: %w", err)
 	}
 
-	method := airdropV1.METHOD_PAUSE_AIRDROP
+	method := dropV1.METHOD_PAUSE_DROP
 	// Evite "data nil" — seu backend já reclamou disso em outros métodos.
 	data := map[string]interface{}{
-		"address": airdropAddress,
+		"address": dropAddress,
 		"paused":  true,
 	}
 	version := uint8(1)
@@ -303,12 +303,12 @@ func (c *networkClient) PauseAirdrop(airdropAddress string) (types.ContractOutpu
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, airdropAddress, method, data, version, uuid7)
+	return c.SignAndSendTransaction(c.chainId, from, dropAddress, method, data, version, uuid7)
 }
 
-func (c *networkClient) UnpauseAirdrop(airdropAddress string) (types.ContractOutput, error) {
-	if airdropAddress == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+func (c *networkClient) UnpauseDrop(dropAddress string) (types.ContractOutput, error) {
+	if dropAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 
 	from := c.publicKey
@@ -318,13 +318,13 @@ func (c *networkClient) UnpauseAirdrop(airdropAddress string) (types.ContractOut
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(airdropAddress); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid airdrop address: %w", err)
+	if err := keys.ValidateEDDSAPublicKeyHex(dropAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid drop address: %w", err)
 	}
 
-	method := airdropV1.METHOD_UNPAUSE_AIRDROP
+	method := dropV1.METHOD_UNPAUSE_DROP
 	data := map[string]interface{}{
-		"address": airdropAddress,
+		"address": dropAddress,
 		"paused":  false,
 	}
 	version := uint8(1)
@@ -334,7 +334,7 @@ func (c *networkClient) UnpauseAirdrop(airdropAddress string) (types.ContractOut
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, airdropAddress, method, data, version, uuid7)
+	return c.SignAndSendTransaction(c.chainId, from, dropAddress, method, data, version, uuid7)
 }
 
 func (c *networkClient) AttestParticipantEligibility(
@@ -344,7 +344,7 @@ func (c *networkClient) AttestParticipantEligibility(
 ) (types.ContractOutput, error) {
 
 	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 	if wallet == "" {
 		return types.ContractOutput{}, fmt.Errorf("wallet not set")
@@ -354,7 +354,7 @@ func (c *networkClient) AttestParticipantEligibility(
 	}
 
 	from := c.publicKey
-	method := airdropV1.METHOD_ATTEST_ELIGIBILITY
+	method := dropV1.METHOD_ATTEST_ELIGIBILITY
 	version := uint8(1)
 
 	uuid7, err := utils.NewUUID7()
@@ -369,7 +369,7 @@ func (c *networkClient) AttestParticipantEligibility(
 }
 
 func (c *networkClient) ManuallyAttestParticipantEligibility(
-	airdropAddress string,
+	dropAddress string,
 	wallet string,
 	approved bool,
 ) (types.ContractOutput, error) {
@@ -378,8 +378,8 @@ func (c *networkClient) ManuallyAttestParticipantEligibility(
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
-	if airdropAddress == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address not set")
+	if dropAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 	if wallet == "" {
 		return types.ContractOutput{}, fmt.Errorf("wallet not set")
@@ -392,7 +392,7 @@ func (c *networkClient) ManuallyAttestParticipantEligibility(
 		return types.ContractOutput{}, fmt.Errorf("invalid wallet address: %w", err)
 	}
 
-	method := airdropV1.METHOD_MANUAL_ATTEST_ELIGIBILITY
+	method := dropV1.METHOD_MANUAL_ATTEST_ELIGIBILITY
 	data := map[string]interface{}{
 		"wallet":   wallet,
 		"approved": approved,
@@ -406,7 +406,7 @@ func (c *networkClient) ManuallyAttestParticipantEligibility(
 	out, err := c.SignAndSendTransaction(
 		c.chainId,
 		from,
-		airdropAddress,
+		dropAddress,
 		method,
 		data,
 		version,
@@ -419,14 +419,14 @@ func (c *networkClient) ManuallyAttestParticipantEligibility(
 	return out, nil
 }
 
-func (c *networkClient) GetAirdrop(address string) (types.ContractOutput, error) {
+func (c *networkClient) GetDrop(address string) (types.ContractOutput, error) {
 	from := c.publicKey
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
 
 	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("airdrop address must be set")
+		return types.ContractOutput{}, fmt.Errorf("drop address must be set")
 	}
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
@@ -434,10 +434,10 @@ func (c *networkClient) GetAirdrop(address string) (types.ContractOutput, error)
 	}
 
 	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid airdrop address: %w", err)
+		return types.ContractOutput{}, fmt.Errorf("invalid drop address: %w", err)
 	}
 
-	method := airdropV1.METHOD_GET_AIRDROP
+	method := dropV1.METHOD_GET_DROP
 
 	contractOutput, err := c.GetState(address, method, nil)
 	if err != nil {
@@ -448,7 +448,7 @@ func (c *networkClient) GetAirdrop(address string) (types.ContractOutput, error)
 }
 
 
-func (c *networkClient) ListAirdrops(
+func (c *networkClient) ListDrops(
 	owner string,
 	page, limit int,
 	ascending bool,
@@ -475,19 +475,19 @@ func (c *networkClient) ListAirdrops(
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
-	method := airdropV1.METHOD_LIST_AIRDROPS
+	method := dropV1.METHOD_LIST_DROPS
 
 	data := map[string]interface{}{
 		"owner":            owner,
 		"page":             page,
 		"limit":            limit,
 		"ascending":        ascending,
-		"contract_version": airdropV1.AIRDROP_CONTRACT_V1,
+		"contract_version": dropV1.DROP_CONTRACT_V1,
 	}
 
 	contractOutput, err := c.GetState("", method, data)
 	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to list airdrop states: %w", err)
+		return types.ContractOutput{}, fmt.Errorf("failed to list drop states: %w", err)
 	}
 
 	return contractOutput, nil
