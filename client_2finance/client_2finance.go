@@ -436,9 +436,8 @@ type Client2FinanceNetwork interface {
 	AddRafflePrize(raffleAddress string, tokenAddress string, amount, tokenType, uuid string) (types.ContractOutput, error)
 	RemoveRafflePrize(raffleAddress string, tokenType, uuid string) (types.ContractOutput, error)
 
-	// GetRaffle(address string) (types.ContractOutput, error)
-	// ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
-
+	GetRaffle(address string) (types.ContractOutput, error)
+	ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
 	ListPrizes(raffleAddress string, page, limit int, asc bool) (types.ContractOutput, error)
 }
 
