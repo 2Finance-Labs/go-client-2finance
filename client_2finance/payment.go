@@ -459,9 +459,10 @@ func (c *networkClient) ListPayments(
 
 	method := paymentV1.METHOD_LIST_PAYMENTS
 	data := map[string]interface{}{
-		"status":           status,
 		"payer":            payer,
 		"payee":            payee,
+		"order_id":         orderId,
+		"status":           status,
 		"page":             page,
 		"limit":            limit,
 		"ascending":        ascending,
