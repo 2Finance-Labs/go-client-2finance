@@ -681,68 +681,75 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//     LIST PAYMENTS
 	// ------------------
-	// listPaymentsOut, err := c.ListPayments(
-	// 	payer.PublicKey,
-	// 	payee.PublicKey,
-	// 	"",
-	// 	payToken.Address,
-	// 	[]string{},
-	// 	1,
-	// 	10,
-	// 	true,
-	// )
-	// if err != nil {
-	// 	t.Fatalf("ListPayments: %v", err)
-	// }
-	// require.NotEmpty(t, listPaymentsOut.States)
+	listPaymentsOut, err := c.ListPayments(
+		payer.PublicKey,
+		payee.PublicKey,
+		"",
+		payToken.Address,
+		[]string{},
+		1,
+		10,
+		true,
+	)
+	if err != nil {
+		t.Fatalf("ListPayments: %v", err)
+	}
+	require.NotEmpty(t, listPaymentsOut.States)
 
-	// var payments []paymentV1Models.PaymentStateModel
-	// err = utils.UnmarshalState[[]paymentV1Models.PaymentStateModel](listPaymentsOut.States[0].Object, &payments)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState (ListPayments.States[0]): %v", err)
-	// }
+	var payments []paymentV1Models.PaymentStateModel
+	err = utils.UnmarshalState[[]paymentV1Models.PaymentStateModel](listPaymentsOut.States[0].Object, &payments)
+	if err != nil {
+		t.Fatalf("UnmarshalState (ListPayments.States[0]): %v", err)
+	}
 
-	// require.NotEmpty(t, payments)
+	require.NotEmpty(t, payments)
 
-	// var foundCreatedFlow bool
-	// var foundVoidFlow bool
-	// var foundDirectFlow bool
+	var foundCreatedFlow bool
+	var foundVoidFlow bool
+	var foundDirectFlow bool
 
-	// for _, p := range payments {
-	// 	if p.Address == paymentAddress {
-	// 		foundCreatedFlow = true
-	// 		assert.Equal(t, orderId, p.OrderId)
-	// 		assert.Equal(t, payer.PublicKey, p.Payer)
-	// 		assert.Equal(t, payee.PublicKey, p.Payee)
-	// 		assert.Equal(t, amount, p.Amount)
-	// 		assert.Equal(t, paymentV1Domain.STATUS_REFUNDED, p.Status)
-	// 		assert.Equal(t, amount, p.CapturedAmount)
-	// 		assert.Equal(t, refundAmount, p.RefundedAmount)
-	// 		assert.NotZero(t, p.CreatedAt)
-	// 		assert.NotZero(t, p.UpdatedAt)
-	// 	}
+	for _, p := range payments {
+		if p.Address == paymentAddress {
+			foundCreatedFlow = true
+			assert.Equal(t, orderId, p.OrderId)
+			assert.Equal(t, payer.PublicKey, p.Payer)
+			assert.Equal(t, payee.PublicKey, p.Payee)
+			assert.Equal(t, amount, p.Amount)
+			assert.Equal(t, paymentV1Domain.STATUS_REFUNDED, p.Status)
+			assert.Equal(t, amount, p.CapturedAmount)
+			assert.Equal(t, refundAmount, p.RefundedAmount)
+			assert.NotZero(t, p.CreatedAt)
+			assert.NotZero(t, p.UpdatedAt)
+		}
 
-	// 	if p.Address == voidPaymentAddress {
-	// 		foundVoidFlow = true
-	// 		assert.Equal(t, voidOrderId, p.OrderId)
-	// 		assert.Equal(t, paymentV1Domain.STATUS_VOIDED, p.Status)
-	// 		assert.NotZero(t, p.CreatedAt)
-	// 		assert.NotZero(t, p.UpdatedAt)
-	// 	}
+		if p.Address == voidPaymentAddress {
+			foundVoidFlow = true
+			assert.Equal(t, voidOrderId, p.OrderId)
+			assert.Equal(t, payer.PublicKey, p.Payer)
+			assert.Equal(t, payee.PublicKey, p.Payee)
+			assert.Equal(t, voidAmount, p.Amount)
+			assert.Equal(t, paymentV1Domain.STATUS_VOIDED, p.Status)
+			assert.NotZero(t, p.CreatedAt)
+			assert.NotZero(t, p.UpdatedAt)
+		}
 
-	// 	if p.Address == directPaymentAddress {
-	// 		foundDirectFlow = true
-	// 		assert.Equal(t, directPayOrderId, p.OrderId)
-	// 		assert.Equal(t, directPayAmount, p.Amount)
-	// 		assert.Equal(t, paymentV1Domain.STATUS_CAPTURED, p.Status)
-	// 		assert.NotZero(t, p.CreatedAt)
-	// 		assert.NotZero(t, p.UpdatedAt)
-	// 	}
-	// }
+		if p.Address == directPaymentAddress {
+			foundDirectFlow = true
+			assert.Equal(t, directPayOrderId, p.OrderId)
+			assert.Equal(t, payer.PublicKey, p.Payer)
+			assert.Equal(t, payee.PublicKey, p.Payee)
+			assert.Equal(t, directPayAmount, p.Amount)
+			assert.Equal(t, directPayAmount, p.CapturedAmount)
+			assert.Equal(t, "0", p.RefundedAmount)
+			assert.Equal(t, paymentV1Domain.STATUS_CAPTURED, p.Status)
+			assert.NotZero(t, p.CreatedAt)
+			assert.NotZero(t, p.UpdatedAt)
+		}
+	}
 
-	// assert.True(t, foundCreatedFlow, "expected to find refunded payment in ListPayments")
-	// assert.True(t, foundVoidFlow, "expected to find voided payment in ListPayments")
-	// assert.True(t, foundDirectFlow, "expected to find direct payment in ListPayments")
+	assert.True(t, foundCreatedFlow, "expected to find refunded payment in ListPayments")
+	assert.True(t, foundVoidFlow, "expected to find voided payment in ListPayments")
+	assert.True(t, foundDirectFlow, "expected to find direct payment in ListPayments")
 }
 
 // More payment scenarios
