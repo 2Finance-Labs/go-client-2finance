@@ -2,13 +2,13 @@ package e2e_test
 
 import (
 	"testing"
-	// "time"
-
-	// "gitlab.com/2finance/2finance-network/blockchain/contract/airdropV1"
-	// airdropModels "gitlab.com/2finance/2finance-network/blockchain/contract/airdropV1/models"
-	// "gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
-	// "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1"
-	tokenDomain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"github.com/stretchr/testify/assert"
+	"gitlab.com/2finance/2finance-network/blockchain/log"
+	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
+	dropV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/domain"
+	dropV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
 )
 
 func TestDropFlow(t *testing.T) {
@@ -24,7 +24,7 @@ func TestDropFlow(t *testing.T) {
 	c.SetPrivateKey(ownerPriv)
 
 	dec := 6
-	tokenType := tokenDomain.FUNGIBLE
+	tokenType := tokenV1Domain.FUNGIBLE
 	stablecoin := false
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
 	amount := "10000"
@@ -33,7 +33,7 @@ func TestDropFlow(t *testing.T) {
 	}
 
 
-	tokenType = tokenDomain.FUNGIBLE
+	tokenType = tokenV1Domain.FUNGIBLE
 	stablecoin = true
 	tok2 := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
 	amount = "10000"
@@ -44,7 +44,7 @@ func TestDropFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Token setup NONFUNGIBLE (NFT)
 	// --------------------------------------------------------------------
-	nonFungibleTokenType := tokenDomain.NON_FUNGIBLE
+	nonFungibleTokenType := tokenV1Domain.NON_FUNGIBLE
 	nftAmount := "50"
 	nft := createBasicToken(t, c, owner.PublicKey, 0, false, nonFungibleTokenType, false)
 	if _, err := c.MintToken(nft.Address, owner.PublicKey, nftAmount); err != nil {
@@ -57,67 +57,192 @@ func TestDropFlow(t *testing.T) {
 		t.Fatalf("MintToken (NFT 2): %v", err)
 	}
 
-	// // --------------------------------------------------------------------
-	// // Deploy Airdrop contract
-	// // --------------------------------------------------------------------
-	// airdropContractState := models.ContractStateModel{}
-	// airdropDeployed, err := c.DeployContract1(airdropV1.AIRDROP_CONTRACT_V1)
-	// if err != nil {
-	// 	t.Fatalf("DeployContract(Airdrop): %v", err)
-	// }
-	// unmarshalState(t, airdropDeployed.States[0].Object, &airdropContractState)
-	// airdropAddress := airdropContractState.Address
+	// --------------------------------------------------------------------
+	// Deploy Drop contract
+	// --------------------------------------------------------------------
+	deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
+	contractLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (AddWallet.Logs[0]): %v", err)
+	}
+	address := contractLog.ContractAddress
 
-	// // --------------------------------------------------------------------
-	// // Create Airdrop (agora passa faucetAddress e NÃO tem nonce)
-	// // --------------------------------------------------------------------
-	// out, err := c.NewAirdrop(
-	// 	airdropAddress,
-	// 	owner.PublicKey,
-	// 	faucetAddress,
-	// 	tok.Address,
-	// 	start,
-	// 	expire,
-	// 	false,
-	// 	3,
-	// 	amt(10, dec),
-	// 	2,
-	// 	"Airdrop E2E",
-	// 	"E2E description",
-	// 	"Short desc",
-	// 	"https://img.png",
-	// 	"https://banner.png",
-	// 	"airdrop",
-	// 	map[string]bool{"FOLLOW_X": true},
-	// 	[]string{"https://x.com/post"},
-	// 	"MANUAL",
-	// 	verifier.PublicKey,
-	// 	true,
+	// --------------------------------------------------------------------
+	// Create Drop (agora passa faucetAddress e NÃO tem nonce)
+	// --------------------------------------------------------------------
+	title := "Airdrop E2E"
+	description := "E2E description"
+	shortDescription := "Short desc"
+	image := "https://img.png"
+	banner := "https://banner.png"
+	category := "airdrop"
+	socialRequirements := map[string]bool{"FOLLOW_X": true}
+	postLinks := map[string]bool{"https://x.com/post/123": true}
+	verificationType := "MANUAL"
+	manualReviewRequired := true
+	out, err := c.NewDrop(
+		address,
+		owner.PublicKey,
+		title,
+		description,
+		shortDescription,
+		image,
+		banner,
+		category,
+		socialRequirements,
+		postLinks,
+		verificationType,
+		manualReviewRequired,
+	)
+	if err != nil {
+		t.Fatalf("NewDrop: %v", err)
+	}
+
+	unmarshalLogToken, err := utils.UnmarshalLog[log.Log](out.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (AddToken.Logs[0]): %v", err)
+	}
+	assert.Equal(t, dropV1Domain.DROP_CREATED_LOG, unmarshalLogToken.LogType, "add-token log type mismatch")
+
+	drop, err := utils.UnmarshalEvent[dropV1Domain.Drop](unmarshalLogToken.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (AddToken.Logs[0]): %v", err)
+	}
+	
+	assert.Equal(t, address, drop.Address, "drop address empty")
+	assert.Equal(t, title, drop.Title, "drop title mismatch")
+	assert.Equal(t, description, drop.Description, "drop description mismatch")
+	assert.Equal(t, shortDescription, drop.ShortDescription, "drop short description mismatch")
+	assert.Equal(t, image, drop.ImageURL, "drop image mismatch")
+	assert.Equal(t, banner, drop.BannerURL, "drop banner mismatch")
+	assert.Equal(t, category, drop.Category, "drop category mismatch")
+	assert.Equal(t, socialRequirements, drop.SocialRequirements, "drop social requirements mismatch")
+	assert.Equal(t, postLinks, drop.PostLinks, "drop post links mismatch")
+	assert.Equal(t, verificationType, drop.VerificationType, "drop verification type mismatch")
+	assert.Equal(t, manualReviewRequired, drop.ManualReviewRequired, "drop manual review required mismatch")
+
+	gotOut, err := c.GetDrop(drop.Address)
+	if err != nil {
+		t.Fatalf("GetDrop: %v", err)
+	}
+
+	var dropStateModel dropV1Models.DropStateModel
+	err = utils.UnmarshalState[dropV1Models.DropStateModel](gotOut.States[0].Object, &dropStateModel)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetDrop.States[0]): %v", err)
+	}
+	assert.Equal(t, address, dropStateModel.Address, "GetDrop address mismatch")
+	assert.Equal(t, title, dropStateModel.Title, "GetDrop title mismatch")
+	assert.Equal(t, description, dropStateModel.Description, "GetDrop description mismatch")
+	assert.Equal(t, shortDescription, dropStateModel.ShortDescription, "GetDrop short description mismatch")
+	assert.Equal(t, image, dropStateModel.ImageURL, "GetDrop image mismatch")
+	assert.Equal(t, banner, dropStateModel.BannerURL, "GetDrop banner mismatch")
+	assert.Equal(t, category, dropStateModel.Category, "GetDrop category mismatch")
+	assert.Equal(t, socialRequirements, dropStateModel.SocialRequirements, "GetDrop social requirements mismatch")
+	assert.Equal(t, postLinks, dropStateModel.PostLinks, "GetDrop post links mismatch")
+	assert.Equal(t, verificationType, dropStateModel.VerificationType, "GetDrop verification type mismatch")
+	assert.Equal(t, manualReviewRequired, dropStateModel.ManualReviewRequired, "GetDrop manual review required mismatch")
+
+	updatedTitle := "Airdrop E2E (UPDATED)"
+	updatedDescription := "Updated description"
+	updatedShortDescription := "Updated short description"
+	updatedImage := "https://img-updated.png"
+	updatedBanner := "https://banner-updated.png"
+	updatedCategory := "airdrop"
+	updatedSocialRequirements := map[string]bool{"LIKE_X": true}
+	updatedPostLinks := map[string]bool{"https://x.com/post/456": true}
+	updatedVerificationType := "ORACLE"
+	updatedManualReviewRequired := false
+
+	outMeta, err := c.UpdateDropMetadata(
+		address,
+		updatedTitle,
+		updatedDescription,
+		updatedShortDescription,
+		updatedImage,
+		updatedBanner,
+		updatedCategory,
+		updatedSocialRequirements,
+		updatedPostLinks,
+		updatedVerificationType,
+		updatedManualReviewRequired,
+	)
+	if err != nil {
+		t.Fatalf("UpdateDropMetadata: %v", err)
+	}
+
+	unmarshalLogToken, err = utils.UnmarshalLog[log.Log](outMeta.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (UpdateDropMetadata.Logs[0]): %v", err)
+	}
+	assert.Equal(t, dropV1Domain.DROP_METADATA_UPDATED_LOG, unmarshalLogToken.LogType, "update-drop-metadata log type mismatch")
+
+	dropUpdated, err := utils.UnmarshalEvent[dropV1Domain.Drop](unmarshalLogToken.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (UpdateDropMetadata.Logs[0]): %v", err)
+	}
+	
+	assert.Equal(t, address, dropUpdated.Address, "updated drop address empty")
+	assert.Equal(t, updatedTitle, dropUpdated.Title, "updated drop title mismatch")
+	assert.Equal(t, updatedDescription, dropUpdated.Description, "updated drop description mismatch")
+	assert.Equal(t, updatedShortDescription, dropUpdated.ShortDescription, "updated drop short description mismatch")
+	assert.Equal(t, updatedImage, dropUpdated.ImageURL, "updated drop image mismatch")
+	assert.Equal(t, updatedBanner, dropUpdated.BannerURL, "updated drop banner mismatch")
+	assert.Equal(t, updatedCategory, dropUpdated.Category, "updated drop category mismatch")
+	assert.Equal(t, updatedSocialRequirements, dropUpdated.SocialRequirements, "updated drop social requirements mismatch")
+	assert.Equal(t, updatedPostLinks, dropUpdated.PostLinks, "updated drop post links mismatch")
+	assert.Equal(t, updatedVerificationType, dropUpdated.VerificationType, "updated drop verification type mismatch")
+	assert.Equal(t, updatedManualReviewRequired, dropUpdated.ManualReviewRequired, "updated drop manual review required mismatch")
+
+	gotUpdatedDrop, err := c.GetDrop(address)
+	if err != nil {
+		t.Fatalf("GetDrop: %v", err)
+	}
+
+	var dropStateModelUpdated dropV1Models.DropStateModel
+	err = utils.UnmarshalState[dropV1Models.DropStateModel](gotUpdatedDrop.States[0].Object, &dropStateModelUpdated)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetDrop.States[0]): %v", err)
+	}
+
+	resultSocialRequirements := map[string]bool{"FOLLOW_X": true, "LIKE_X": true}
+	resultPostLinks := map[string]bool{"https://x.com/post/123": true, "https://x.com/post/456": true}
+	assert.Equal(t, updatedTitle, dropStateModelUpdated.Title, "GetDrop title mismatch")
+	assert.Equal(t, updatedDescription, dropStateModelUpdated.Description, "GetDrop description mismatch")
+	assert.Equal(t, updatedShortDescription, dropStateModelUpdated.ShortDescription, "GetDrop short description mismatch")
+	assert.Equal(t, updatedImage, dropStateModelUpdated.ImageURL, "GetDrop image mismatch")
+	assert.Equal(t, updatedBanner, dropStateModelUpdated.BannerURL, "GetDrop banner mismatch")
+	assert.Equal(t, updatedCategory, dropStateModelUpdated.Category, "GetDrop category mismatch")
+	assert.Equal(t, resultSocialRequirements, dropStateModelUpdated.SocialRequirements, "GetDrop social requirements mismatch")
+	assert.Equal(t, resultPostLinks, dropStateModelUpdated.PostLinks, "GetDrop post links mismatch")
+	assert.Equal(t, updatedVerificationType, dropStateModelUpdated.VerificationType, "GetDrop verification type mismatch")
+	assert.Equal(t, updatedManualReviewRequired, dropStateModelUpdated.ManualReviewRequired, "GetDrop manual review required mismatch")
+
+	// startAt := time.Now().Add(1 * time.Hour)
+	// expireAt := time.Now().Add(24 * time.Hour)
+
+	// programAddresses := map[string]string{"program1": "program1", "token2": "program2"}
+	// _, err = c.UpdateDropSettings(
+	// 	address,
+	// 	programAddresses,
+	// 	startAt,
+	// 	expireAt,
+	// 	100,
+	// 	map[string]string{"token1": "100", "token2": "200"},
+	// 	3600,
 	// )
 	// if err != nil {
-	// 	t.Fatalf("NewAirdrop: %v", err)
+	// 	t.Fatalf("UpdateDropSettings: %v", err)
 	// }
 
-	// var ad airdropModels.AirdropStateModel
-	// unmarshalState(t, out.States[0].Object, &ad)
-
-	// // --------------------------------------------------------------------
-	// // GET Airdrop (reader) - cobre METHOD_GET_AIRDROP
-	// // --------------------------------------------------------------------
-	// gotOut, err := c.GetAirdrop(ad.Address)
-	// if err != nil {
-	// 	t.Fatalf("GetAirdrop: %v", err)
-	// }
-
-	// var adGet airdropModels.AirdropStateModel
-	// unmarshalState(t, gotOut.States[0].Object, &adGet)
-
-	// if adGet.Address != ad.Address {
-	// 	t.Fatalf("GetAirdrop mismatch: address=%q want=%q", adGet.Address, ad.Address)
-	// }
-	// if adGet.FaucetAddress != ad.FaucetAddress {
-	// 	t.Fatalf("GetAirdrop mismatch: faucet_address=%q want=%q", adGet.FaucetAddress, ad.FaucetAddress)
-	// }
+	// --------------------------------------------------------------------
+	// GET Drop (reader) - cobre METHOD_GET_DROP
+	// --------------------------------------------------------------------
+	
+	
 
 	// // --------------------------------------------------------------------
 	// // LIST Airdrops (reader) - cobre METHOD_LIST_AIRDROPS

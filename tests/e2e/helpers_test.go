@@ -92,11 +92,7 @@ func createBasicToken(
 	symbol := "2F" + randSuffix(4)
 	name := "2Finance"
 	var totalSupply string
-	if tokenType == tokenV1Domain.NON_FUNGIBLE {
-		totalSupply = "1"
-	} else {
-		totalSupply = amt(1_000_000, decimals)
-	}
+	totalSupply = "1000"
 	description := "e2e token created by tests"
 	image := "https://example.com/image.png"
 	website := "https://example.com"
@@ -114,9 +110,9 @@ func createBasicToken(
 		feeTiers = []map[string]interface{}{
 			{
 				"min_amount": "0",
-				"max_amount": amt(10_000, decimals),
+				"max_amount": "10000",
 				"min_volume": "0",
-				"max_volume": amt(100_000, decimals),
+				"max_volume": "100000",
 				"fee_bps":    50,
 			},
 		}
@@ -141,6 +137,7 @@ func createBasicToken(
 
 	assetGLBUri := "https://example.com/asset.glb"
 	transferable := true
+	assetType := tokenV1Domain.TOKEN_ASSET_TYPE
 
 	out, err := c.AddToken(
 		address,
@@ -170,7 +167,7 @@ func createBasicToken(
 		assetGLBUri,
 		tokenType,
 		transferable,
-		stablecoin,
+		assetType,
 	)
 	if err != nil {
 		t.Fatalf("AddToken: %v", err)

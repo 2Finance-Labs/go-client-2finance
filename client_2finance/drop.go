@@ -3,7 +3,6 @@ package client_2finance
 import (
 	"fmt"
 	"time"
-
 	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
@@ -13,14 +12,6 @@ import (
 func (c *networkClient) NewDrop(
 	address string,
 	owner string,
-	faucetAddress string,
-	tokenAddress string,
-	startTime time.Time,
-	expireTime time.Time,
-	paused bool,
-	requestLimit int,
-	claimAmount string,
-	claimIntervalSeconds int64,
 	title string,
 	description string,
 	shortDescription string,
@@ -28,9 +19,8 @@ func (c *networkClient) NewDrop(
 	bannerURL string,
 	category string,
 	socialRequirements map[string]bool,
-	postLinks []string,
+	postLinks map[string]bool,
 	verificationType string,
-	verifierPublicKey string,
 	manualReviewRequired bool,
 ) (types.ContractOutput, error) {
 
@@ -40,17 +30,8 @@ func (c *networkClient) NewDrop(
 	if owner == "" {
 		return types.ContractOutput{}, fmt.Errorf("owner not set")
 	}
-	if faucetAddress == "" {
-		return types.ContractOutput{}, fmt.Errorf("faucet address not set")
-	}
-	if tokenAddress == "" {
-		return types.ContractOutput{}, fmt.Errorf("token address not set")
-	}
 	if title == "" {
 		return types.ContractOutput{}, fmt.Errorf("title not set")
-	}
-	if claimAmount == "" {
-		return types.ContractOutput{}, fmt.Errorf("claim amount not set")
 	}
 	if verificationType == "" {
 		return types.ContractOutput{}, fmt.Errorf("verification type not set")
@@ -58,14 +39,6 @@ func (c *networkClient) NewDrop(
 
 	if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
-	}
-	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
-	}
-	if verifierPublicKey != "" {
-		if err := keys.ValidateEDDSAPublicKeyHex(verifierPublicKey); err != nil {
-			return types.ContractOutput{}, fmt.Errorf("invalid verifier public key: %w", err)
-		}
 	}
 
 	from := c.publicKey
@@ -76,14 +49,6 @@ func (c *networkClient) NewDrop(
 	method := dropV1.METHOD_NEW_DROP
 	data := map[string]interface{}{
 		"owner":                  owner,
-		"faucet_address":         faucetAddress,
-		"token_address":          tokenAddress,
-		"start_time":             startTime,
-		"expire_time":            expireTime,
-		"paused":                 paused,
-		"request_limit":          requestLimit,
-		"claim_amount":           claimAmount,
-		"claim_interval_seconds": claimIntervalSeconds,
 		"title":                  title,
 		"description":            description,
 		"short_description":      shortDescription,
@@ -93,7 +58,6 @@ func (c *networkClient) NewDrop(
 		"social_requirements":    socialRequirements,
 		"post_links":             postLinks,
 		"verification_type":      verificationType,
-		"verifier_public_key":    verifierPublicKey,
 		"manual_review_required": manualReviewRequired,
 	}
 	version := uint8(1)
@@ -114,9 +78,8 @@ func (c *networkClient) UpdateDropMetadata(
 	bannerURL string,
 	category string,
 	socialRequirements map[string]bool,
-	postLinks []string,
+	postLinks map[string]bool,
 	verificationType string,
-	verifierPublicKey string,
 	manualReviewRequired bool,
 ) (types.ContractOutput, error) {
 
@@ -137,7 +100,6 @@ func (c *networkClient) UpdateDropMetadata(
 		"social_requirements":    socialRequirements,
 		"post_links":             postLinks,
 		"verification_type":      verificationType,
-		"verifier_public_key":    verifierPublicKey,
 		"manual_review_required": manualReviewRequired,
 	}
 	version := uint8(1)
@@ -147,6 +109,40 @@ func (c *networkClient) UpdateDropMetadata(
 	}
 
 	return c.SignAndSendTransaction(c.chainId, from, address, method, data, version, uuid7)
+}
+
+func (c *networkClient) UpdateDropSettings(
+	address string,
+	programAddresses map[string]string,
+	startAt time.Time,
+	expireAt time.Time,
+	requestLimit int,
+	claimsAmounts map[string]string,
+	claimIntervalSeconds int,
+) (types.ContractOutput, error) {
+	
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("drop address not set")
+	}
+	
+	from := c.publicKey
+	to := address
+	method := dropV1.METHOD_UPDATE_SETTINGS
+	data := map[string]interface{}{
+		"program_addresses":       programAddresses,
+		"startAt":              startAt,
+		"expireAt":             expireAt,
+		"request_limit":           requestLimit,
+		"claims_amounts":          claimsAmounts,
+		"claim_interval_seconds": claimIntervalSeconds,
+	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
 func (c *networkClient) AllowOracles(address string, oracles map[string]bool) (types.ContractOutput, error) {

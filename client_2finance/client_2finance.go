@@ -99,7 +99,7 @@ type Client2FinanceNetwork interface {
 		expired_at time.Time,
 		assetGLBUri string,
 		tokenType string,
-		transferable, stablecoin bool) (types.ContractOutput, error)
+		transferable bool, assetType string) (types.ContractOutput, error)
 	MintToken(to, mintTo, amount string) (types.ContractOutput, error)
 	BurnToken(to, amount string, tokenUUIDList []string) (types.ContractOutput, error)
 	TransferToken(tokenAddress, transferTo, amount string, tokenUUIDList []string) (types.ContractOutput, error)
@@ -136,14 +136,6 @@ type Client2FinanceNetwork interface {
 	NewDrop(
 		address string,
 		owner string,
-		faucetAddress string,
-		tokenAddress string,
-		startTime time.Time,
-		expireTime time.Time,
-		paused bool,
-		requestLimit int,
-		claimAmount string,
-		claimIntervalSeconds int64,
 		title string,
 		description string,
 		shortDescription string,
@@ -151,9 +143,8 @@ type Client2FinanceNetwork interface {
 		bannerURL string,
 		category string,
 		socialRequirements map[string]bool,
-		postLinks []string,
+		postLinks map[string]bool,
 		verificationType string,
-		verifierPublicKey string,
 		manualReviewRequired bool,
 	) (types.ContractOutput, error)
 
@@ -166,12 +157,19 @@ type Client2FinanceNetwork interface {
 		bannerURL string,
 		category string,
 		socialRequirements map[string]bool,
-		postLinks []string,
+		postLinks map[string]bool,
 		verificationType string,
-		verifierPublicKey string,
 		manualReviewRequired bool,
 	) (types.ContractOutput, error)
-
+	UpdateDropSettings(
+		address string,
+		programAddresses map[string]string,
+		startAt time.Time,
+		expireAt time.Time,
+		requestLimit int,
+		claimsAmounts map[string]string,
+		claimIntervalSeconds int,
+	) (types.ContractOutput, error)
 	AllowOracles(
 		address string,
 		oracles map[string]bool,
@@ -275,7 +273,6 @@ type Client2FinanceNetwork interface {
 
 	AddCoupon(
 		address string, // optional, depends on your infra
-		tokenAddress string,
 		programType string, // "percentage" | "fixed-amount"
 		percentageBPS string, // required if percentage
 		fixedAmount string, // required if fixed-amount
@@ -287,6 +284,18 @@ type Client2FinanceNetwork interface {
 		maxRedemptions int,
 		perUserLimit int,
 		passcodeHash string, // sha256(preimage)
+		symbol string,
+		name string,
+		amount string,
+		description string,
+		image string,
+		website string,
+		tagsSocialMedia map[string]string,
+		tagsCategory map[string]string,
+		tags map[string]string,
+		creator string,
+		creatorWebsite string,
+		assetGLBUri string,
 	) (types.ContractOutput, error)
 
 	UpdateCoupon(
@@ -307,15 +316,27 @@ type Client2FinanceNetwork interface {
 	PauseCoupon(address string, paused bool) (types.ContractOutput, error)
 	UnpauseCoupon(address string, paused bool) (types.ContractOutput, error)
 
-	// Redeem coupon,
-	//TODO change this to Redeem Manual, because is possible to add orderAmount
+	IssueCoupon(
+		address string, // coupon address
+		toAddress string,
+		amount string, // integer string
+	) (types.ContractOutput, error)
+
 	RedeemCoupon(
 		address string, // coupon address
 		orderAmount string, // integer string
 		passcode string,
-		tokenType string,
 		uuid string,
 	) (types.ContractOutput, error)
+
+	RedeemCouponForUser(
+		address string, // coupon address
+		userAddress string, // user redeeming on behalf of
+		orderAmount string, // integer string
+		passcode string,
+		uuid string,
+	) (types.ContractOutput, error)
+		
 
 	// getters
 	GetCoupon(address string) (types.ContractOutput, error)

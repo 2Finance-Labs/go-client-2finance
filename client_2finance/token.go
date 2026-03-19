@@ -38,7 +38,7 @@ func (c *networkClient) AddToken(
 	expired_at time.Time,
 	assetGLBUri string,
 	tokenType string,
-	transferable, stablecoin bool) (types.ContractOutput, error) {
+	transferable bool, assetType string) (types.ContractOutput, error) {
 
 	if symbol == "" {
 		return types.ContractOutput{}, fmt.Errorf("symbol not set")
@@ -122,7 +122,7 @@ func (c *networkClient) AddToken(
 		"asset_glb_uri":            assetGLBUri,
 		"token_type":               tokenType,
 		"transferable":             transferable,
-		"stablecoin":               stablecoin,
+		"asset_type":               assetType,
 	}
 
 	version := uint8(1)

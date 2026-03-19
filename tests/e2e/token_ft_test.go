@@ -11,7 +11,6 @@ import (
 	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
-	"fmt"
 )
 
 func TestTokenFlowFungible(t *testing.T) {
@@ -34,7 +33,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	address := contractLog.ContractAddress
 	decimals := 6
 	tokenType := tokenV1Domain.FUNGIBLE
-	stablecoin := false
+	assetType := tokenV1Domain.COUPON_ASSET_TYPE
 	symbol := "2F" + randSuffix(4)
 	name := "2Finance"
 	var totalSupply string
@@ -78,7 +77,6 @@ func TestTokenFlowFungible(t *testing.T) {
 	expiredAt := time.Time{}
 	assetGLBUri := "https://example.com/asset.glb"
 	transferable := true
-	fmt.Printf("Creating token with address: %s\n", address)
 	out, err := c.AddToken(
 		address,
 		symbol,
@@ -107,7 +105,7 @@ func TestTokenFlowFungible(t *testing.T) {
 		assetGLBUri,
 		tokenType,
 		transferable,
-		stablecoin,
+		assetType,
 	)
 	if err != nil {
 		t.Fatalf("AddToken: %v", err)
@@ -149,7 +147,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	assert.Equal(t, assetGLBUri, tok.AssetGLBUri, "token asset GLB URI mismatch")
 	assert.Equal(t, tokenType, tok.TokenType, "token type mismatch")
 	assert.Equal(t, transferable, tok.Transferable, "token transferable mismatch")
-	assert.Equal(t, stablecoin, tok.Stablecoin, "token stablecoin mismatch")
+	assert.Equal(t, assetType, tok.AssetType, "token asset type mismatch")
 
 	unmarshalLogMint, err := utils.UnmarshalLog[log.Log](out.Logs[1])
 	if err != nil {
@@ -219,7 +217,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	assert.Equal(t, assetGLBUri, tokenState.AssetGLBUri, "token asset GLB URI mismatch")
 	assert.Equal(t, tokenType, tokenState.TokenType, "token type mismatch")
 	assert.Equal(t, transferable, tokenState.Transferable, "token transferable mismatch")
-	assert.Equal(t, stablecoin, tokenState.Stablecoin, "token stablecoin mismatch")
+	assert.Equal(t, assetType, tokenState.AssetType, "token asset type mismatch")
 
 	getBalanceOut, err := c.GetTokenBalance(tok.Address, owner.PublicKey)
 	if err != nil {
@@ -563,8 +561,10 @@ func TestTokenFlowFungible(t *testing.T) {
 
 	// Add allow users
 	receiverPub, _ := genKey(t, c)
+	anotherPub, _ := genKey(t, c)
 	allowUsers, err := c.AddAllowedUsers(tok.Address, map[string]bool{
 		receiverPub: true,
+		anotherPub:  true,
 	})
 	if err != nil {
 		t.Fatalf("AllowUsers: %v", err)
@@ -1223,7 +1223,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	assert.NotNil(t, balanceStateOwner.UpdatedAt, "updated at is nil for owner")
 	assert.Equal(t, balanceStateOwner.TokenUUID, "", "token uuid mismatch in balance state for owner")
 
-	listOfBalances, err := c.ListTokenBalances("", "", domain.FUNGIBLE, 1, 10, true)
+	listOfBalances, err := c.ListTokenBalances("", "", domain.FUNGIBLE, 1, 2, true)
 	if err != nil {
 		t.Fatalf("ListTokenBalances: %v", err)
 	}
@@ -1236,7 +1236,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	require.NotEmpty(t, balanceStateList, "expected at least one balance in list")
-	require.Equal(t, 10, len(balanceStateList), "expected exactly ten balances in list")
+	require.Equal(t, 2, len(balanceStateList), "expected exactly two balances in list")
 	require.NotNil(t, balanceStateList[0].TokenAddress, "token address is nil for balance in list")
 	require.NotNil(t, balanceStateList[0].OwnerAddress, "owner address is nil for balance in list")
 	require.NotNil(t, balanceStateList[0].Amount, "amount is nil for balance in list")
@@ -1245,7 +1245,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	require.NotNil(t, balanceStateList[0].UpdatedAt, "updated at is nil for balance in list")
 
 
-	listTokens, err := c.ListTokens("", "", "", domain.FUNGIBLE, 1, 10, true);
+	listTokens, err := c.ListTokens(tok.Address, "", "", domain.FUNGIBLE, 1, 1, true);
 	if err != nil {
 		t.Fatalf("ListTokens: %v", err)
 	}
@@ -1258,7 +1258,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	}
 
 	require.NotEmpty(t, tokenStateList, "expected at least one token in list")
-	require.Equal(t, 10, len(tokenStateList), "expected exactly ten tokens in list")
+	require.Equal(t, 1, len(tokenStateList), "expected exactly one token in list")
 	require.NotNil(t, tokenStateList[0].Address, "token address is nil for token in list")
 	require.NotNil(t, tokenStateList[0].Symbol, "token symbol is nil for token in list")
 	require.NotNil(t, tokenStateList[0].Name, "token name is nil for token in list")
@@ -1284,8 +1284,22 @@ func TestTokenFlowFungible(t *testing.T) {
 	require.NotNil(t, tokenStateList[0].AssetGLBUri, "token asset GLB URI is nil for token in list")
 	require.NotNil(t, tokenStateList[0].TokenType, "token type is nil for token in list")
 	require.NotNil(t, tokenStateList[0].Transferable, "token transferable is nil for token in list")
-	require.NotNil(t, tokenStateList[0].Stablecoin, "token stablecoin is nil for token in list")
+	require.NotNil(t, tokenStateList[0].AssetType, "token asset type is nil for token in list")
 	require.NotNil(t, tokenStateList[0].CreatedAt, "created at is nil for token in list")
 	require.NotNil(t, tokenStateList[0].UpdatedAt, "updated at is nil for token in list")
 
+
+	listTokens, err = c.ListTokens("", "", "", domain.FUNGIBLE, 1, 3, true);
+	if err != nil {
+		t.Fatalf("ListTokens: %v", err)
+	}
+
+	require.NotEmpty(t, listTokens.States, "expected at least one state in ListTokens response")
+	var tokenStateListOfThree []tokenV1Models.TokenStateModel
+	err = utils.UnmarshalState[[]tokenV1Models.TokenStateModel](listTokens.States[0].Object, &tokenStateListOfThree)
+	if err != nil {
+		t.Fatalf("UnmarshalState (ListTokens.States[0].Object): %v", err)
+	}
+	require.NotEmpty(t, tokenStateListOfThree, "expected at least one token in list")
+	require.Equal(t, 3, len(tokenStateListOfThree), "expected exactly three tokens in list")
 }
