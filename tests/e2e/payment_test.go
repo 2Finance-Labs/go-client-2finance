@@ -77,7 +77,7 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//  FUND THE PAYER
 	// ------------------
-	fundAmount := "3000000"
+	fundAmount := "500"
 	_, err = c.TransferToken(payToken.Address, payer.PublicKey, fundAmount, []string{})
 	if err != nil {
 		t.Fatalf("TransferToken payer funding: %v", err)
@@ -114,7 +114,7 @@ func TestPaymentFlow(t *testing.T) {
 	//   CREATE PAYMENT
 	// ------------------
 	orderId := "order-payment-e2e-001"
-	amount := "1000000"
+	amount := "300"
 	expiredAt := time.Now().Add(2 * time.Hour)
 
 	c.SetPrivateKey(ownerPriv)
@@ -358,7 +358,7 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//       REFUND
 	// ------------------
-	refundAmount := "300000"
+	refundAmount := "100"
 	refundUUID := "payment-refund-e2e-001"
 
 	c.SetPrivateKey(payeePriv)
@@ -452,7 +452,7 @@ func TestPaymentFlow(t *testing.T) {
 	}
 
 	voidOrderId := "order-payment-e2e-void-001"
-	voidAmount := "200000"
+	voidAmount := "80"
 	voidExpiredAt := time.Now().Add(2 * time.Hour)
 
 	c.SetPrivateKey(ownerPriv)
@@ -512,133 +512,171 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//     DIRECT PAY
 	// ------------------
-	// deployedContract3, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
-	// if err != nil {
-	// 	t.Fatalf("DeployContract direct pay: %v", err)
-	// }
-	// require.NotEmpty(t, deployedContract3.Logs)
+	deployedContract3, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
+	if err != nil {
+		t.Fatalf("DeployContract direct pay: %v", err)
+	}
+	require.NotEmpty(t, deployedContract3.Logs)
 
-	// deployLog3, err := utils.UnmarshalLog[log.Log](deployedContract3.Logs[0])
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalLog (DeployContract direct pay.Logs[0]): %v", err)
-	// }
+	deployLog3, err := utils.UnmarshalLog[log.Log](deployedContract3.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (DeployContract direct pay.Logs[0]): %v", err)
+	}
 
-	// directPaymentAddress := deployLog3.ContractAddress
-	// require.NotEmpty(t, directPaymentAddress)
+	directPaymentAddress := deployLog3.ContractAddress
+	require.NotEmpty(t, directPaymentAddress)
 
-	// _, err = c.AddAllowedUsers(payToken.Address, map[string]bool{
-	// 	directPaymentAddress: true,
-	// })
-	// if err != nil {
-	// 	t.Fatalf("AddAllowedUsers direct payment address: %v", err)
-	// }
+	_, err = c.AddAllowedUsers(payToken.Address, map[string]bool{
+		directPaymentAddress: true,
+	})
+	if err != nil {
+		t.Fatalf("AddAllowedUsers direct payment address: %v", err)
+	}
 
-	// directPayAmount := "150000"
-	// directPayOrderId := "order-payment-e2e-direct-001"
-	// directPayUUID := "payment-direct-e2e-001"
+	directPayAmount := "50"
+	directPayOrderId := "order-payment-e2e-direct-001"
+	directPayUUID := "payment-direct-e2e-001"
 
-	// payerBalanceBeforeDirectOut, err := c.GetTokenBalance(payToken.Address, payer.PublicKey)
-	// if err != nil {
-	// 	t.Fatalf("GetTokenBalance payer before direct pay: %v", err)
-	// }
-	// var payerBalanceBeforeDirect tokenV1Models.BalanceStateModel
-	// err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceBeforeDirectOut.States[0].Object, &payerBalanceBeforeDirect)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState payerBalanceBeforeDirect: %v", err)
-	// }
+	payerBalanceBeforeDirectOut, err := c.GetTokenBalance(payToken.Address, payer.PublicKey)
+	if err != nil {
+		t.Fatalf("GetTokenBalance payer before direct pay: %v", err)
+	}
+	var payerBalanceBeforeDirect tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceBeforeDirectOut.States[0].Object, &payerBalanceBeforeDirect)
+	if err != nil {
+		t.Fatalf("UnmarshalState payerBalanceBeforeDirect: %v", err)
+	}
 
-	// payeeBalanceBeforeDirectOut, err := c.GetTokenBalance(payToken.Address, payee.PublicKey)
-	// if err != nil {
-	// 	t.Fatalf("GetTokenBalance payee before direct pay: %v", err)
-	// }
-	// var payeeBalanceBeforeDirect tokenV1Models.BalanceStateModel
-	// err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payeeBalanceBeforeDirectOut.States[0].Object, &payeeBalanceBeforeDirect)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState payeeBalanceBeforeDirect: %v", err)
-	// }
+	payeeBalanceBeforeDirectOut, err := c.GetTokenBalance(payToken.Address, payee.PublicKey)
+	if err != nil {
+		t.Fatalf("GetTokenBalance payee before direct pay: %v", err)
+	}
+	var payeeBalanceBeforeDirect tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payeeBalanceBeforeDirectOut.States[0].Object, &payeeBalanceBeforeDirect)
+	if err != nil {
+		t.Fatalf("UnmarshalState payeeBalanceBeforeDirect: %v", err)
+	}
 
-	// c.SetPrivateKey(payerPriv)
-	// directPayOut, err := c.DirectPay(
-	// 	directPaymentAddress,
-	// 	payToken.Address,
-	// 	directPayOrderId,
-	// 	payer.PublicKey,
-	// 	payee.PublicKey,
-	// 	directPayAmount,
-	// 	payToken.TokenType,
-	// 	directPayUUID,
-	// )
-	// if err != nil {
-	// 	t.Fatalf("DirectPay: %v", err)
-	// }
-	// require.NotEmpty(t, directPayOut.Logs)
+	c.SetPrivateKey(payerPriv)
+	directPayOut, err := c.DirectPay(
+		directPaymentAddress,
+		payToken.Address,
+		directPayOrderId,
+		payer.PublicKey,
+		payee.PublicKey,
+		directPayAmount,
+		payToken.TokenType,
+		directPayUUID,
+	)
+	if err != nil {
+		t.Fatalf("DirectPay: %v", err)
+	}
 
-	// directPayLog, err := utils.UnmarshalLog[log.Log](directPayOut.Logs[0])
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalLog (DirectPay.Logs[0]): %v", err)
-	// }
+	require.Len(t, directPayOut.Logs, 3, "direct pay should generate created, authorized and captured logs")
 
-	// assert.Contains(
-	// 	t,
-	// 	[]string{
-	// 		paymentV1Domain.PAYMENT_CREATED_LOG,
-	// 		paymentV1Domain.PAYMENT_AUTHORIZED_LOG,
-	// 		paymentV1Domain.PAYMENT_CAPTURED_LOG,
-	// 	},
-	// 	directPayLog.LogType,
-	// 	"unexpected direct pay log type",
-	// )
+	directCreatedLog, err := utils.UnmarshalLog[log.Log](directPayOut.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (DirectPay.Logs[0]): %v", err)
+	}
+	assert.Equal(t, paymentV1Domain.PAYMENT_CREATED_LOG, directCreatedLog.LogType)
 
-	// getDirectPaymentOut, err := c.GetPayment(directPaymentAddress)
-	// if err != nil {
-	// 	t.Fatalf("GetPayment direct pay: %v", err)
-	// }
-	// require.NotEmpty(t, getDirectPaymentOut.States)
+	directCreatedEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](directCreatedLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (DirectPay.Logs[0]): %v", err)
+	}
+	assert.Equal(t, directPaymentAddress, directCreatedEvent.Address)
+	assert.Equal(t, payer.PublicKey, directCreatedEvent.Owner)
+	assert.Equal(t, payToken.Address, directCreatedEvent.TokenAddress)
+	assert.Equal(t, directPayOrderId, directCreatedEvent.OrderId)
+	assert.Equal(t, payer.PublicKey, directCreatedEvent.Payer)
+	assert.Equal(t, payee.PublicKey, directCreatedEvent.Payee)
+	assert.Equal(t, directPayAmount, directCreatedEvent.Amount)
+	assert.Equal(t, paymentV1Domain.STATUS_CREATED, directCreatedEvent.Status)
+	assert.False(t, directCreatedEvent.Paused)
 
-	// var directPaymentState paymentV1Models.PaymentStateModel
-	// err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getDirectPaymentOut.States[0].Object, &directPaymentState)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState (GetPayment direct pay): %v", err)
-	// }
+	directAuthorizedLog, err := utils.UnmarshalLog[log.Log](directPayOut.Logs[1])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (DirectPay.Logs[1]): %v", err)
+	}
+	assert.Equal(t, paymentV1Domain.PAYMENT_AUTHORIZED_LOG, directAuthorizedLog.LogType)
 
-	// assert.Equal(t, directPaymentAddress, directPaymentState.Address)
-	// assert.Equal(t, directPayOrderId, directPaymentState.OrderId)
-	// assert.Equal(t, payer.PublicKey, directPaymentState.Payer)
-	// assert.Equal(t, payee.PublicKey, directPaymentState.Payee)
-	// assert.Equal(t, directPayAmount, directPaymentState.Amount)
-	// assert.Equal(t, paymentV1Domain.STATUS_CAPTURED, directPaymentState.Status)
+	directAuthorizedEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](directAuthorizedLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (DirectPay.Logs[1]): %v", err)
+	}
+	assert.Equal(t, directPaymentAddress, directAuthorizedEvent.Address)
+	assert.Equal(t, paymentV1Domain.STATUS_AUTHORIZED, directAuthorizedEvent.Status)
 
-	// payerBalanceAfterDirectOut, err := c.GetTokenBalance(payToken.Address, payer.PublicKey)
-	// if err != nil {
-	// 	t.Fatalf("GetTokenBalance payer after direct pay: %v", err)
-	// }
-	// var payerBalanceAfterDirect tokenV1Models.BalanceStateModel
-	// err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceAfterDirectOut.States[0].Object, &payerBalanceAfterDirect)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState payerBalanceAfterDirect: %v", err)
-	// }
+	directCapturedLog, err := utils.UnmarshalLog[log.Log](directPayOut.Logs[2])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (DirectPay.Logs[2]): %v", err)
+	}
+	assert.Equal(t, paymentV1Domain.PAYMENT_CAPTURED_LOG, directCapturedLog.LogType)
 
-	// payeeBalanceAfterDirectOut, err := c.GetTokenBalance(payToken.Address, payee.PublicKey)
-	// if err != nil {
-	// 	t.Fatalf("GetTokenBalance payee after direct pay: %v", err)
-	// }
-	// var payeeBalanceAfterDirect tokenV1Models.BalanceStateModel
-	// err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payeeBalanceAfterDirectOut.States[0].Object, &payeeBalanceAfterDirect)
-	// if err != nil {
-	// 	t.Fatalf("UnmarshalState payeeBalanceAfterDirect: %v", err)
-	// }
+	directCapturedEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](directCapturedLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (DirectPay.Logs[2]): %v", err)
+	}
+	assert.Equal(t, directPaymentAddress, directCapturedEvent.Address)
+	assert.Equal(t, directPayAmount, directCapturedEvent.CapturedAmount)
+	assert.Equal(t, paymentV1Domain.STATUS_CAPTURED, directCapturedEvent.Status)
 
-	// expectedPayerBalanceAfterDirect, err := utils.SubBigIntStrings(payerBalanceBeforeDirect.Amount, directPayAmount)
-	// if err != nil {
-	// 	t.Fatalf("SubBigIntStrings payerBalanceBeforeDirect - directPayAmount: %v", err)
-	// }
-	// expectedPayeeBalanceAfterDirect, err := utils.AddBigIntStrings(payeeBalanceBeforeDirect.Amount, directPayAmount)
-	// if err != nil {
-	// 	t.Fatalf("AddBigIntStrings payeeBalanceBeforeDirect + directPayAmount: %v", err)
-	// }
+	getDirectPaymentOut, err := c.GetPayment(directPaymentAddress)
+	if err != nil {
+		t.Fatalf("GetPayment direct pay: %v", err)
+	}
+	require.NotEmpty(t, getDirectPaymentOut.States)
 
-	// assert.Equal(t, expectedPayerBalanceAfterDirect, payerBalanceAfterDirect.Amount)
-	// assert.Equal(t, expectedPayeeBalanceAfterDirect, payeeBalanceAfterDirect.Amount)
+	var directPaymentState paymentV1Models.PaymentStateModel
+	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getDirectPaymentOut.States[0].Object, &directPaymentState)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetPayment direct pay): %v", err)
+	}
+
+	assert.Equal(t, directPaymentAddress, directPaymentState.Address)
+	assert.Equal(t, payer.PublicKey, directPaymentState.Owner)
+	assert.Equal(t, payToken.Address, directPaymentState.TokenAddress)
+	assert.Equal(t, directPayOrderId, directPaymentState.OrderId)
+	assert.Equal(t, payer.PublicKey, directPaymentState.Payer)
+	assert.Equal(t, payee.PublicKey, directPaymentState.Payee)
+	assert.Equal(t, directPayAmount, directPaymentState.Amount)
+	assert.Equal(t, directPayAmount, directPaymentState.CapturedAmount)
+	assert.Equal(t, "0", directPaymentState.RefundedAmount)
+	assert.Equal(t, paymentV1Domain.STATUS_CAPTURED, directPaymentState.Status)
+	assert.False(t, directPaymentState.Paused)
+	assert.NotEmpty(t, directPaymentState.Hash)
+
+	payerBalanceAfterDirectOut, err := c.GetTokenBalance(payToken.Address, payer.PublicKey)
+	if err != nil {
+		t.Fatalf("GetTokenBalance payer after direct pay: %v", err)
+	}
+	var payerBalanceAfterDirect tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceAfterDirectOut.States[0].Object, &payerBalanceAfterDirect)
+	if err != nil {
+		t.Fatalf("UnmarshalState payerBalanceAfterDirect: %v", err)
+	}
+
+	payeeBalanceAfterDirectOut, err := c.GetTokenBalance(payToken.Address, payee.PublicKey)
+	if err != nil {
+		t.Fatalf("GetTokenBalance payee after direct pay: %v", err)
+	}
+	var payeeBalanceAfterDirect tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payeeBalanceAfterDirectOut.States[0].Object, &payeeBalanceAfterDirect)
+	if err != nil {
+		t.Fatalf("UnmarshalState payeeBalanceAfterDirect: %v", err)
+	}
+
+	expectedPayerBalanceAfterDirect, err := utils.SubBigIntStrings(payerBalanceBeforeDirect.Amount, directPayAmount)
+	if err != nil {
+		t.Fatalf("SubBigIntStrings payerBalanceBeforeDirect - directPayAmount: %v", err)
+	}
+	expectedPayeeBalanceAfterDirect, err := utils.AddBigIntStrings(payeeBalanceBeforeDirect.Amount, directPayAmount)
+	if err != nil {
+		t.Fatalf("AddBigIntStrings payeeBalanceBeforeDirect + directPayAmount: %v", err)
+	}
+
+	assert.Equal(t, expectedPayerBalanceAfterDirect, payerBalanceAfterDirect.Amount)
+	assert.Equal(t, expectedPayeeBalanceAfterDirect, payeeBalanceAfterDirect.Amount)
 
 	// ------------------
 	//     LIST PAYMENTS
