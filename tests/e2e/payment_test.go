@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1"
 	paymentV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
 	paymentV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/models"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
@@ -118,15 +119,16 @@ func TestPaymentFlow(t *testing.T) {
 	expiredAt := time.Now().Add(2 * time.Hour)
 
 	c.SetPrivateKey(ownerPriv)
-	createPaymentOut, err := c.CreatePayment(
-		paymentAddress,
-		payToken.Address,
-		orderId,
-		payer.PublicKey,
-		payee.PublicKey,
-		amount,
-		expiredAt,
-	)
+	createPaymentOut, err := c.CreatePayment(inputs.InputCreate{
+		Address:      paymentAddress,
+		Owner:        owner.PublicKey,
+		TokenAddress: payToken.Address,
+		OrderId:      orderId,
+		Payer:        payer.PublicKey,
+		Payee:        payee.PublicKey,
+		Amount:       amount,
+		ExpiredAt:    expiredAt,
+	})
 	if err != nil {
 		t.Fatalf("CreatePayment: %v", err)
 	}
@@ -186,7 +188,10 @@ func TestPaymentFlow(t *testing.T) {
 	//       PAUSE
 	// ------------------
 	c.SetPrivateKey(payerPriv)
-	pauseOut, err := c.PausePayment(paymentAddress, true)
+	pauseOut, err := c.PausePayment(inputs.InputPause{
+		Address: paymentAddress,
+		Paused:  true,
+	})
 	if err != nil {
 		t.Fatalf("PausePayment: %v", err)
 	}
@@ -219,7 +224,10 @@ func TestPaymentFlow(t *testing.T) {
 	//      UNPAUSE
 	// ------------------
 	c.SetPrivateKey(payerPriv)
-	unpauseOut, err := c.UnpausePayment(paymentAddress, false)
+	unpauseOut, err := c.UnpausePayment(inputs.InputPause{
+		Address: paymentAddress,
+		Paused:  false,
+	})
 	if err != nil {
 		t.Fatalf("UnpausePayment: %v", err)
 	}
@@ -251,10 +259,10 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//     AUTHORIZE
 	// ------------------
-	authorizeUUID := "payment-authorize-e2e-001"
-
 	c.SetPrivateKey(payerPriv)
-	authorizeOut, err := c.AuthorizePayment(paymentAddress, payToken.TokenType, authorizeUUID)
+	authorizeOut, err := c.AuthorizePayment(inputs.InputAuthorize{
+		Address: paymentAddress,
+	})
 	if err != nil {
 		t.Fatalf("AuthorizePayment: %v", err)
 	}
@@ -288,10 +296,10 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//      CAPTURE
 	// ------------------
-	captureUUID := "payment-capture-e2e-001"
-
 	c.SetPrivateKey(payeePriv)
-	captureOut, err := c.CapturePayment(paymentAddress, payToken.TokenType, captureUUID)
+	captureOut, err := c.CapturePayment(inputs.InputCapture{
+		Address: paymentAddress,
+	})
 	if err != nil {
 		t.Fatalf("CapturePayment: %v", err)
 	}
@@ -359,10 +367,12 @@ func TestPaymentFlow(t *testing.T) {
 	//       REFUND
 	// ------------------
 	refundAmount := "100"
-	refundUUID := "payment-refund-e2e-001"
 
 	c.SetPrivateKey(payeePriv)
-	refundOut, err := c.RefundPayment(paymentAddress, refundAmount, payToken.TokenType, refundUUID)
+	refundOut, err := c.RefundPayment(inputs.InputRefund{
+		Address: paymentAddress,
+		Amount:  refundAmount,
+	})
 	if err != nil {
 		t.Fatalf("RefundPayment: %v", err)
 	}
@@ -453,29 +463,33 @@ func TestPaymentFlow(t *testing.T) {
 
 	voidOrderId := "order-payment-e2e-void-001"
 	voidAmount := "80"
-	voidExpiredAt := time.Now().Add(2 * time.Hour)
 
 	c.SetPrivateKey(ownerPriv)
-	_, err = c.CreatePayment(
-		voidPaymentAddress,
-		payToken.Address,
-		voidOrderId,
-		payer.PublicKey,
-		payee.PublicKey,
-		voidAmount,
-		voidExpiredAt,
-	)
+	_, err = c.CreatePayment(inputs.InputCreate{
+		Address:      paymentAddress,
+		Owner:        owner.PublicKey,
+		TokenAddress: payToken.Address,
+		OrderId:      orderId,
+		Payer:        payer.PublicKey,
+		Payee:        payee.PublicKey,
+		Amount:       amount,
+		ExpiredAt:    expiredAt,
+	})
 	if err != nil {
 		t.Fatalf("CreatePayment void flow: %v", err)
 	}
 
 	c.SetPrivateKey(payerPriv)
-	_, err = c.AuthorizePayment(voidPaymentAddress, payToken.TokenType, "payment-authorize-void-e2e-001")
+	_, err = c.AuthorizePayment(inputs.InputAuthorize{
+		Address: paymentAddress,
+	})
 	if err != nil {
 		t.Fatalf("AuthorizePayment void flow: %v", err)
 	}
 
-	voidOut, err := c.VoidPayment(voidPaymentAddress, payToken.TokenType, "payment-void-e2e-001")
+	voidOut, err := c.VoidPayment(inputs.InputVoidPayment{
+		Address: voidPaymentAddress,
+	})
 	if err != nil {
 		t.Fatalf("VoidPayment: %v", err)
 	}
@@ -535,7 +549,6 @@ func TestPaymentFlow(t *testing.T) {
 
 	directPayAmount := "50"
 	directPayOrderId := "order-payment-e2e-direct-001"
-	directPayUUID := "payment-direct-e2e-001"
 
 	payerBalanceBeforeDirectOut, err := c.GetTokenBalance(payToken.Address, payer.PublicKey)
 	if err != nil {
@@ -558,16 +571,16 @@ func TestPaymentFlow(t *testing.T) {
 	}
 
 	c.SetPrivateKey(payerPriv)
-	directPayOut, err := c.DirectPay(
-		directPaymentAddress,
-		payToken.Address,
-		directPayOrderId,
-		payer.PublicKey,
-		payee.PublicKey,
-		directPayAmount,
-		payToken.TokenType,
-		directPayUUID,
-	)
+	directPayOut, err := c.DirectPay(inputs.InputDirectPay{
+		Address:      directPaymentAddress,
+		Owner:        payer.PublicKey,
+		TokenAddress: payToken.Address,
+		OrderId:      directPayOrderId,
+		Payer:        payer.PublicKey,
+		Payee:        payee.PublicKey,
+		Amount:       directPayAmount,
+		ExpiredAt:    time.Now().Add(2 * time.Hour),
+	})
 	if err != nil {
 		t.Fatalf("DirectPay: %v", err)
 	}
@@ -681,16 +694,16 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//     LIST PAYMENTS
 	// ------------------
-	listPaymentsOut, err := c.ListPayments(
-		payer.PublicKey,
-		payee.PublicKey,
-		"",
-		payToken.Address,
-		[]string{},
-		1,
-		10,
-		true,
-	)
+	listPaymentsOut, err := c.ListPayments(inputs.InputList{
+		OrderId:      "",
+		TokenAddress: payToken.Address,
+		Status:       []string{},
+		Payer:        payer.PublicKey,
+		Payee:        payee.PublicKey,
+		Page:         1,
+		Limit:        10,
+		Ascending:    true,
+	})
 	if err != nil {
 		t.Fatalf("ListPayments: %v", err)
 	}
@@ -856,15 +869,16 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	expiredAt := time.Now().Add(2 * time.Hour)
 
 	c.SetPrivateKey(ownerPriv)
-	createPaymentOut, err := c.CreatePayment(
-		paymentAddress,
-		payToken.Address,
-		orderId,
-		payer.PublicKey,
-		payee.PublicKey,
-		amount,
-		expiredAt,
-	)
+	createPaymentOut, err := c.CreatePayment(inputs.InputCreate{
+		Address:      paymentAddress,
+		Owner:        owner.PublicKey,
+		TokenAddress: payToken.Address,
+		OrderId:      orderId,
+		Payer:        payer.PublicKey,
+		Payee:        payee.PublicKey,
+		Amount:       amount,
+		ExpiredAt:    expiredAt,
+	})
 	if err != nil {
 		t.Fatalf("CreatePayment: %v", err)
 	}
@@ -917,10 +931,10 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	// ------------------
 	//     AUTHORIZE
 	// ------------------
-	authorizeUUID := "payment-auth-void-authorize-001"
-
 	c.SetPrivateKey(payerPriv)
-	authorizeOut, err := c.AuthorizePayment(paymentAddress, payToken.TokenType, authorizeUUID)
+	authorizeOut, err := c.AuthorizePayment(inputs.InputAuthorize{
+		Address: paymentAddress,
+	})
 	if err != nil {
 		t.Fatalf("AuthorizePayment: %v", err)
 	}
@@ -959,10 +973,10 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	// ------------------
 	//        VOID
 	// ------------------
-	voidUUID := "payment-auth-void-void-001"
-
 	c.SetPrivateKey(payerPriv)
-	voidOut, err := c.VoidPayment(paymentAddress, payToken.TokenType, voidUUID)
+	voidOut, err := c.VoidPayment(inputs.InputVoidPayment{
+		Address: paymentAddress,
+	})
 	if err != nil {
 		t.Fatalf("VoidPayment: %v", err)
 	}
@@ -1040,16 +1054,16 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	// ------------------
 	//    LIST PAYMENTS
 	// ------------------
-	listPaymentsOut, err := c.ListPayments(
-		payer.PublicKey,
-		payee.PublicKey,
-		orderId,
-		payToken.Address,
-		[]string{paymentV1Domain.STATUS_VOIDED},
-		1,
-		10,
-		true,
-	)
+	listPaymentsOut, err := c.ListPayments(inputs.InputList{
+		OrderId:      orderId,
+		TokenAddress: payToken.Address,
+		Status:       []string{paymentV1Domain.STATUS_VOIDED},
+		Payer:        payer.PublicKey,
+		Payee:        payee.PublicKey,
+		Page:         1,
+		Limit:        10,
+		Ascending:    true,
+	})
 	if err != nil {
 		t.Fatalf("ListPayments: %v", err)
 	}

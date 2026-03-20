@@ -3,84 +3,82 @@ package client_2finance
 import (
 	"fmt"
 
-	"time"
-
 	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
-// CreatePayment creates a new payment intent (to = DEPLOY address).
-// Server/contract treats the tx sender (c.publicKey) as the owner.
-func (c *networkClient) CreatePayment(
-	address string,
-	tokenAddress string, // ERC-20-like token on your chain
-	orderId string,
-	payer string,
-	payee string,
-	amount string, // integer string
-	expiredAt time.Time,
-) (types.ContractOutput, error) {
-
+// CreatePayment creates a new payment intent.
+func (c *networkClient) CreatePayment(in inputs.InputCreate) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if address == "" {
+	if in.Address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	if tokenAddress == "" {
+	if in.Owner == "" {
+		return types.ContractOutput{}, fmt.Errorf("owner not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Owner); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
+	}
+
+	if in.TokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.TokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
-	if payer == "" {
+
+	if in.Payer == "" {
 		return types.ContractOutput{}, fmt.Errorf("payer not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(payer); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Payer); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid payer address: %w", err)
 	}
-	if payee == "" {
+
+	if in.Payee == "" {
 		return types.ContractOutput{}, fmt.Errorf("payee not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(payee); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Payee); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid payee address: %w", err)
 	}
 
-	if payer == payee {
-		return types.ContractOutput{}, fmt.Errorf("payee and payer cannot be the same: %s - %s", payee, payer)
+	if in.Payer == in.Payee {
+		return types.ContractOutput{}, fmt.Errorf("payee and payer cannot be the same: %s - %s", in.Payee, in.Payer)
 	}
 
-	if orderId == "" {
+	if in.OrderId == "" {
 		return types.ContractOutput{}, fmt.Errorf("order_id not set")
 	}
-	if amount == "" {
+	if in.Amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
-	if expiredAt.IsZero() {
+	if in.ExpiredAt.IsZero() {
 		return types.ContractOutput{}, fmt.Errorf("expired_at not set")
 	}
 
-	to := address
+	to := in.Address
 	method := paymentV1.METHOD_CREATE_PAYMENT
 
 	data := map[string]interface{}{
-		"address":       address,
-		"token_address": tokenAddress,
-		"order_id":      orderId,
-		"payer":         payer,
-		"payee":         payee,
-		"amount":        amount,
-		"expired_at":    expiredAt,
+		"address":       in.Address,
+		"owner":         in.Owner,
+		"token_address": in.TokenAddress,
+		"order_id":      in.OrderId,
+		"payer":         in.Payer,
+		"payee":         in.Payee,
+		"amount":        in.Amount,
+		"expired_at":    in.ExpiredAt,
 	}
 
 	version := uint8(1)
@@ -88,80 +86,81 @@ func (c *networkClient) CreatePayment(
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
+
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-// DirectPay is a one-step convenience: create + immediate capture.
-func (c *networkClient) DirectPay(
-	address string,
-	tokenAddress string,
-	orderId string,
-	payer string,
-	payee string,
-	amount string,
-	tokenType string,
-	uuid string,
-) (types.ContractOutput, error) {
-
+// DirectPay creates + authorizes + captures in one step.
+func (c *networkClient) DirectPay(in inputs.InputDirectPay) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if address == "" {
+	if in.Address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	if tokenAddress == "" {
-		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	if in.Owner == "" {
+		return types.ContractOutput{}, fmt.Errorf("owner not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
-	}
-	if payer == "" {
-		return types.ContractOutput{}, fmt.Errorf("payer not set")
-	}
-	if err := keys.ValidateEDDSAPublicKeyHex(payer); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid payer address: %w", err)
-	}
-	if payee == "" {
-		return types.ContractOutput{}, fmt.Errorf("payee not set")
-	}
-	if err := keys.ValidateEDDSAPublicKeyHex(payee); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid payee address: %w", err)
-	}
-	if orderId == "" {
-		return types.ContractOutput{}, fmt.Errorf("order_id not set")
-	}
-	if amount == "" {
-		return types.ContractOutput{}, fmt.Errorf("amount not set")
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
-	}
-	if tokenType == domain.NON_FUNGIBLE {
-		if uuid == "" {
-			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
-		}
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Owner); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
 
-	to := address
+	if in.TokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(in.TokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+
+	if in.Payer == "" {
+		return types.ContractOutput{}, fmt.Errorf("payer not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Payer); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid payer address: %w", err)
+	}
+
+	if in.Payee == "" {
+		return types.ContractOutput{}, fmt.Errorf("payee not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Payee); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid payee address: %w", err)
+	}
+
+	if in.Payer == in.Payee {
+		return types.ContractOutput{}, fmt.Errorf("payee and payer cannot be the same: %s - %s", in.Payee, in.Payer)
+	}
+
+	if in.OrderId == "" {
+		return types.ContractOutput{}, fmt.Errorf("order_id not set")
+	}
+	if in.Amount == "" {
+		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if in.ExpiredAt.IsZero() {
+		return types.ContractOutput{}, fmt.Errorf("expired_at not set")
+	}
+
+	to := in.Address
 	method := paymentV1.METHOD_DIRECT_PAY
 
 	data := map[string]interface{}{
-		"address":       address,
-		"token_address": tokenAddress,
-		"order_id":      orderId,
-		"payer":         payer,
-		"payee":         payee,
-		"amount":        amount,
-		"token_type":    tokenType,
-		"uuid":          uuid,
+		"address":       in.Address,
+		"owner":         in.Owner,
+		"token_address": in.TokenAddress,
+		"order_id":      in.OrderId,
+		"payer":         in.Payer,
+		"payee":         in.Payee,
+		"amount":        in.Amount,
+		"expired_at":    in.ExpiredAt,
 	}
+
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -171,36 +170,26 @@ func (c *networkClient) DirectPay(
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-// AuthorizePayment places a hold on funds (payer -> payee) for a payment address.
-func (c *networkClient) AuthorizePayment(address, tokenType, uuid string) (types.ContractOutput, error) {
-	if address == "" {
+// AuthorizePayment places a hold on funds.
+func (c *networkClient) AuthorizePayment(in inputs.InputAuthorize) (types.ContractOutput, error) {
+	if in.Address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
-	}
-	if tokenType == domain.NON_FUNGIBLE {
-		if uuid == "" {
-			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
-		}
 	}
 
 	from := c.publicKey
-
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	to := address
+	to := in.Address
 	method := paymentV1.METHOD_AUTHORIZE_PAYMENT
 	data := map[string]interface{}{
-		"address": address,
-		"token_type": tokenType,
-		"uuid": uuid,
+		"address": in.Address,
 	}
+
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -210,36 +199,26 @@ func (c *networkClient) AuthorizePayment(address, tokenType, uuid string) (types
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-// CapturePayment settles funds (full/partial).
-func (c *networkClient) CapturePayment(address, tokenType, uuid string) (types.ContractOutput, error) {
-	if address == "" {
+// CapturePayment settles funds.
+func (c *networkClient) CapturePayment(in inputs.InputCapture) (types.ContractOutput, error) {
+	if in.Address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
-	}
-	if tokenType == domain.NON_FUNGIBLE {
-		if uuid == "" {
-			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
-		}
 	}
 
 	from := c.publicKey
-
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	to := address
+	to := in.Address
 	method := paymentV1.METHOD_CAPTURE_PAYMENT
 	data := map[string]interface{}{
-		"address": address,
-		"token_type": tokenType,
-		"uuid": uuid,
+		"address": in.Address,
 	}
+
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -249,40 +228,30 @@ func (c *networkClient) CapturePayment(address, tokenType, uuid string) (types.C
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-// RefundPayment returns funds (full/partial) from payee back to payer.
-func (c *networkClient) RefundPayment(address, amount, tokenType, uuid string) (types.ContractOutput, error) {
-	if address == "" {
+// RefundPayment returns funds from payee back to payer.
+func (c *networkClient) RefundPayment(in inputs.InputRefund) (types.ContractOutput, error) {
+	if in.Address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
-	if amount == "" {
+	if in.Amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
-	}
-	if tokenType == domain.NON_FUNGIBLE {
-		if uuid == "" {
-			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
-		}
 	}
 
 	from := c.publicKey
-
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	to := address
+	to := in.Address
 	method := paymentV1.METHOD_REFUND_PAYMENT
 	data := map[string]interface{}{
-		"address": address,
-		"amount":  amount,
-		"token_type": tokenType,
-		"uuid": uuid,
+		"address": in.Address,
+		"amount":  in.Amount,
 	}
+
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -293,67 +262,58 @@ func (c *networkClient) RefundPayment(address, amount, tokenType, uuid string) (
 }
 
 // VoidPayment releases an authorization hold.
-func (c *networkClient) VoidPayment(address, tokenType, uuid string) (types.ContractOutput, error) {
-	if address == "" {
+func (c *networkClient) VoidPayment(in inputs.InputVoidPayment) (types.ContractOutput, error) {
+	if in.Address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
-	}
-	if tokenType == domain.NON_FUNGIBLE {
-		if uuid == "" {
-			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
-		}
 	}
 
 	from := c.publicKey
-
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	to := address
+	to := in.Address
 	method := paymentV1.METHOD_VOID_PAYMENT
 	data := map[string]interface{}{
-		"address": address,
-		"token_type": tokenType,
-		"uuid": uuid,
+		"address": in.Address,
 	}
+
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
+
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-// PausePayment toggles the paused state to true. OnlyOwner.
-func (c *networkClient) PausePayment(address string, paused bool) (types.ContractOutput, error) {
-	if address == "" {
+// PausePayment toggles paused=true.
+func (c *networkClient) PausePayment(in inputs.InputPause) (types.ContractOutput, error) {
+	if in.Address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
-	if !paused {
-		return types.ContractOutput{}, fmt.Errorf("paused must be true: Pause: %t", paused)
+	if !in.Paused {
+		return types.ContractOutput{}, fmt.Errorf("paused must be true: Pause: %t", in.Paused)
 	}
 
 	from := c.publicKey
-
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	to := address
+	to := in.Address
 	method := paymentV1.METHOD_PAUSE_PAYMENT
 	data := map[string]interface{}{
-		"address": address,
-		"paused":  paused,
+		"address": in.Address,
+		"paused":  in.Paused,
 	}
+
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -363,29 +323,28 @@ func (c *networkClient) PausePayment(address string, paused bool) (types.Contrac
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-// UnpausePayment toggles the paused state to false. OnlyOwner.
-func (c *networkClient) UnpausePayment(address string, paused bool) (types.ContractOutput, error) {
-	if address == "" {
+// UnpausePayment toggles paused=false.
+func (c *networkClient) UnpausePayment(in inputs.InputPause) (types.ContractOutput, error) {
+	if in.Address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
-	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
-	if paused {
-		return types.ContractOutput{}, fmt.Errorf("paused must be false: Pause: %t", paused)
+	if in.Paused {
+		return types.ContractOutput{}, fmt.Errorf("paused must be false: Pause: %t", in.Paused)
 	}
 
 	from := c.publicKey
-
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	to := address
+	to := in.Address
 	method := paymentV1.METHOD_UNPAUSE_PAYMENT
 	data := map[string]interface{}{
-		"address": address,
-		"paused":  paused,
+		"address": in.Address,
+		"paused":  in.Paused,
 	}
 
 	version := uint8(1)
@@ -393,6 +352,7 @@ func (c *networkClient) UnpausePayment(address string, paused bool) (types.Contr
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
+
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
@@ -412,61 +372,49 @@ func (c *networkClient) GetPayment(address string) (types.ContractOutput, error)
 	}
 
 	method := paymentV1.METHOD_GET_PAYMENT
-
 	return c.GetState(address, method, nil)
 }
 
-// payer, payee, orderId, tokenAddress string, status []string, page, limit int, ascending bool
 // ListPayments queries payments with filters + pagination.
-func (c *networkClient) ListPayments(
-	payer string,
-	payee string,
-	orderId string,
-	tokenAddress string,
-	status []string,
-	page int,
-	limit int,
-	ascending bool,
-) (types.ContractOutput, error) {
-
+func (c *networkClient) ListPayments(in inputs.InputList) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	if tokenAddress != "" {
-		if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+	if in.TokenAddress != "" {
+		if err := keys.ValidateEDDSAPublicKeyHex(in.TokenAddress); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 		}
 	}
-	if payer != "" {
-		if err := keys.ValidateEDDSAPublicKeyHex(payer); err != nil {
+	if in.Payer != "" {
+		if err := keys.ValidateEDDSAPublicKeyHex(in.Payer); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid payer address: %w", err)
 		}
 	}
-	if payee != "" {
-		if err := keys.ValidateEDDSAPublicKeyHex(payee); err != nil {
+	if in.Payee != "" {
+		if err := keys.ValidateEDDSAPublicKeyHex(in.Payee); err != nil {
 			return types.ContractOutput{}, fmt.Errorf("invalid payee address: %w", err)
 		}
 	}
-	if page < 1 {
+	if in.Page < 1 {
 		return types.ContractOutput{}, fmt.Errorf("page must be greater than 0")
 	}
-	if limit < 1 {
+	if in.Limit < 1 {
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
 	method := paymentV1.METHOD_LIST_PAYMENTS
 	data := map[string]interface{}{
-		"payer":            payer,
-		"payee":            payee,
-		"order_id":         orderId,
-		"status":           status,
-		"page":             page,
-		"limit":            limit,
-		"ascending":        ascending,
-		"token_address":    tokenAddress,
+		"order_id":         in.OrderId,
+		"token_address":    in.TokenAddress,
+		"status":           in.Status,
+		"payer":            in.Payer,
+		"payee":            in.Payee,
+		"page":             in.Page,
+		"limit":            in.Limit,
+		"ascending":        in.Ascending,
 		"contract_version": paymentV1.PAYMENT_CONTRACT_V1,
 	}
 

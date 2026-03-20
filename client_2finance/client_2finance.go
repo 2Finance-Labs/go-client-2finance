@@ -8,6 +8,7 @@ import (
 
 	"gitlab.com/2finance/2finance-network/blockchain/block"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
@@ -336,52 +337,25 @@ type Client2FinanceNetwork interface {
 		passcode string,
 		uuid string,
 	) (types.ContractOutput, error)
-		
 
 	// getters
 	GetCoupon(address string) (types.ContractOutput, error)
 	ListCoupons(owner, tokenAddress, programType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
 
-	CreatePayment(
-		address string,
-		tokenAddress string, // ERC-20-like token on your chain
-		orderId string,
-		payer string,
-		payee string,
-		amount string, // integer string
-		expiredAt time.Time,
-	) (types.ContractOutput, error)
+	// Payment
+	CreatePayment(in inputs.InputCreate) (types.ContractOutput, error)
+	DirectPay(in inputs.InputDirectPay) (types.ContractOutput, error)
 
-	DirectPay(
-		address string,
-		tokenAddress string,
-		orderId string,
-		payer string,
-		payee string,
-		amount string,
-		tokenType string,
-		uuid string,
-	) (types.ContractOutput, error)
+	AuthorizePayment(in inputs.InputAuthorize) (types.ContractOutput, error)
+	CapturePayment(in inputs.InputCapture) (types.ContractOutput, error)
+	VoidPayment(in inputs.InputVoidPayment) (types.ContractOutput, error)
+	RefundPayment(in inputs.InputRefund) (types.ContractOutput, error)
 
-	AuthorizePayment(address, tokenType, uuid string) (types.ContractOutput, error)
-
-	CapturePayment(
-		address, tokenType, uuid string) (types.ContractOutput, error)
-
-	VoidPayment(
-		address, tokenType, uuid string) (types.ContractOutput, error)
-
-	RefundPayment(
-		address string,
-		amount string,
-		tokenType string,
-		uuid string) (types.ContractOutput, error)
-
-	UnpausePayment(address string, paused bool) (types.ContractOutput, error)
-	PausePayment(address string, paused bool) (types.ContractOutput, error)
+	UnpausePayment(in inputs.InputPause) (types.ContractOutput, error)
+	PausePayment(in inputs.InputPause) (types.ContractOutput, error)
 
 	GetPayment(address string) (types.ContractOutput, error)
-	ListPayments(payer, payee, orderId, tokenAddress string, status []string, page, limit int, ascending bool) (types.ContractOutput, error)
+	ListPayments(in inputs.InputList) (types.ContractOutput, error)
 	//MEMBER GET MEMBER
 	AddMgM(
 		address string,
