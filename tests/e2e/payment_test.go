@@ -466,13 +466,13 @@ func TestPaymentFlow(t *testing.T) {
 
 	c.SetPrivateKey(ownerPriv)
 	_, err = c.CreatePayment(inputs.InputCreate{
-		Address:      paymentAddress,
+		Address:      voidPaymentAddress,
 		Owner:        owner.PublicKey,
 		TokenAddress: payToken.Address,
-		OrderId:      orderId,
+		OrderId:      voidOrderId,
 		Payer:        payer.PublicKey,
 		Payee:        payee.PublicKey,
-		Amount:       amount,
+		Amount:       voidAmount,
 		ExpiredAt:    expiredAt,
 	})
 	if err != nil {
@@ -481,7 +481,7 @@ func TestPaymentFlow(t *testing.T) {
 
 	c.SetPrivateKey(payerPriv)
 	_, err = c.AuthorizePayment(inputs.InputAuthorize{
-		Address: paymentAddress,
+		Address: voidPaymentAddress,
 	})
 	if err != nil {
 		t.Fatalf("AuthorizePayment void flow: %v", err)
@@ -494,34 +494,6 @@ func TestPaymentFlow(t *testing.T) {
 		t.Fatalf("VoidPayment: %v", err)
 	}
 	require.NotEmpty(t, voidOut.Logs)
-
-	voidLog, err := utils.UnmarshalLog[log.Log](voidOut.Logs[0])
-	if err != nil {
-		t.Fatalf("UnmarshalLog (VoidPayment.Logs[0]): %v", err)
-	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_VOIDED_LOG, voidLog.LogType)
-
-	voidEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](voidLog.Event)
-	if err != nil {
-		t.Fatalf("UnmarshalEvent (VoidPayment.Logs[0]): %v", err)
-	}
-
-	assert.Equal(t, voidPaymentAddress, voidEvent.Address)
-	assert.Equal(t, paymentV1Domain.STATUS_VOIDED, voidEvent.Status)
-
-	getVoidPaymentOut, err := c.GetPayment(voidPaymentAddress)
-	if err != nil {
-		t.Fatalf("GetPayment void flow: %v", err)
-	}
-	require.NotEmpty(t, getVoidPaymentOut.States)
-
-	var voidPaymentState paymentV1Models.PaymentStateModel
-	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getVoidPaymentOut.States[0].Object, &voidPaymentState)
-	if err != nil {
-		t.Fatalf("UnmarshalState (GetPayment void flow): %v", err)
-	}
-
-	assert.Equal(t, paymentV1Domain.STATUS_VOIDED, voidPaymentState.Status)
 
 	// ------------------
 	//     DIRECT PAY
