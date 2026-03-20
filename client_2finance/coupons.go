@@ -27,6 +27,7 @@ func (c *networkClient) AddCoupon(
 	maxRedemptions int,
 	perUserLimit int,
 	passcodeHash string, // sha256(preimage)
+	voucherOwner string,
 	symbol string,
 	name string,
 	amount string,
@@ -62,6 +63,9 @@ func (c *networkClient) AddCoupon(
 	}
 	if programType == "fixed-amount" && fixedAmount == "" {
 		return types.ContractOutput{}, fmt.Errorf("fixed_amount must be set for program_type=fixed-amount")
+	}
+	if voucherOwner == "" {
+		return types.ContractOutput{}, fmt.Errorf("voucherOwner must be set")
 	}
 	if symbol == "" {
 		return types.ContractOutput{}, fmt.Errorf("symbol must be set")
@@ -115,6 +119,7 @@ func (c *networkClient) AddCoupon(
 		"max_redemptions":  maxRedemptions,
 		"per_user_limit":   perUserLimit,
 		"passcode_hash":    passcodeHash, // sha256(preimage) hex
+		"voucher_owner":	voucherOwner,
 		"symbol":           symbol,
 		"name":             name,
 		"amount":           amount,
@@ -265,7 +270,7 @@ func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-func (c *networkClient) IssueCoupon(
+func (c *networkClient) IssueVoucher(
 	address string, // coupon address
 	toAddress string,
 	amount string, // integer string in token base units
@@ -293,7 +298,7 @@ func (c *networkClient) IssueCoupon(
 	}
 
 	to := address
-	method := couponV1.METHOD_ISSUE_COUPON
+	method := couponV1.METHOD_ISSUE_VOUCHER
 
 	data := map[string]interface{}{
 		"address":    address,
@@ -312,18 +317,18 @@ func (c *networkClient) IssueCoupon(
 // Redeem a coupon for an order amount using a passcode preimage.
 // NOTE: If you bind the hash to the redeemer (recommended), your handler
 // should validate msg.sender and the recomputed hash.
-func (c *networkClient) RedeemCoupon(
-	address string,     // coupon address
+func (c *networkClient) RedeemVoucher(
+	address string,     // voucher address
 	orderAmount string, // integer string in token base units
 	passcode string,
-	uuid string,
+	voucherUUID string,
 ) (types.ContractOutput, error) {
 
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
 	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
+		return types.ContractOutput{}, fmt.Errorf("invalid voucher address: %w", err)
 	}
 	if orderAmount == "" {
 		return types.ContractOutput{}, fmt.Errorf("order_amount not set")
@@ -331,8 +336,8 @@ func (c *networkClient) RedeemCoupon(
 	if passcode == "" {
 		return types.ContractOutput{}, fmt.Errorf("passcode (preimage) not set")
 	}
-	if uuid == "" {
-		return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+	if voucherUUID == "" {
+		return types.ContractOutput{}, fmt.Errorf("voucher_uuid must be set for non-fungible tokens")
 	}
 
 	from := c.publicKey
@@ -342,13 +347,13 @@ func (c *networkClient) RedeemCoupon(
 	}
 
 	to := address
-	method := couponV1.METHOD_REDEEM_COUPON
+	method := couponV1.METHOD_REDEEM_VOUCHER
 
 	data := map[string]interface{}{
 		"address":       address,
 		"order_amount":  orderAmount,
 		"passcode": passcode,
-		"uuid":          uuid,
+		"voucher_uuid":  voucherUUID,
 	}
 
 	version := uint8(1)
@@ -359,60 +364,6 @@ func (c *networkClient) RedeemCoupon(
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-func (c *networkClient) RedeemCouponForUser(
-	address string,     // coupon address
-	userAddress string, // user redeeming on behalf of
-	orderAmount string, // integer string in token base units
-	passcode string,
-	uuid string,
-) (types.ContractOutput, error) {
-	// Similar validations as RedeemCoupon, plus userAddress validation
-	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("address not set")
-	}
-	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
-	}
-	if userAddress == "" {
-		return types.ContractOutput{}, fmt.Errorf("user_address not set")
-	}
-	if err := keys.ValidateEDDSAPublicKeyHex(userAddress); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid user address: %w", err)
-	}
-	if orderAmount == "" {
-		return types.ContractOutput{}, fmt.Errorf("order_amount not set")
-	}
-	if passcode == "" {
-		return types.ContractOutput{}, fmt.Errorf("passcode (preimage) not set")
-	}
-	if uuid == "" {
-		return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
-	}
-
-	from := c.publicKey
-
-	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
-	}
-
-	to := address
-	method := couponV1.METHOD_REDEEM_COUPON_FOR_USER
-
-	data := map[string]interface{}{
-		"address":       address,
-		"user_address":  userAddress,
-		"order_amount":  orderAmount,
-		"passcode":      passcode,
-		"uuid":          uuid,
-	}
-
-	version := uint8(1)
-	uuid7, err := utils.NewUUID7()
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
-	}
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
-}
 // ---------------------------------------------
 // Read methods
 // ---------------------------------------------
