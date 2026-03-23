@@ -274,7 +274,7 @@ type Client2FinanceNetwork interface {
 
 	AddCoupon(
 		address string, // optional, depends on your infra
-		programType string, // "percentage" | "fixed-amount"
+		discountType string, // "percentage" | "fixed-amount"
 		percentageBPS string, // required if percentage
 		fixedAmount string, // required if fixed-amount
 		minOrder string, // optional, "" means none
@@ -303,7 +303,7 @@ type Client2FinanceNetwork interface {
 	UpdateCoupon(
 		address string,
 		tokenAddress string,
-		programType string,
+		discountType string,
 		percentageBPS string,
 		fixedAmount string,
 		minOrder string,
@@ -334,7 +334,7 @@ type Client2FinanceNetwork interface {
 
 	// getters
 	GetCoupon(address string) (types.ContractOutput, error)
-	ListCoupons(owner, tokenAddress, programType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
+	ListCoupons(owner, tokenAddress, discountType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	// Payment
 	CreatePayment(in inputs.InputCreate) (types.ContractOutput, error)

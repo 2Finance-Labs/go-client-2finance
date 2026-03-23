@@ -9,6 +9,7 @@ import (
 	dropV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/domain"
 	dropV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/models"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
+	"time"
 )
 
 func TestDropFlow(t *testing.T) {
@@ -57,7 +58,16 @@ func TestDropFlow(t *testing.T) {
 		t.Fatalf("MintToken (NFT 2): %v", err)
 	}
 
-	// --------------------------------------------------------------------
+	// coupon1, err := createBasicCoupon(t, c, owner.PublicKey, couponV1Domain.DISCOUNT_TYPE_PERCENTAGE)
+	// if err != nil {
+	// 	t.Fatalf("CreateBasicCoupon: %v", err)
+	// }
+
+	// coupon2, err := createBasicCoupon(t, c, owner.PublicKey, couponV1Domain.DISCOUNT_TYPE_FIXED)
+	// if err != nil {
+	// 	t.Fatalf("CreateBasicCoupon: %v", err)
+	// }
+	// // --------------------------------------------------------------------
 	// Deploy Drop contract
 	// --------------------------------------------------------------------
 	deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
@@ -221,23 +231,40 @@ func TestDropFlow(t *testing.T) {
 	assert.Equal(t, updatedVerificationType, dropStateModelUpdated.VerificationType, "GetDrop verification type mismatch")
 	assert.Equal(t, updatedManualReviewRequired, dropStateModelUpdated.ManualReviewRequired, "GetDrop manual review required mismatch")
 
-	// startAt := time.Now().Add(1 * time.Hour)
-	// expireAt := time.Now().Add(24 * time.Hour)
+	startAt := time.Now()
+	expireAt := time.Now().Add(24 * time.Hour)
+	
+	programAddresses := map[string]string{"program1": "program1", "token2": "program2"}
+	outUpdatedDropSettings, err := c.UpdateDropSettings(
+		address,
+		programAddresses,
+		startAt,
+		expireAt,
+		100,
+		map[string]string{"token1": "100", "token2": "200"},
+		3600,
+	)
+	if err != nil {
+		t.Fatalf("UpdateDropSettings: %v", err)
+	}
 
-	// programAddresses := map[string]string{"program1": "program1", "token2": "program2"}
-	// _, err = c.UpdateDropSettings(
-	// 	address,
-	// 	programAddresses,
-	// 	startAt,
-	// 	expireAt,
-	// 	100,
-	// 	map[string]string{"token1": "100", "token2": "200"},
-	// 	3600,
-	// )
-	// if err != nil {
-	// 	t.Fatalf("UpdateDropSettings: %v", err)
-	// }
+	unmarshalSettingsLog, err := utils.UnmarshalLog[log.Log](outUpdatedDropSettings.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (UpdateDropSettings.Logs[0]): %v", err)
+	}
+	assert.Equal(t, dropV1Domain.DROP_SETTINGS_UPDATED_LOG, unmarshalSettingsLog.LogType, "update-drop-settings log type mismatch")
 
+	dropSettingsUpdated, err := utils.UnmarshalEvent[dropV1Domain.Settings](unmarshalSettingsLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (UpdateDropSettings.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, address, dropSettingsUpdated.Address, "updated drop settings address empty")
+	assert.Equal(t, programAddresses, dropSettingsUpdated.ProgramAddresses, "updated drop settings program addresses mismatch")
+	assert.Equal(t, startAt.Format(time.RFC3339), dropSettingsUpdated.StartAt.Format(time.RFC3339), "updated drop settings startAt mismatch")
+	assert.Equal(t, expireAt.Format(time.RFC3339), dropSettingsUpdated.ExpireAt.Format(time.RFC3339), "updated drop settings expireAt mismatch")
+
+	
 	// --------------------------------------------------------------------
 	// GET Drop (reader) - cobre METHOD_GET_DROP
 	// --------------------------------------------------------------------

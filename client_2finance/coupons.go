@@ -16,7 +16,7 @@ import (
 
 func (c *networkClient) AddCoupon(
 	address string, // optional, depends on your infra
-	programType string,   // "percentage" | "fixed-amount"
+	discountType string,   // "percentage" | "fixed-amount"
 	percentageBPS string, // required if percentage
 	fixedAmount string,   // required if fixed-amount
 	minOrder string,      // optional, "" means none
@@ -54,15 +54,15 @@ func (c *networkClient) AddCoupon(
 	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
 	}
-	if !(programType == "percentage" || programType == "fixed-amount") {
-		return types.ContractOutput{}, fmt.Errorf("invalid program_type: %s", programType)
+	if !(discountType == "percentage" || discountType == "fixed-amount") {
+		return types.ContractOutput{}, fmt.Errorf("invalid discount_type: %s", discountType)
 	}
 	// Basic param sanity (business rules enforced again in contract/domain)
-	if programType == "percentage" && percentageBPS == "" {
-		return types.ContractOutput{}, fmt.Errorf("percentage_bps must be set for program_type=percentage")
+	if discountType == "percentage" && percentageBPS == "" {
+		return types.ContractOutput{}, fmt.Errorf("percentage_bps must be set for discount_type=percentage")
 	}
-	if programType == "fixed-amount" && fixedAmount == "" {
-		return types.ContractOutput{}, fmt.Errorf("fixed_amount must be set for program_type=fixed-amount")
+	if discountType == "fixed-amount" && fixedAmount == "" {
+		return types.ContractOutput{}, fmt.Errorf("fixed_amount must be set for discount_type=fixed-amount")
 	}
 	if voucherOwner == "" {
 		return types.ContractOutput{}, fmt.Errorf("voucherOwner must be set")
@@ -108,7 +108,7 @@ func (c *networkClient) AddCoupon(
 	method := couponV1.METHOD_ADD_COUPON
 	data := map[string]interface{}{
 		"address":          address,       // optional, depends on your infra
-		"program_type":     programType,
+		"discount_type":     discountType,
 		"percentage_bps":   percentageBPS,
 		"fixed_amount":     fixedAmount,
 		"min_order":        minOrder,
@@ -145,7 +145,7 @@ func (c *networkClient) AddCoupon(
 func (c *networkClient) UpdateCoupon(
 	address string,
 	tokenAddress string,
-	programType string,
+	discountType string,
 	percentageBPS string,
 	fixedAmount string,
 	minOrder string,
@@ -168,8 +168,8 @@ func (c *networkClient) UpdateCoupon(
 			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 		}
 	}
-	if programType != "" && !(programType == "percentage" || programType == "fixed-amount") {
-		return types.ContractOutput{}, fmt.Errorf("invalid program_type: %s", programType)
+	if discountType != "" && !(discountType == "percentage" || discountType == "fixed-amount") {
+		return types.ContractOutput{}, fmt.Errorf("invalid discount_type: %s", discountType)
 	}
 
 	from := c.publicKey
@@ -184,7 +184,7 @@ func (c *networkClient) UpdateCoupon(
 	data := map[string]interface{}{
 		"address":         address,
 		"token_address":   tokenAddress,   // optional; handler may ignore if ""
-		"program_type":    programType,    // optional; handler may ignore if ""
+		"discount_type":    discountType,    // optional; handler may ignore if ""
 		"percentage_bps":  percentageBPS,  // optional
 		"fixed_amount":    fixedAmount,    // optional
 		"min_order":       minOrder,       // optional

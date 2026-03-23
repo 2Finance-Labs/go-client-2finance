@@ -36,7 +36,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	raw := sha256.Sum256([]byte("e2e-passcode"))
 	pcHash := hex.EncodeToString(raw[:])
 
-	programType := couponV1Domain.DISCOUNT_TYPE_PERCENTAGE
+	discountType := couponV1Domain.DISCOUNT_TYPE_PERCENTAGE
 	percentageBPS := "1000" 
 	fixedAmount := ""
 	minOrder := "50"
@@ -64,7 +64,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 
 	outAddCoupon, err := c.AddCoupon(
 		address, 
-		programType, 
+		discountType, 
 		percentageBPS, 
 		fixedAmount, 
 		minOrder, 
@@ -106,7 +106,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	
 	assert.Equal(t, address, coupon.Address, "coupon address empty")
 	assert.NotNil(t, coupon.TokenAddress, "coupon token address mismatch")
-	assert.Equal(t, programType, coupon.ProgramType, "coupon discount type mismatch")
+	assert.Equal(t, discountType, coupon.DiscountType, "coupon discount type mismatch")
 	assert.Equal(t, percentageBPS, coupon.PercentageBPS, "coupon percentage BPS mismatch")
 	assert.Equal(t, fixedAmount, coupon.FixedAmount, "coupon fixed amount mismatch")
 	assert.Equal(t, minOrder, coupon.MinOrder, "coupon min order mismatch")
@@ -149,23 +149,22 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	assert.NotNil(t, balanceStates[0].TokenUUID, "balance token uuid mismatch for NFT token")
 	
 	// Update coupon to fixed amount
-	updatedProgramType := couponV1Domain.DISCOUNT_TYPE_FIXED
+	updatedDiscountType := couponV1Domain.DISCOUNT_TYPE_FIXED
 	updatedPercentageBPS := "" 
 	updatedFixedAmount := "10000"
 	updatedMinOrder := "50"
 	updatedStart := time.Now().Add(1 * time.Second)
 	updatedExp := time.Now().Add(10 * time.Minute)
 	raw2 := sha256.Sum256([]byte("e2e-passcode-2"))
+	updatedPcHash := hex.EncodeToString(raw2[:])
 	updatedStackable := false
 	updatedMaxRedemptions := 50
 	updatedPerUserLimit := 2
-	updatedPcHash := hex.EncodeToString(raw2[:])
-	
 
 	outUpdateCoupon, err := c.UpdateCoupon(
 		coupon.Address, 
 		coupon.TokenAddress, 
-		updatedProgramType, 
+		updatedDiscountType, 
 		updatedPercentageBPS, 
 		updatedFixedAmount, 
 		updatedMinOrder, 
@@ -193,7 +192,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 
 	assert.Equal(t, coupon.Address, updatedCoupon.Address, "updated coupon address mismatch")
 	assert.Equal(t, coupon.TokenAddress, updatedCoupon.TokenAddress, "updated coupon token address mismatch")
-	assert.Equal(t, updatedProgramType, updatedCoupon.ProgramType, "updated coupon discount type mismatch")
+	assert.Equal(t, updatedDiscountType, updatedCoupon.DiscountType, "updated coupon discount type mismatch")
 	assert.Equal(t, updatedPercentageBPS, updatedCoupon.PercentageBPS, "updated coupon percentage BPS mismatch")
 	assert.Equal(t, updatedFixedAmount, updatedCoupon.FixedAmount, "updated coupon fixed amount mismatch")
 	assert.Equal(t, updatedMinOrder, updatedCoupon.MinOrder, "updated coupon min order mismatch")
@@ -316,7 +315,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	}
 	assert.Equal(t, coupon.Address, couponState.Address, "GetCoupon address mismatch")
 	assert.Equal(t, coupon.TokenAddress, couponState.TokenAddress, "GetCoupon token address mismatch")
-	assert.Equal(t, updatedCoupon.ProgramType, couponState.ProgramType, "GetCoupon program type mismatch")
+	assert.Equal(t, updatedCoupon.DiscountType, couponState.DiscountType, "GetCoupon discount type mismatch")
 	assert.Equal(t, updatedCoupon.PercentageBPS, couponState.PercentageBPS, "GetCoupon percentage BPS mismatch")
 	assert.Equal(t, updatedCoupon.FixedAmount, couponState.FixedAmount, "GetCoupon fixed amount mismatch")
 	assert.Equal(t, updatedCoupon.MinOrder, couponState.MinOrder, "GetCoupon min order mismatch")
@@ -343,7 +342,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	assert.GreaterOrEqual(t, len(couponsList), 1, "ListCoupons returned empty list")
 	assert.Equal(t, coupon.Address, couponsList[0].Address, "ListCoupons first coupon address mismatch")
 	assert.Equal(t, coupon.TokenAddress, couponsList[0].TokenAddress, "ListCoupons first coupon token address mismatch")
-	assert.Equal(t, updatedCoupon.ProgramType, couponsList[0].ProgramType, "ListCoupons first coupon program type mismatch")
+	assert.Equal(t, updatedCoupon.DiscountType, couponsList[0].DiscountType, "ListCoupons first coupon discount type mismatch")
 	assert.Equal(t, updatedCoupon.PercentageBPS, couponsList[0].PercentageBPS, "ListCoupons first coupon percentage BPS mismatch")
 	assert.Equal(t, updatedCoupon.FixedAmount, couponsList[0].FixedAmount, "ListCoupons first coupon fixed amount mismatch")
 	assert.Equal(t, updatedCoupon.MinOrder, couponsList[0].MinOrder, "ListCoupons first coupon min order mismatch")
