@@ -101,7 +101,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 		"https://example.com/prize.glb",
 		tokenV1Domain.NON_FUNGIBLE,
 		true,
-		false,
+		tokenV1Domain.TOKEN_ASSET_TYPE,
 	)
 	require.NoError(t, err)
 	require.NotEmpty(t, prizeAddOut.Logs)
