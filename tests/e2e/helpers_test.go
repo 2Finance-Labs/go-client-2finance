@@ -3,13 +3,16 @@ package e2e_test
 import (
 	"testing"
 	"time"
-
+	"crypto/sha256"
+	"encoding/hex"
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
 	walletV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
+	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
+	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
@@ -233,4 +236,124 @@ func createTransferFT(t *testing.T, c client2f.Client2FinanceNetwork, token toke
 	// }
 	// return tr
 	return tokenV1Domain.TransferFT{}
+}
+
+func createBasicCoupon(
+	t *testing.T,
+	c client2f.Client2FinanceNetwork,
+	ownerPub string,
+	discountType string,
+) couponV1Domain.Coupon {
+	t.Helper()
+
+	deployedContract, err := c.DeployContract1(couponV1.COUPON_CONTRACT_V1)
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
+
+	contractLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (DeployContract.Logs[0]): %v", err)
+	}
+
+	address := contractLog.ContractAddress
+	if address == "" {
+		t.Fatalf("coupon contract address empty")
+	}
+
+	startAt := time.Now().Add(2 * time.Second)
+	expiredAt := time.Now().Add(25 * time.Minute)
+
+	passcode := "e2e-passcode-" + randSuffix(6)
+	raw := sha256.Sum256([]byte(passcode))
+	passcodeHash := hex.EncodeToString(raw[:])
+
+	percentageBPS := ""
+	fixedAmount := ""
+	minOrder := "50"
+
+	switch discountType {
+	case couponV1Domain.DISCOUNT_TYPE_PERCENTAGE:
+		percentageBPS = "1000"
+	case couponV1Domain.DISCOUNT_TYPE_FIXED:
+		fixedAmount = "1000"
+	default:
+		t.Fatalf("unsupported discountType: %s", discountType)
+	}
+
+	paused := false
+	stackable := true
+	maxRedemptions := 100
+	perUserLimit := 5
+
+	symbol := "CPN" + randSuffix(4)
+	name := "Test Coupon"
+	amount := "1000"
+	description := "e2e coupon created by tests"
+	image := "https://example.com/image.png"
+	website := "https://example.com"
+	tagsSocialMedia := map[string]string{
+		"twitter": "https://twitter.com/example",
+	}
+	tagsCategory := map[string]string{
+		"type": "coupon",
+	}
+	tags := map[string]string{
+		"tag1": "discount",
+		"tag2": "e2e",
+	}
+	creator := "2Finance Test"
+	creatorWebsite := "https://creator.example.com"
+	assetGLBUri := "https://example.com/asset.glb"
+
+	out, err := c.AddCoupon(
+		address,
+		discountType,
+		percentageBPS,
+		fixedAmount,
+		minOrder,
+		startAt,
+		expiredAt,
+		paused,
+		stackable,
+		maxRedemptions,
+		perUserLimit,
+		passcodeHash,
+		ownerPub,
+		symbol,
+		name,
+		amount,
+		description,
+		image,
+		website,
+		tagsSocialMedia,
+		tagsCategory,
+		tags,
+		creator,
+		creatorWebsite,
+		assetGLBUri,
+	)
+	if err != nil {
+		t.Fatalf("AddCoupon: %v", err)
+	}
+
+	if len(out.Logs) == 0 {
+		t.Fatalf("AddCoupon returned no logs")
+	}
+
+	couponLog, err := utils.UnmarshalLog[log.Log](out.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (AddCoupon.Logs[0]): %v", err)
+	}
+
+	coupon, err := utils.UnmarshalEvent[couponV1Domain.Coupon](couponLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (AddCoupon.Logs[0]): %v", err)
+	}
+
+	if coupon.Address == "" {
+		t.Fatalf("coupon address empty (event=%s)", string(couponLog.Event))
+	}
+
+	return coupon
 }
