@@ -8,6 +8,7 @@ import (
 
 	"gitlab.com/2finance/2finance-network/blockchain/block"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
@@ -99,7 +100,7 @@ type Client2FinanceNetwork interface {
 		expired_at time.Time,
 		assetGLBUri string,
 		tokenType string,
-		transferable, stablecoin bool) (types.ContractOutput, error)
+		transferable bool, assetType string) (types.ContractOutput, error)
 	MintToken(to, mintTo, amount string) (types.ContractOutput, error)
 	BurnToken(to, amount string, tokenUUIDList []string) (types.ContractOutput, error)
 	TransferToken(tokenAddress, transferTo, amount string, tokenUUIDList []string) (types.ContractOutput, error)
@@ -136,14 +137,6 @@ type Client2FinanceNetwork interface {
 	NewDrop(
 		address string,
 		owner string,
-		faucetAddress string,
-		tokenAddress string,
-		startTime time.Time,
-		expireTime time.Time,
-		paused bool,
-		requestLimit int,
-		claimAmount string,
-		claimIntervalSeconds int64,
 		title string,
 		description string,
 		shortDescription string,
@@ -151,9 +144,8 @@ type Client2FinanceNetwork interface {
 		bannerURL string,
 		category string,
 		socialRequirements map[string]bool,
-		postLinks []string,
+		postLinks map[string]bool,
 		verificationType string,
-		verifierPublicKey string,
 		manualReviewRequired bool,
 	) (types.ContractOutput, error)
 
@@ -166,12 +158,19 @@ type Client2FinanceNetwork interface {
 		bannerURL string,
 		category string,
 		socialRequirements map[string]bool,
-		postLinks []string,
+		postLinks map[string]bool,
 		verificationType string,
-		verifierPublicKey string,
 		manualReviewRequired bool,
 	) (types.ContractOutput, error)
-
+	UpdateDropSettings(
+		address string,
+		programAddresses map[string]string,
+		startAt time.Time,
+		expireAt time.Time,
+		requestLimit int,
+		claimsAmounts map[string]string,
+		claimIntervalSeconds int,
+	) (types.ContractOutput, error)
 	AllowOracles(
 		address string,
 		oracles map[string]bool,
@@ -275,7 +274,6 @@ type Client2FinanceNetwork interface {
 
 	AddCoupon(
 		address string, // optional, depends on your infra
-		tokenAddress string,
 		programType string, // "percentage" | "fixed-amount"
 		percentageBPS string, // required if percentage
 		fixedAmount string, // required if fixed-amount
@@ -287,6 +285,18 @@ type Client2FinanceNetwork interface {
 		maxRedemptions int,
 		perUserLimit int,
 		passcodeHash string, // sha256(preimage)
+		symbol string,
+		name string,
+		amount string,
+		description string,
+		image string,
+		website string,
+		tagsSocialMedia map[string]string,
+		tagsCategory map[string]string,
+		tags map[string]string,
+		creator string,
+		creatorWebsite string,
+		assetGLBUri string,
 	) (types.ContractOutput, error)
 
 	UpdateCoupon(
@@ -307,13 +317,24 @@ type Client2FinanceNetwork interface {
 	PauseCoupon(address string, paused bool) (types.ContractOutput, error)
 	UnpauseCoupon(address string, paused bool) (types.ContractOutput, error)
 
-	// Redeem coupon,
-	//TODO change this to Redeem Manual, because is possible to add orderAmount
+	IssueCoupon(
+		address string, // coupon address
+		toAddress string,
+		amount string, // integer string
+	) (types.ContractOutput, error)
+
 	RedeemCoupon(
 		address string, // coupon address
 		orderAmount string, // integer string
 		passcode string,
-		tokenType string,
+		uuid string,
+	) (types.ContractOutput, error)
+
+	RedeemCouponForUser(
+		address string, // coupon address
+		userAddress string, // user redeeming on behalf of
+		orderAmount string, // integer string
+		passcode string,
 		uuid string,
 	) (types.ContractOutput, error)
 
@@ -321,46 +342,20 @@ type Client2FinanceNetwork interface {
 	GetCoupon(address string) (types.ContractOutput, error)
 	ListCoupons(owner, tokenAddress, programType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
 
-	CreatePayment(
-		address string,
-		tokenAddress string, // ERC-20-like token on your chain
-		orderId string,
-		payer string,
-		payee string,
-		amount string, // integer string
-		expiredAt time.Time,
-	) (types.ContractOutput, error)
+	// Payment
+	CreatePayment(in inputs.InputCreate) (types.ContractOutput, error)
+	DirectPay(in inputs.InputDirectPay) (types.ContractOutput, error)
 
-	DirectPay(
-		address string,
-		tokenAddress string,
-		orderId string,
-		payer string,
-		payee string,
-		amount string,
-		tokenType string,
-		uuid string,
-	) (types.ContractOutput, error)
+	AuthorizePayment(in inputs.InputAuthorize) (types.ContractOutput, error)
+	CapturePayment(in inputs.InputCapture) (types.ContractOutput, error)
+	VoidPayment(in inputs.InputVoidPayment) (types.ContractOutput, error)
+	RefundPayment(in inputs.InputRefund) (types.ContractOutput, error)
 
-	AuthorizePayment(address, tokenType, uuid string) (types.ContractOutput, error)
-
-	CapturePayment(
-		address, tokenType, uuid string) (types.ContractOutput, error)
-
-	VoidPayment(
-		address, tokenType, uuid string) (types.ContractOutput, error)
-
-	RefundPayment(
-		address string,
-		amount string,
-		tokenType string,
-		uuid string) (types.ContractOutput, error)
-
-	UnpausePayment(address string, paused bool) (types.ContractOutput, error)
-	PausePayment(address string, paused bool) (types.ContractOutput, error)
+	UnpausePayment(in inputs.InputPause) (types.ContractOutput, error)
+	PausePayment(in inputs.InputPause) (types.ContractOutput, error)
 
 	GetPayment(address string) (types.ContractOutput, error)
-	ListPayments(payer, payee, orderId, tokenAddress string, status []string, page, limit int, ascending bool) (types.ContractOutput, error)
+	ListPayments(in inputs.InputList) (types.ContractOutput, error)
 	//MEMBER GET MEMBER
 	AddMgM(
 		address string,
@@ -436,9 +431,8 @@ type Client2FinanceNetwork interface {
 	AddRafflePrize(raffleAddress string, tokenAddress string, amount, tokenType, uuid string) (types.ContractOutput, error)
 	RemoveRafflePrize(raffleAddress string, tokenType, uuid string) (types.ContractOutput, error)
 
-	// GetRaffle(address string) (types.ContractOutput, error)
-	// ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
-
+	GetRaffle(address string) (types.ContractOutput, error)
+	ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
 	ListPrizes(raffleAddress string, page, limit int, asc bool) (types.ContractOutput, error)
 }
 

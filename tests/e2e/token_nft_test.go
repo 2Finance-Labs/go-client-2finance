@@ -3,7 +3,6 @@ package e2e_test
 import (
 	"testing"
 	"time"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -34,7 +33,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	address := contractLog.ContractAddress
 	decimals := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
-	stablecoin := false
+	assetType := tokenV1Domain.TOKEN_ASSET_TYPE
 	symbol := "2NFT" + randSuffix(4)
 	name := "2Finance NFT"
 	totalSupply := "1"
@@ -88,7 +87,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		assetGLBUri,
 		tokenType,
 		transferable,
-		stablecoin,
+		assetType,
 	)
 	if err != nil {
 		t.Fatalf("AddToken: %v", err)
@@ -129,7 +128,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	assert.Equal(t, assetGLBUri, tok.AssetGLBUri, "token asset GLB URI mismatch")
 	assert.Equal(t, tokenType, tok.TokenType, "token type mismatch")
 	assert.Equal(t, transferable, tok.Transferable, "token transferable mismatch")
-	assert.Equal(t, stablecoin, tok.Stablecoin, "token stablecoin mismatch")
+	assert.Equal(t, assetType, tok.AssetType, "token asset type mismatch")
 
 	getTokenOut, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -166,7 +165,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	assert.Equal(t, assetGLBUri, tokenState.AssetGLBUri, "token asset GLB URI mismatch")
 	assert.Equal(t, tokenType, tokenState.TokenType, "token type mismatch")
 	assert.Equal(t, transferable, tokenState.Transferable, "token transferable mismatch")
-	assert.Equal(t, stablecoin, tokenState.Stablecoin, "token stablecoin mismatch")
+	assert.Equal(t, assetType, tokenState.AssetType, "token asset type mismatch")
 
 	// ------------------
 	//        MINT
@@ -249,8 +248,6 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		receiver.PublicKey: true,
 	})
 	assert.NoError(t, err, "AddAllowedUsers failed")
-	fmt.Println("receiver address:", receiver.PublicKey)
-	fmt.Println("owner address:", owner.PublicKey)
 	mintedUUID = mint.TokenUUIDList[0]
 	transferToken, err := c.TransferToken(tok.Address, receiver.PublicKey, "", []string{mintedUUID})
 	if err != nil {
@@ -328,7 +325,6 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	c.SetPrivateKey(receiverPriv)
 	listOfUUIDs := []string{mintedUUID}
-	fmt.Printf("Burning token with UUID: %s\n", listOfUUIDs)
 	burnToken, err := c.BurnToken(tok.Address, "", listOfUUIDs)
 	if err != nil {
 		t.Fatalf("BurnToken: %v", err)
