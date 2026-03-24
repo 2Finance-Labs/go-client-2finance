@@ -274,7 +274,7 @@ type Client2FinanceNetwork interface {
 
 	AddCoupon(
 		address string, // optional, depends on your infra
-		programType string, // "percentage" | "fixed-amount"
+		discountType string, // "percentage" | "fixed-amount"
 		percentageBPS string, // required if percentage
 		fixedAmount string, // required if fixed-amount
 		minOrder string, // optional, "" means none
@@ -285,6 +285,7 @@ type Client2FinanceNetwork interface {
 		maxRedemptions int,
 		perUserLimit int,
 		passcodeHash string, // sha256(preimage)
+		voucherOwner string,
 		symbol string,
 		name string,
 		amount string,
@@ -302,7 +303,7 @@ type Client2FinanceNetwork interface {
 	UpdateCoupon(
 		address string,
 		tokenAddress string,
-		programType string,
+		discountType string,
 		percentageBPS string,
 		fixedAmount string,
 		minOrder string,
@@ -317,30 +318,23 @@ type Client2FinanceNetwork interface {
 	PauseCoupon(address string, paused bool) (types.ContractOutput, error)
 	UnpauseCoupon(address string, paused bool) (types.ContractOutput, error)
 
-	IssueCoupon(
+	IssueVoucher(
 		address string, // coupon address
 		toAddress string,
 		amount string, // integer string
 	) (types.ContractOutput, error)
 
-	RedeemCoupon(
+	RedeemVoucher(
 		address string, // coupon address
 		orderAmount string, // integer string
 		passcode string,
-		uuid string,
+		voucherUUID string,
 	) (types.ContractOutput, error)
 
-	RedeemCouponForUser(
-		address string, // coupon address
-		userAddress string, // user redeeming on behalf of
-		orderAmount string, // integer string
-		passcode string,
-		uuid string,
-	) (types.ContractOutput, error)
 
 	// getters
 	GetCoupon(address string) (types.ContractOutput, error)
-	ListCoupons(owner, tokenAddress, programType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
+	ListCoupons(owner, tokenAddress, discountType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	// Payment
 	CreatePayment(in inputs.InputCreate) (types.ContractOutput, error)
