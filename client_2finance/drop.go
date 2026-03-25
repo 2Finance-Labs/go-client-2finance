@@ -2,42 +2,29 @@ package client_2finance
 
 import (
 	"fmt"
-	"time"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/inputs"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
-func (c *networkClient) NewDrop(
-	address string,
-	owner string,
-	title string,
-	description string,
-	shortDescription string,
-	imageURL string,
-	bannerURL string,
-	category string,
-	socialRequirements map[string]bool,
-	postLinks map[string]bool,
-	verificationType string,
-	manualReviewRequired bool,
-) (types.ContractOutput, error) {
+func (c *networkClient) NewDrop(in inputs.InputNewDrop) (types.ContractOutput, error) {
 
-	if address == "" {
+	if in.Address == "" {
 		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
-	if owner == "" {
+	if in.Owner == "" {
 		return types.ContractOutput{}, fmt.Errorf("owner not set")
 	}
-	if title == "" {
+	if in.Title == "" {
 		return types.ContractOutput{}, fmt.Errorf("title not set")
 	}
-	if verificationType == "" {
+	if in.VerificationType == "" {
 		return types.ContractOutput{}, fmt.Errorf("verification type not set")
 	}
 
-	if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(in.Owner); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
 
@@ -48,17 +35,24 @@ func (c *networkClient) NewDrop(
 
 	method := dropV1.METHOD_NEW_DROP
 	data := map[string]interface{}{
-		"owner":                  owner,
-		"title":                  title,
-		"description":            description,
-		"short_description":      shortDescription,
-		"image_url":              imageURL,
-		"banner_url":             bannerURL,
-		"category":               category,
-		"social_requirements":    socialRequirements,
-		"post_links":             postLinks,
-		"verification_type":      verificationType,
-		"manual_review_required": manualReviewRequired,
+		"address":                in.Address,
+		"program_address":        in.ProgramAddress,
+		"token_address":          in.TokenAddress,
+		"owner":                  in.Owner,
+		"title":                  in.Title,
+		"description":            in.Description,
+		"short_description":      in.ShortDescription,
+		"image_url":              in.ImageURL,
+		"banner_url":             in.BannerURL,
+		"category":               in.Category,
+		"social_requirements":    in.SocialRequirements,
+		"post_links":             in.PostLinks,
+		"verification_type":      in.VerificationType,
+		"start_at":               in.StartAt,
+		"expire_at":              in.ExpireAt,
+		"request_limit":          in.RequestLimit,
+		"claim_amount":           in.ClaimAmount,
+		"claim_interval_seconds": in.ClaimIntervalSeconds,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -66,41 +60,38 @@ func (c *networkClient) NewDrop(
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, address, method, data, version, uuid7)
+	return c.SignAndSendTransaction(c.chainId, from, in.Address, method, data, version, uuid7)
 }
 
 func (c *networkClient) UpdateDropMetadata(
-	address string,
-	title string,
-	description string,
-	shortDescription string,
-	imageURL string,
-	bannerURL string,
-	category string,
-	socialRequirements map[string]bool,
-	postLinks map[string]bool,
-	verificationType string,
-	manualReviewRequired bool,
+	in inputs.InputUpdateDropMetadata,
 ) (types.ContractOutput, error) {
 
-	if address == "" {
+	if in.Address == "" {
 		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 
 	from := c.publicKey
 
 	method := dropV1.METHOD_UPDATE_DROP_METADATA
-	data := map[string]interface{}{
-		"title":                  title,
-		"description":            description,
-		"short_description":      shortDescription,
-		"image_url":              imageURL,
-		"banner_url":             bannerURL,
-		"category":               category,
-		"social_requirements":    socialRequirements,
-		"post_links":             postLinks,
-		"verification_type":      verificationType,
-		"manual_review_required": manualReviewRequired,
+		data := map[string]interface{}{
+		"address":                in.Address,
+		"program_address":        in.ProgramAddress,
+		"token_address":          in.TokenAddress,
+		"title":                  in.Title,
+		"description":            in.Description,
+		"short_description":      in.ShortDescription,
+		"image_url":              in.ImageURL,
+		"banner_url":             in.BannerURL,
+		"category":               in.Category,
+		"social_requirements":    in.SocialRequirements,
+		"post_links":             in.PostLinks,
+		"verification_type":      in.VerificationType,
+		"start_at":               in.StartAt,
+		"expire_at":              in.ExpireAt,
+		"request_limit":          in.RequestLimit,
+		"claim_amount":           in.ClaimAmount,
+		"claim_interval_seconds": in.ClaimIntervalSeconds,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -108,42 +99,9 @@ func (c *networkClient) UpdateDropMetadata(
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, address, method, data, version, uuid7)
+	return c.SignAndSendTransaction(c.chainId, from, in.Address, method, data, version, uuid7)
 }
 
-func (c *networkClient) UpdateDropSettings(
-	address string,
-	programAddresses map[string]string,
-	startAt time.Time,
-	expireAt time.Time,
-	requestLimit int,
-	claimsAmounts map[string]string,
-	claimIntervalSeconds int,
-) (types.ContractOutput, error) {
-	
-	if address == "" {
-		return types.ContractOutput{}, fmt.Errorf("drop address not set")
-	}
-	
-	from := c.publicKey
-	to := address
-	method := dropV1.METHOD_UPDATE_SETTINGS
-	data := map[string]interface{}{
-		"program_addresses":       programAddresses,
-		"startAt":              startAt,
-		"expireAt":             expireAt,
-		"request_limit":           requestLimit,
-		"claims_amounts":          claimsAmounts,
-		"claim_interval_seconds": claimIntervalSeconds,
-	}
-	version := uint8(1)
-	uuid7, err := utils.NewUUID7()
-	if err != nil {
-		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
-	}
-
-	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
-}
 
 func (c *networkClient) AllowOracles(address string, oracles map[string]bool) (types.ContractOutput, error) {
 	if address == "" {
@@ -189,9 +147,10 @@ func (c *networkClient) DisallowOracles(address string, oracles map[string]bool)
 
 func (c *networkClient) DepositDrop(
 	address string,
+	programAddress string,
+	tokenAddress string,
 	amount string,
-	tokenType string,
-	uuid string,
+	uuid []string,
 ) (types.ContractOutput, error) {
 
 	if address == "" {
@@ -199,9 +158,6 @@ func (c *networkClient) DepositDrop(
 	}
 	if amount == "" {
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 
 	from := c.publicKey
@@ -214,8 +170,9 @@ func (c *networkClient) DepositDrop(
 	}
 
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
+		"program_address": programAddress,
+		"token_address":   tokenAddress,
 		"amount":     amount,
-		"token_type": tokenType,
 		"uuid":       uuid,
 	}, version, uuid7)
 }
@@ -245,9 +202,10 @@ func (c *networkClient) ClaimDrop(address, tokenType string) (types.ContractOutp
 
 func (c *networkClient) WithdrawDrop(
 	address string,
+	programAddress string,
+	tokenAddress string,
 	amount string,
-	tokenType string,
-	uuid string,
+	uuid []string,
 ) (types.ContractOutput, error) {
 
 	if address == "" {
@@ -266,7 +224,6 @@ func (c *networkClient) WithdrawDrop(
 	}
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"amount":     amount,
-		"token_type": tokenType,
 		"uuid":       uuid,
 	}, version, uuid7)
 }

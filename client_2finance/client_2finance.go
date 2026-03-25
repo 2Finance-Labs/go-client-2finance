@@ -8,7 +8,8 @@ import (
 
 	"gitlab.com/2finance/2finance-network/blockchain/block"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
+	inputsPaymentV1 "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
+	inputsDropV1 "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/inputs"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
@@ -135,42 +136,13 @@ type Client2FinanceNetwork interface {
 	ListTokenBalances(tokenAddress, ownerAddress, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	NewDrop(
-		address string,
-		owner string,
-		title string,
-		description string,
-		shortDescription string,
-		imageURL string,
-		bannerURL string,
-		category string,
-		socialRequirements map[string]bool,
-		postLinks map[string]bool,
-		verificationType string,
-		manualReviewRequired bool,
+		in 	inputsDropV1.InputNewDrop,
 	) (types.ContractOutput, error)
 
 	UpdateDropMetadata(
-		address string,
-		title string,
-		description string,
-		shortDescription string,
-		imageURL string,
-		bannerURL string,
-		category string,
-		socialRequirements map[string]bool,
-		postLinks map[string]bool,
-		verificationType string,
-		manualReviewRequired bool,
+		in inputsDropV1.InputUpdateDropMetadata,
 	) (types.ContractOutput, error)
-	UpdateDropSettings(
-		address string,
-		programAddresses map[string]string,
-		startAt time.Time,
-		expireAt time.Time,
-		requestLimit int,
-		claimsAmounts map[string]string,
-		claimIntervalSeconds int,
-	) (types.ContractOutput, error)
+	
 	AllowOracles(
 		address string,
 		oracles map[string]bool,
@@ -183,9 +155,10 @@ type Client2FinanceNetwork interface {
 
 	DepositDrop(
 		address string,
+		programAddress string,
+		tokenAddress string,
 		amount string,
-		tokenType string,
-		uuid string,
+		uuid []string,
 	) (types.ContractOutput, error)
 
 	ClaimDrop(
@@ -195,9 +168,10 @@ type Client2FinanceNetwork interface {
 
 	WithdrawDrop(
 		address string,
+		programAddress string,
+		tokenAddress string,
 		amount string,
-		tokenType string,
-		uuid string,
+		uuid []string,
 	) (types.ContractOutput, error)
 
 	PauseDrop(
@@ -337,19 +311,19 @@ type Client2FinanceNetwork interface {
 	ListCoupons(owner, tokenAddress, discountType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	// Payment
-	CreatePayment(in inputs.InputCreate) (types.ContractOutput, error)
-	DirectPay(in inputs.InputDirectPay) (types.ContractOutput, error)
+	CreatePayment(in inputsPaymentV1.InputCreate) (types.ContractOutput, error)
+	DirectPay(in inputsPaymentV1.InputDirectPay) (types.ContractOutput, error)
 
-	AuthorizePayment(in inputs.InputAuthorize) (types.ContractOutput, error)
-	CapturePayment(in inputs.InputCapture) (types.ContractOutput, error)
-	VoidPayment(in inputs.InputVoidPayment) (types.ContractOutput, error)
-	RefundPayment(in inputs.InputRefund) (types.ContractOutput, error)
+	AuthorizePayment(in inputsPaymentV1.InputAuthorize) (types.ContractOutput, error)
+	CapturePayment(in inputsPaymentV1.InputCapture) (types.ContractOutput, error)
+	VoidPayment(in inputsPaymentV1.InputVoidPayment) (types.ContractOutput, error)
+	RefundPayment(in inputsPaymentV1.InputRefund) (types.ContractOutput, error)
 
-	UnpausePayment(in inputs.InputPause) (types.ContractOutput, error)
-	PausePayment(in inputs.InputPause) (types.ContractOutput, error)
+	UnpausePayment(in inputsPaymentV1.InputPause) (types.ContractOutput, error)
+	PausePayment(in inputsPaymentV1.InputPause) (types.ContractOutput, error)
 
 	GetPayment(address string) (types.ContractOutput, error)
-	ListPayments(in inputs.InputList) (types.ContractOutput, error)
+	ListPayments(in inputsPaymentV1.InputList) (types.ContractOutput, error)
 	//MEMBER GET MEMBER
 	AddMgM(
 		address string,
