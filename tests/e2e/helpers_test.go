@@ -271,7 +271,7 @@ func createBasicCoupon(
 	percentageBPS := ""
 	fixedAmount := ""
 	minOrder := "50"
-
+	
 	switch discountType {
 	case couponV1Domain.DISCOUNT_TYPE_PERCENTAGE:
 		percentageBPS = "1000"
