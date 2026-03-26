@@ -2,7 +2,9 @@ package e2e_test
 
 import (
 	"testing"
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
@@ -13,6 +15,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
 	"time"
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
+	
 
 )
 
@@ -973,4 +976,260 @@ func TestDropFlow(t *testing.T) {
 		inputUpdateDrop.TokenAddress,
 		inputUpdateDrop.ClaimAmount,
 	)
+}
+
+
+func mustGetDrop(
+	t *testing.T,
+	c client2f.Client2FinanceNetwork,
+	address string,
+) types.ContractOutput {
+	t.Helper()
+
+	out, err := c.GetDrop(address)
+	if err != nil {
+		t.Fatalf("GetDrop: %v", err)
+	}
+
+	return out
+}
+
+func mustListDrops(
+	t *testing.T,
+	c client2f.Client2FinanceNetwork,
+	owner string,
+	page, limit int,
+	ascending bool,
+) types.ContractOutput {
+	t.Helper()
+
+	out, err := c.ListDrops(owner, page, limit, ascending)
+	if err != nil {
+		t.Fatalf("ListDrops: %v", err)
+	}
+
+	return out
+}
+
+func assertGetDropState(
+	t *testing.T,
+	out types.ContractOutput,
+	expectedAddress string,
+	expectedOwner string,
+	expectedProgramAddress string,
+	expectedTokenAddress string,
+	expectedTitle string,
+) dropV1Models.DropStateModel {
+	t.Helper()
+
+	require.Len(t, out.States, 1)
+
+	var state dropV1Models.DropStateModel
+	err := utils.UnmarshalState[dropV1Models.DropStateModel](out.States[0].Object, &state)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetDrop.States[0]): %v", err)
+	}
+
+	assert.Equal(t, expectedAddress, state.Address)
+	assert.Equal(t, expectedOwner, state.Owner)
+	assert.Equal(t, expectedProgramAddress, state.ProgramAddress)
+	assert.Equal(t, expectedTokenAddress, state.TokenAddress)
+	assert.Equal(t, expectedTitle, state.Title)
+
+	return state
+}
+
+func assertListDropsState(
+	t *testing.T,
+	out types.ContractOutput,
+) []dropV1Models.DropStateModel {
+	t.Helper()
+
+	require.Len(t, out.States, 1)
+
+	raw, err := json.Marshal(out.States[0].Object)
+	if err != nil {
+		t.Fatalf("Marshal list state: %v", err)
+	}
+
+	var states []dropV1Models.DropStateModel
+	if err := json.Unmarshal(raw, &states); err != nil {
+		t.Fatalf("Unmarshal list state: %v", err)
+	}
+
+	return states
+}
+
+func TestClient_GetDrop(t *testing.T) {
+	c := setupClient(t)
+
+	owner, ownerPriv := createWallet(t, c)
+	c.SetPrivateKey(ownerPriv)
+
+	deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
+
+	deployLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (DeployContract.Logs[0]): %v", err)
+	}
+
+	dropAddress := deployLog.ContractAddress
+	programAddress, _ := genKey(t, c)
+	tokenAddress, _ := genKey(t, c)
+
+	startAt := time.Now()
+	expireAt := time.Now().Add(24 * time.Hour)
+
+	input := dropV1Inputs.InputNewDrop{
+		Address:              dropAddress,
+		ProgramAddress:       programAddress,
+		TokenAddress:         tokenAddress,
+		Owner:                owner.PublicKey,
+		Title:                "drop get test",
+		Description:          "desc",
+		ShortDescription:     "short",
+		ImageURL:             "https://img.png",
+		BannerURL:            "https://banner.png",
+		Category:             "airdrop",
+		SocialRequirements:   map[string]bool{"follow_x": true},
+		PostLinks:            map[string]bool{"https://x.com/post/1": true},
+		VerificationType:     dropV1Domain.VERIFICATION_TYPE_ORACLE,
+		StartAt:              startAt,
+		ExpireAt:             expireAt,
+		RequestLimit:         100,
+		ClaimAmount:          "10",
+		ClaimIntervalSeconds: 3600,
+	}
+
+	_, err = c.NewDrop(input)
+	if err != nil {
+		t.Fatalf("NewDrop: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		out := mustGetDrop(t, c, dropAddress)
+
+		assertGetDropState(
+			t,
+			out,
+			dropAddress,
+			owner.PublicKey,
+			programAddress,
+			tokenAddress,
+			"drop get test",
+		)
+	})
+
+	t.Run("error when address is empty", func(t *testing.T) {
+		_, err := c.GetDrop("")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "drop address must be set")
+	})
+
+	t.Run("error when address is invalid", func(t *testing.T) {
+		_, err := c.GetDrop("invalid-address")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid drop address")
+	})
+}
+
+func TestClient_ListDrops(t *testing.T) {
+	c := setupClient(t)
+
+	owner, ownerPriv := createWallet(t, c)
+	c.SetPrivateKey(ownerPriv)
+
+	createDrop := func(title string) string {
+		deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
+		if err != nil {
+			t.Fatalf("DeployContract: %v", err)
+		}
+
+		deployLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
+		if err != nil {
+			t.Fatalf("UnmarshalLog (DeployContract.Logs[0]): %v", err)
+		}
+
+		dropAddress := deployLog.ContractAddress
+		programAddress, _ := genKey(t, c)
+		tokenAddress, _ := genKey(t, c)
+
+		input := dropV1Inputs.InputNewDrop{
+			Address:              dropAddress,
+			ProgramAddress:       programAddress,
+			TokenAddress:         tokenAddress,
+			Owner:                owner.PublicKey,
+			Title:                title,
+			Description:          "desc",
+			ShortDescription:     "short",
+			ImageURL:             "https://img.png",
+			BannerURL:            "https://banner.png",
+			Category:             "airdrop",
+			SocialRequirements:   map[string]bool{"follow_x": true},
+			PostLinks:            map[string]bool{"https://x.com/post/1": true},
+			VerificationType:     dropV1Domain.VERIFICATION_TYPE_ORACLE,
+			StartAt:              time.Now(),
+			ExpireAt:             time.Now().Add(24 * time.Hour),
+			RequestLimit:         100,
+			ClaimAmount:          "10",
+			ClaimIntervalSeconds: 3600,
+		}
+
+		_, err = c.NewDrop(input)
+		if err != nil {
+			t.Fatalf("NewDrop: %v", err)
+		}
+
+		return dropAddress
+	}
+
+	address1 := createDrop("drop list test 1")
+	address2 := createDrop("drop list test 2")
+
+	t.Run("success with owner filter", func(t *testing.T) {
+		out := mustListDrops(t, c, owner.PublicKey, 1, 10, true)
+		states := assertListDropsState(t, out)
+
+		require.NotEmpty(t, states)
+
+		var found1, found2 bool
+		for _, s := range states {
+			if s.Address == address1 {
+				found1 = true
+			}
+			if s.Address == address2 {
+				found2 = true
+			}
+		}
+
+		assert.True(t, found1, "address1 not found in ListDrops")
+		assert.True(t, found2, "address2 not found in ListDrops")
+	})
+
+	t.Run("success with empty owner", func(t *testing.T) {
+		out := mustListDrops(t, c, "", 1, 10, true)
+		states := assertListDropsState(t, out)
+		require.NotEmpty(t, states)
+	})
+
+	t.Run("error when owner is invalid", func(t *testing.T) {
+		_, err := c.ListDrops("invalid-owner", 1, 10, true)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid owner address")
+	})
+
+	t.Run("error when page is invalid", func(t *testing.T) {
+		_, err := c.ListDrops(owner.PublicKey, 0, 10, true)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "page must be greater than 0")
+	})
+
+	t.Run("error when limit is invalid", func(t *testing.T) {
+		_, err := c.ListDrops(owner.PublicKey, 1, 0, true)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "limit must be greater than 0")
+	})
 }
