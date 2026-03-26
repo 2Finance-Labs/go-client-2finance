@@ -163,7 +163,6 @@ type Client2FinanceNetwork interface {
 
 	ClaimDrop(
 		address string,
-		tokenType string,
 	) (types.ContractOutput, error)
 
 	WithdrawDrop(
@@ -184,12 +183,6 @@ type Client2FinanceNetwork interface {
 
 	AttestParticipantEligibility(
 		address string,
-		wallet string,
-		approved bool,
-	) (types.ContractOutput, error)
-
-	ManuallyAttestParticipantEligibility(
-		dropAddress string,
 		wallet string,
 		approved bool,
 	) (types.ContractOutput, error)
