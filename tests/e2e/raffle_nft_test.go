@@ -128,10 +128,10 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, mintPrizeEvent.TokenUUIDList, 2)
 
-	prizeUUID := mintPrizeEvent.TokenUUIDList[0]
-	require.NotEmpty(t, prizeUUID)
+	tokenUUID := mintPrizeEvent.TokenUUIDList[0]
+	require.NotEmpty(t, tokenUUID)
 
-	ownerPrizeBeforeOut, err := c.GetTokenBalanceNFT(prizeTokenAddress, owner.PublicKey, prizeUUID)
+	ownerPrizeBeforeOut, err := c.GetTokenBalanceNFT(prizeTokenAddress, owner.PublicKey, tokenUUID)
 	require.NoError(t, err)
 
 	var ownerPrizeBefore tokenV1Models.BalanceStateModel
@@ -140,7 +140,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 
 	assert.Equal(t, prizeTokenAddress, ownerPrizeBefore.TokenAddress)
 	assert.Equal(t, owner.PublicKey, ownerPrizeBefore.OwnerAddress)
-	assert.Equal(t, prizeUUID, ownerPrizeBefore.TokenUUID)
+	assert.Equal(t, tokenUUID, ownerPrizeBefore.TokenUUID)
 	assert.Equal(t, "1", ownerPrizeBefore.Amount)
 	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, ownerPrizeBefore.TokenType)
 	assert.False(t, ownerPrizeBefore.Burned)
@@ -179,10 +179,10 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = c.TransferToken(payToken.Address, player1.PublicKey, "3000000", []string{})
+	_, err = c.TransferToken(payToken.Address, player1.PublicKey, "30", []string{})
 	require.NoError(t, err)
 
-	_, err = c.TransferToken(payToken.Address, player2.PublicKey, "3000000", []string{})
+	_, err = c.TransferToken(payToken.Address, player2.PublicKey, "30", []string{})
 	require.NoError(t, err)
 
 	player1PayBeforeOut, err := c.GetTokenBalance(payToken.Address, player1.PublicKey)
@@ -209,7 +209,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	revealSeed := "raffle-secret-seed-non-fungible-e2e"
 	seedCommitHex := seed.CommitSeed(revealSeed)
 
-	ticketPrice := "1000000"
+	ticketPrice := "10"
 	maxEntries := 10
 	maxEntriesPerUser := 3
 	startAt := time.Now().Add(-5 * time.Minute)
@@ -275,13 +275,12 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	//     ADD PRIZE NFT
 	// ------------------
 	prizeAmount := "1"
-
+	UUIDNFTs := []string{tokenUUID}
 	addPrizeOut, err := c.AddRafflePrize(
 		raffleAddress,
 		prizeTokenAddress,
 		prizeAmount,
-		tokenV1Domain.NON_FUNGIBLE,
-		prizeUUID,
+		UUIDNFTs,
 	)
 	require.NoError(t, err)
 	require.NotEmpty(t, addPrizeOut.Logs)
@@ -299,23 +298,23 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	assert.Equal(t, prizeAmount, addPrizeEvent.Amount)
 	assert.NotEmpty(t, addPrizeEvent.UUID)
 
-	// originalPrizeUUID := prizeUUID
+	originalPrizeUUID := tokenUUID
 	rafflePrizeUUID := addPrizeEvent.UUID
 
-	ownerPrizeAfterAddOut, err := c.GetTokenBalanceNFT(prizeTokenAddress, owner.PublicKey, prizeUUID)
+	ownerPrizeAfterAddOut, err := c.GetTokenBalanceNFT(prizeTokenAddress, owner.PublicKey, tokenUUID)
 	require.NoError(t, err)
 
 	var ownerPrizeAfterAdd tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPrizeAfterAddOut.States[0].Object, &ownerPrizeAfterAdd)
 	require.NoError(t, err)
 
-	assert.Equal(t, prizeUUID, ownerPrizeAfterAdd.TokenUUID)
+	assert.Equal(t, tokenUUID, ownerPrizeAfterAdd.TokenUUID)
 	assert.Equal(t, owner.PublicKey, ownerPrizeAfterAdd.OwnerAddress)
 	assert.Equal(t, "1", ownerPrizeAfterAdd.Amount)
 	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, ownerPrizeAfterAdd.TokenType)
 
 	// raffle now owns that NFT
-	rafflePrizeAfterAddOut, err := c.GetTokenBalanceNFT(prizeTokenAddress, raffleAddress, prizeUUID)
+	rafflePrizeAfterAddOut, err := c.GetTokenBalanceNFT(prizeTokenAddress, raffleAddress, tokenUUID)
 	require.NoError(t, err)
 
 	var rafflePrizeAfterAdd tokenV1Models.BalanceStateModel
@@ -324,7 +323,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 
 	assert.Equal(t, prizeTokenAddress, rafflePrizeAfterAdd.TokenAddress)
 	assert.Equal(t, raffleAddress, rafflePrizeAfterAdd.OwnerAddress)
-	assert.Equal(t, prizeUUID, rafflePrizeAfterAdd.TokenUUID)
+	assert.Equal(t, tokenUUID, rafflePrizeAfterAdd.TokenUUID)
 	assert.Equal(t, "1", rafflePrizeAfterAdd.Amount)
 	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, rafflePrizeAfterAdd.TokenType)
 	assert.False(t, rafflePrizeAfterAdd.Burned)
@@ -332,7 +331,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	// ------------------
 	//    UPDATE RAFFLE
 	// ------------------
-	newTicketPrice := "500000"
+	newTicketPrice := "5"
 	newMaxEntries := 20
 	newMaxEntriesPerUser := 5
 	newStartAt := time.Now().Add(-10 * time.Minute)
@@ -428,7 +427,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, player1.PublicKey, enter1Event.Entrant)
 	assert.Equal(t, 2, enter1Event.Tickets)
-	assert.Equal(t, "1000000", enter1Event.Paid)
+	assert.Equal(t, "10", enter1Event.Paid)
 
 	c.SetPrivateKey(player2Priv)
 	enter2Out, err := c.EnterRaffle(
@@ -449,7 +448,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, player2.PublicKey, enter2Event.Entrant)
 	assert.Equal(t, 1, enter2Event.Tickets)
-	assert.Equal(t, "500000", enter2Event.Paid)
+	assert.Equal(t, "5", enter2Event.Paid)
 
 	player1PayAfterEnterOut, err := c.GetTokenBalance(payToken.Address, player1.PublicKey)
 	require.NoError(t, err)
@@ -469,14 +468,14 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](rafflePayAfterEnterOut.States[0].Object, &rafflePayAfterEnter)
 	require.NoError(t, err)
 
-	expectedPlayer1PayAfterEnter, err := utils.SubBigIntStrings(player1PayBefore.Amount, "1000000")
+	expectedPlayer1PayAfterEnter, err := utils.SubBigIntStrings(player1PayBefore.Amount, "10")
 	require.NoError(t, err)
-	expectedPlayer2PayAfterEnter, err := utils.SubBigIntStrings(player2PayBefore.Amount, "500000")
+	expectedPlayer2PayAfterEnter, err := utils.SubBigIntStrings(player2PayBefore.Amount, "5")
 	require.NoError(t, err)
 
 	assert.Equal(t, expectedPlayer1PayAfterEnter, player1PayAfterEnter.Amount)
 	assert.Equal(t, expectedPlayer2PayAfterEnter, player2PayAfterEnter.Amount)
-	assert.Equal(t, "1500000", rafflePayAfterEnter.Amount)
+	assert.Equal(t, "15", rafflePayAfterEnter.Amount)
 
 	// ------------------
 	//       DRAW
@@ -499,65 +498,65 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	assert.Equal(t, 1, drawEvent.WinnerCount)
 	require.Len(t, drawEvent.Winners, 1)
 
-	winner := drawEvent.Winners[0]
-	assert.Contains(t, []string{player1.PublicKey, player2.PublicKey}, winner)
+	winnerPrize := drawEvent.Winners[0]
+	assert.Contains(t, []string{player1.PublicKey, player2.PublicKey}, winnerPrize.Winner)
+	assert.NotEmpty(t, winnerPrize.PrizeUUID)
 
 	// ------------------
 	//       CLAIM NFT
 	// ------------------
-	// _, err = c.GetTokenBalanceNFT(prizeTokenAddress, winner, rafflePrizeUUID)
-	// require.Error(t, err)
-	// require.Contains(t, err.Error(), "record not found")
+	_, err = c.GetTokenBalanceNFT(prizeTokenAddress, winnerPrize.Winner, winnerPrize.PrizeUUID)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "record not found")
 
-	// switch winner {
-	// case player1.PublicKey:
-	// 	c.SetPrivateKey(player1Priv)
-	// case player2.PublicKey:
-	// 	c.SetPrivateKey(player2Priv)
-	// default:
-	// 	t.Fatalf("unexpected winner: %s", winner)
-	// }
+	switch winnerPrize.Winner {
+	case player1.PublicKey:
+		c.SetPrivateKey(player1Priv)
+	case player2.PublicKey:
+		c.SetPrivateKey(player2Priv)
+	default:
+		t.Fatalf("unexpected winner: %s", winnerPrize.Winner)
+	}
 
-	// claimOut, err := c.ClaimRaffle(
-	// 	raffleAddress,
-	// 	winner,
-	// 	tokenV1Domain.NON_FUNGIBLE,
-	// 	originalPrizeUUID,
-	// )
-	// require.NoError(t, err)
-	// require.NotEmpty(t, claimOut.Logs)
+	claimOut, err := c.ClaimRaffle(
+		raffleAddress,
+		winnerPrize.PrizeUUID,
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, claimOut.Logs)
 
-	// claimLog, err := utils.UnmarshalLog[log.Log](claimOut.Logs[0])
-	// require.NoError(t, err)
-	// assert.Equal(t, raffleV1Domain.RAFFLE_CLAIMED_LOG, claimLog.LogType)
+	claimLog, err := utils.UnmarshalLog[log.Log](claimOut.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_CLAIMED_LOG, claimLog.LogType)
 
-	// claimEvent, err := utils.UnmarshalEvent[raffleV1Domain.Claim](claimLog.Event)
-	// require.NoError(t, err)
-	// assert.Equal(t, raffleAddress, claimEvent.Address)
-	// assert.Equal(t, winner, claimEvent.Winner)
+	claimEvent, err := utils.UnmarshalEvent[raffleV1Domain.Claim](claimLog.Event)
+	require.NoError(t, err)
+	assert.Equal(t, raffleAddress, claimEvent.Address)
+	assert.Equal(t, winnerPrize.Winner, claimEvent.Winner)
+	assert.Equal(t, winnerPrize.PrizeUUID, claimEvent.PrizeUUID)
 
-	// winnerPrizeAfterOut, err := c.GetTokenBalanceNFT(prizeTokenAddress, winner, originalPrizeUUID)
-	// require.NoError(t, err)
+	winnerPrizeAfterOut, err := c.GetTokenBalanceNFT(prizeTokenAddress, winnerPrize.Winner, originalPrizeUUID)
+	require.NoError(t, err)
 
-	// var winnerPrizeAfter tokenV1Models.BalanceStateModel
-	// err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](winnerPrizeAfterOut.States[0].Object, &winnerPrizeAfter)
-	// require.NoError(t, err)
+	var winnerPrizeAfter tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](winnerPrizeAfterOut.States[0].Object, &winnerPrizeAfter)
+	require.NoError(t, err)
 
-	// assert.Equal(t, originalPrizeUUID, winnerPrizeAfter.TokenUUID)
-	// assert.Equal(t, winner, winnerPrizeAfter.OwnerAddress)
-	// assert.Equal(t, "1", winnerPrizeAfter.Amount)
-	// assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, winnerPrizeAfter.TokenType)
+	assert.Equal(t, originalPrizeUUID, winnerPrizeAfter.TokenUUID)
+	assert.Equal(t, winnerPrize.Winner, winnerPrizeAfter.OwnerAddress)
+	assert.Equal(t, "1", winnerPrizeAfter.Amount)
+	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, winnerPrizeAfter.TokenType)
 
-	// _, err = c.GetTokenBalanceNFT(prizeTokenAddress, raffleAddress, originalPrizeUUID)
-	// require.Error(t, err)
-	// require.Contains(t, err.Error(), "record not found")
+	_, err = c.GetTokenBalanceNFT(prizeTokenAddress, raffleAddress, "")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "token UUID not set")
 
 	// ------------------
 	//      WITHDRAW
 	// ------------------
 	c.SetPrivateKey(ownerPriv)
 
-	withdrawAmount := "500000"
+	withdrawAmount := "10"
 	withdrawUUID := "withdraw-nft-001"
 
 	withdrawOut, err := c.WithdrawRaffle(
@@ -574,13 +573,12 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, raffleV1Domain.RAFFLE_WITHDRAWN_LOG, withdrawLog.LogType)
 
-	withdrawEvent, err := utils.UnmarshalEvent[raffleV1Domain.Treasury](withdrawLog.Event)
+	withdrawEvent, err := utils.UnmarshalEvent[raffleV1Domain.Withdrawal](withdrawLog.Event)
 	require.NoError(t, err)
 
 	assert.Equal(t, raffleAddress, withdrawEvent.Address)
 	assert.Equal(t, payToken.Address, withdrawEvent.TokenAddress)
 	assert.Equal(t, withdrawAmount, withdrawEvent.Amount)
-	assert.Equal(t, raffleV1Domain.ACTION_WITHDRAW, withdrawEvent.Action)
 
 	ownerPayAfterWithdrawOut, err := c.GetTokenBalance(payToken.Address, owner.PublicKey)
 	require.NoError(t, err)
@@ -596,7 +594,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 
 	expectedOwnerPayAfterWithdraw, err := utils.AddBigIntStrings(ownerPayBeforeWithdraw.Amount, withdrawAmount)
 	require.NoError(t, err)
-	expectedRafflePayAfterWithdraw, err := utils.SubBigIntStrings("1500000", withdrawAmount)
+	expectedRafflePayAfterWithdraw, err := utils.SubBigIntStrings("15", withdrawAmount)
 	require.NoError(t, err)
 
 	assert.Equal(t, expectedOwnerPayAfterWithdraw, ownerPayAfterWithdraw.Amount)
@@ -621,7 +619,8 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 			found = true
 			assert.Equal(t, "1", p.Amount)
 			assert.Equal(t, owner.PublicKey, p.Sponsor)
-			assert.Equal(t, winner, p.Winner)
+			assert.Equal(t, winnerPrize.Winner, p.Winner)
+			assert.Equal(t, winnerPrize.PrizeUUID, p.UUID)
 			// assert.True(t, p.Claimed)
 			assert.NotZero(t, p.CreatedAt)
 			assert.NotZero(t, p.UpdatedAt)

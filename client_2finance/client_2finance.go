@@ -387,13 +387,14 @@ type Client2FinanceNetwork interface {
 	UnpauseRaffle(address string, paused bool) (types.ContractOutput, error)
 	EnterRaffle(address string, tickets int, payTokenAddress, tokenType, uuid string) (types.ContractOutput, error)
 	DrawRaffle(address, revealSeed string) (types.ContractOutput, error)
-	ClaimRaffle(address, winner, tokenType, uuid string) (types.ContractOutput, error)
+	ClaimRaffle(address, prizeUUID string) (types.ContractOutput, error)
 	WithdrawRaffle(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error)
-	AddRafflePrize(raffleAddress string, tokenAddress string, amount, tokenType, uuid string) (types.ContractOutput, error)
+	AddRafflePrize(raffleAddress string, tokenAddress string, amount string, uuidNFTs []string) (types.ContractOutput, error)
 	RemoveRafflePrize(raffleAddress string, tokenType, uuid string) (types.ContractOutput, error)
 
 	GetRaffle(address string) (types.ContractOutput, error)
 	ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
+	GetPrize(address string, prizeUUID string) (types.ContractOutput, error)
 	ListPrizes(raffleAddress string, page, limit int, asc bool) (types.ContractOutput, error)
 }
 

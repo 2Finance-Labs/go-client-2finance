@@ -45,7 +45,7 @@ func buildNewDropInput(
 		ShortDescription:     "Short desc",
 		ImageURL:             "https://img.png",
 		BannerURL:            "https://banner.png",
-		Category:             "airdrop",
+		Categories:           map[string]bool{"airdrop": true},
 		SocialRequirements:   map[string]bool{"FOLLOW_X": true},
 		PostLinks:            map[string]bool{"https://x.com/post/123": true},
 		VerificationType:     "ORACLE",
@@ -73,7 +73,7 @@ func buildUpdateDropInput(
 		ShortDescription:     "Updated short description",
 		ImageURL:             "https://img-updated.png",
 		BannerURL:            "https://banner-updated.png",
-		Category:             "airdrop",
+		Categories:           map[string]bool{"airdrop": true},
 		SocialRequirements:   map[string]bool{"LIKE_X": true},
 		PostLinks:            map[string]bool{"https://x.com/post/456": true},
 		StartAt:              startAt,
@@ -113,7 +113,7 @@ func assertCreatedDropLog(
 	assert.Equal(t, input.ShortDescription, drop.ShortDescription)
 	assert.Equal(t, input.ImageURL, drop.ImageURL)
 	assert.Equal(t, input.BannerURL, drop.BannerURL)
-	assert.Equal(t, input.Category, drop.Category)
+	assert.Equal(t, input.Categories, drop.Categories)
 	assert.Equal(t, input.SocialRequirements, drop.SocialRequirements)
 	assert.Equal(t, input.PostLinks, drop.PostLinks)
 	assert.Equal(t, input.VerificationType, drop.VerificationType)
@@ -138,7 +138,7 @@ func assertDropState(
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetDrop.States[0]): %v", err)
 	}
-
+	
 	assert.Equal(t, input.Address, state.Address)
 	assert.Equal(t, input.ProgramAddress, state.ProgramAddress)
 	assert.Equal(t, input.TokenAddress, state.TokenAddress)
@@ -148,7 +148,7 @@ func assertDropState(
 	assert.Equal(t, input.ShortDescription, state.ShortDescription)
 	assert.Equal(t, input.ImageURL, state.ImageURL)
 	assert.Equal(t, input.BannerURL, state.BannerURL)
-	assert.Equal(t, input.Category, state.Category)
+	assert.Equal(t, input.Categories, state.Categories)
 	assert.Equal(t, input.SocialRequirements, state.SocialRequirements)
 	assert.Equal(t, input.PostLinks, state.PostLinks)
 	assert.Equal(t, input.VerificationType, state.VerificationType)
@@ -186,7 +186,7 @@ func assertUpdatedDropLog(
 	assert.Equal(t, input.ShortDescription, dropUpdated.ShortDescription)
 	assert.Equal(t, input.ImageURL, dropUpdated.ImageURL)
 	assert.Equal(t, input.BannerURL, dropUpdated.BannerURL)
-	assert.Equal(t, input.Category, dropUpdated.Category)
+	assert.Equal(t, input.Categories, dropUpdated.Categories)
 	assert.Equal(t, input.SocialRequirements, dropUpdated.SocialRequirements)
 	assert.Equal(t, input.PostLinks, dropUpdated.PostLinks)
 	assert.Equal(t, input.VerificationType, dropUpdated.VerificationType)
@@ -222,7 +222,7 @@ func assertUpdatedDropState(
 	assert.Equal(t, input.ShortDescription, state.ShortDescription)
 	assert.Equal(t, input.ImageURL, state.ImageURL)
 	assert.Equal(t, input.BannerURL, state.BannerURL)
-	assert.Equal(t, input.Category, state.Category)
+	assert.Equal(t, input.Categories, state.Categories)
 	assert.Equal(t, expectedSocialRequirements, state.SocialRequirements)
 	assert.Equal(t, expectedPostLinks, state.PostLinks)
 	assert.Equal(t, input.VerificationType, state.VerificationType)
@@ -1093,7 +1093,7 @@ func TestClient_GetDrop(t *testing.T) {
 		ShortDescription:     "short",
 		ImageURL:             "https://img.png",
 		BannerURL:            "https://banner.png",
-		Category:             "airdrop",
+		Categories:           map[string]bool{"airdrop": true},
 		SocialRequirements:   map[string]bool{"follow_x": true},
 		PostLinks:            map[string]bool{"https://x.com/post/1": true},
 		VerificationType:     dropV1Domain.VERIFICATION_TYPE_ORACLE,
@@ -1167,7 +1167,7 @@ func TestClient_ListDrops(t *testing.T) {
 			ShortDescription:     "short",
 			ImageURL:             "https://img.png",
 			BannerURL:            "https://banner.png",
-			Category:             "airdrop",
+			Categories:           map[string]bool{"airdrop": true},
 			SocialRequirements:   map[string]bool{"follow_x": true},
 			PostLinks:            map[string]bool{"https://x.com/post/1": true},
 			VerificationType:     dropV1Domain.VERIFICATION_TYPE_ORACLE,

@@ -306,26 +306,15 @@ func (c *networkClient) DrawRaffle(address, revealSeed string) (types.ContractOu
 }
 
 // ClaimRaffle allows a winner to claim their prize.
-func (c *networkClient) ClaimRaffle(address, winner, tokenType, uuid string) (types.ContractOutput, error) {
+func (c *networkClient) ClaimRaffle(address, prizeUUID string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
 	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
-	if winner == "" {
-		return types.ContractOutput{}, fmt.Errorf("winner not set")
-	}
-	if err := keys.ValidateEDDSAPublicKeyHex(winner); err != nil {
-		return types.ContractOutput{}, fmt.Errorf("invalid winner address: %w", err)
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
-	}
-	if tokenType == domain.NON_FUNGIBLE {
-		if uuid == "" {
-			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
-		}
+	if prizeUUID == "" {
+		return types.ContractOutput{}, fmt.Errorf("prizeUUID not set")
 	}
 
 	from := c.publicKey
@@ -338,13 +327,14 @@ func (c *networkClient) ClaimRaffle(address, winner, tokenType, uuid string) (ty
 
 	to := address
 	method := raffleV1.METHOD_CLAIM_RAFFLE
-	data := map[string]interface{}{"address": address, "winner": winner, "token_type": tokenType, "uuid": uuid}
+	data := map[string]interface{}{"raffle_address": address, "prize_uuid": prizeUUID}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
+
 }
 
 // WithdrawRaffle withdraws unused/prize funds from the raffle pool.
@@ -392,7 +382,7 @@ func (c *networkClient) WithdrawRaffle(address, tokenAddress, amount, tokenType,
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string, amount string, tokenType string, uuid string) (types.ContractOutput, error) {
+func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string, amount string, uuidNFTs []string) (types.ContractOutput, error) {
 	if raffleAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("raffle address not set")
 	}
@@ -405,16 +395,8 @@ func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string
 	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
-	if amount == "" {
-		return types.ContractOutput{}, fmt.Errorf("amount not set")
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
-	}
-	if tokenType == domain.NON_FUNGIBLE {
-		if uuid == "" {
-			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
-		}
+	if amount == "" && len(uuidNFTs) == 0 {
+		return types.ContractOutput{}, fmt.Errorf("amount not set or uuidNFTs not set")
 	}
 
 	from := c.publicKey
@@ -427,7 +409,7 @@ func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string
 
 	to := raffleAddress
 	method := raffleV1.METHOD_ADD_RAFFLE_PRIZE
-	data := map[string]interface{}{"amount": amount, "raffle_address": raffleAddress, "token_address": tokenAddress, "token_type": tokenType, "uuid": uuid}
+	data := map[string]interface{}{"amount": amount, "raffle_address": raffleAddress, "token_address": tokenAddress, "uuid_nfts": uuidNFTs}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -524,7 +506,6 @@ func (c *networkClient) ListRaffles(owner, tokenAddress string, paused *bool, ac
 		"limit":            limit,
 		"ascending":        asc,
 		"token_address":    tokenAddress,
-		"contract_version": raffleV1.RAFFLE_CONTRACT_V1,
 	}
 	if paused != nil {
 		data["paused"] = *paused
@@ -567,4 +548,26 @@ func (c *networkClient) ListPrizes(raffleAddress string, page, limit int, asc bo
 	}
 
 	return c.GetState("", method, data)
+}
+
+func (c *networkClient) GetPrize(address string, prizeUUID string) (types.ContractOutput, error) {
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+	if prizeUUID == "" {
+		return types.ContractOutput{}, fmt.Errorf("prize UUID must be set")
+	}
+
+	method := raffleV1.METHOD_GET_PRIZE
+	data := map[string]interface{}{
+		"raffle_address":   address,
+		"prize_uuid":       prizeUUID,
+		"contract_version": raffleV1.RAFFLE_CONTRACT_V1,
+	}
+
+	return c.GetState(address, method, data)
 }
