@@ -44,7 +44,7 @@ func (c *networkClient) NewDrop(in inputs.InputNewDrop) (types.ContractOutput, e
 		"short_description":      in.ShortDescription,
 		"image_url":              in.ImageURL,
 		"banner_url":             in.BannerURL,
-		"category":               in.Category,
+		"categories":             in.Categories,
 		"social_requirements":    in.SocialRequirements,
 		"post_links":             in.PostLinks,
 		"verification_type":      in.VerificationType,
@@ -83,7 +83,7 @@ func (c *networkClient) UpdateDropMetadata(
 		"short_description":      in.ShortDescription,
 		"image_url":              in.ImageURL,
 		"banner_url":             in.BannerURL,
-		"category":               in.Category,
+		"categories":             in.Categories,
 		"social_requirements":    in.SocialRequirements,
 		"post_links":             in.PostLinks,
 		"verification_type":      in.VerificationType,
@@ -177,12 +177,9 @@ func (c *networkClient) DepositDrop(
 	}, version, uuid7)
 }
 
-func (c *networkClient) ClaimDrop(address, tokenType string) (types.ContractOutput, error) {
+func (c *networkClient) ClaimDrop(address string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("drop address not set")
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("token type not set")
 	}
 
 	from := c.publicKey
@@ -195,8 +192,6 @@ func (c *networkClient) ClaimDrop(address, tokenType string) (types.ContractOutp
 	}
 
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
-		"address":    address,
-		"token_type": tokenType,
 	}, version, uuid7)
 }
 
@@ -223,6 +218,8 @@ func (c *networkClient) WithdrawDrop(
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
+		"program_address": programAddress,
+		"token_address":   tokenAddress,
 		"amount":     amount,
 		"uuid":       uuid,
 	}, version, uuid7)
@@ -445,5 +442,4 @@ func (c *networkClient) ListDrops(
 
 	return contractOutput, nil
 }
-
 
