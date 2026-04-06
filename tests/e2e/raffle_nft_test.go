@@ -329,6 +329,64 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	assert.False(t, rafflePrizeAfterAdd.Burned)
 
 	// ------------------
+	//    REMOVE PRIZE
+	// ------------------
+	removePrizeOut, err := c.RemoveRafflePrize(raffleAddress, addPrizeEvent.UUID)
+	require.NoError(t, err)
+	require.NotEmpty(t, removePrizeOut.Logs)
+
+	removePrizeLog, err := utils.UnmarshalLog[log.Log](removePrizeOut.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_REMOVED_PRIZES_LOG, removePrizeLog.LogType)
+
+	removePrizeEvent, err := utils.UnmarshalEvent[raffleV1Domain.RafflePrize](removePrizeLog.Event)
+	require.NoError(t, err)
+
+	assert.Equal(t, raffleAddress, removePrizeEvent.RaffleAddress)
+	assert.Equal(t, owner.PublicKey, removePrizeEvent.Sponsor)
+	assert.Equal(t, prizeTokenAddress, removePrizeEvent.TokenAddress)
+	assert.Equal(t, "1", removePrizeEvent.Amount)
+	assert.Equal(t, addPrizeEvent.UUID, removePrizeEvent.UUID)
+
+	_, err = c.GetTokenBalanceNFT(prizeTokenAddress, raffleAddress, prizeUUID)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "record not found")
+
+	ownerPrizeAfterRemoveOut, err := c.GetTokenBalanceNFT(prizeTokenAddress, owner.PublicKey, prizeUUID)
+	require.NoError(t, err)
+
+	var ownerPrizeAfterRemove tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPrizeAfterRemoveOut.States[0].Object, &ownerPrizeAfterRemove)
+	require.NoError(t, err)
+
+	assert.Equal(t, prizeUUID, ownerPrizeAfterRemove.TokenUUID)
+	assert.Equal(t, owner.PublicKey, ownerPrizeAfterRemove.OwnerAddress)
+	assert.Equal(t, "1", ownerPrizeAfterRemove.Amount)
+	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, ownerPrizeAfterRemove.TokenType)
+
+	// ------------------
+	//  ADD PRIZE AGAIN
+	// ------------------
+	addPrizeOut, err = c.AddRafflePrize(
+		raffleAddress,
+		prizeTokenAddress,
+		prizeAmount,
+		tokenV1Domain.NON_FUNGIBLE,
+		prizeUUID,
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, addPrizeOut.Logs)
+
+	addPrizeLog, err = utils.UnmarshalLog[log.Log](addPrizeOut.Logs[0])
+	require.NoError(t, err)
+	assert.Equal(t, raffleV1Domain.RAFFLE_ADDED_PRIZES_LOG, addPrizeLog.LogType)
+
+	addPrizeEvent, err = utils.UnmarshalEvent[raffleV1Domain.RafflePrize](addPrizeLog.Event)
+	require.NoError(t, err)
+
+	rafflePrizeUUID = addPrizeEvent.UUID
+
+	// ------------------
 	//    UPDATE RAFFLE
 	// ------------------
 	newTicketPrice := "5"

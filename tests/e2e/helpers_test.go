@@ -95,7 +95,7 @@ func createBasicToken(
 	symbol := "2F" + randSuffix(4)
 	name := "2Finance"
 	var totalSupply string
-	totalSupply = "1000"
+	totalSupply = "100000000"
 	description := "e2e token created by tests"
 	image := "https://example.com/image.png"
 	website := "https://example.com"

@@ -298,6 +298,88 @@ func TestRaffleFlowFungible(t *testing.T) {
 	assert.Equal(t, expectedOwnerPrizeAfterAdd, ownerPrizeAfterAdd.Amount)
 
 	// ------------------
+	//    REMOVE PRIZE
+	// ------------------
+	removePrizeOut, err := c.RemoveRafflePrize(raffleAddress, addPrizeEvent.UUID)
+	if err != nil {
+		t.Fatalf("RemoveRafflePrize: %v", err)
+	}
+	require.NotEmpty(t, removePrizeOut.Logs)
+
+	removePrizeLog, err := utils.UnmarshalLog[log.Log](removePrizeOut.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (RemoveRafflePrize.Logs[0]): %v", err)
+	}
+	assert.Equal(t, raffleV1Domain.RAFFLE_REMOVED_PRIZES_LOG, removePrizeLog.LogType)
+
+	removePrizeEvent, err := utils.UnmarshalEvent[raffleV1Domain.RafflePrize](removePrizeLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (RemoveRafflePrize.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, raffleAddress, removePrizeEvent.RaffleAddress)
+	assert.Equal(t, owner.PublicKey, removePrizeEvent.Sponsor)
+	assert.Equal(t, prizeToken.Address, removePrizeEvent.TokenAddress)
+	assert.Equal(t, prizeAmount, removePrizeEvent.Amount)
+	assert.Equal(t, addPrizeEvent.UUID, removePrizeEvent.UUID)
+
+	rafflePrizeAfterRemoveOut, err := c.GetTokenBalance(prizeToken.Address, raffleAddress)
+	if err != nil {
+		require.Contains(t, err.Error(), "record not found")
+	} else {
+		var rafflePrizeAfterRemove tokenV1Models.BalanceStateModel
+		err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](rafflePrizeAfterRemoveOut.States[0].Object, &rafflePrizeAfterRemove)
+		if err != nil {
+			t.Fatalf("UnmarshalState rafflePrizeAfterRemove: %v", err)
+		}
+		assert.Equal(t, "0", rafflePrizeAfterRemove.Amount)
+	}
+
+	ownerPrizeAfterRemoveOut, err := c.GetTokenBalance(prizeToken.Address, owner.PublicKey)
+	if err != nil {
+		t.Fatalf("GetTokenBalance owner prize after remove: %v", err)
+	}
+	var ownerPrizeAfterRemove tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPrizeAfterRemoveOut.States[0].Object, &ownerPrizeAfterRemove)
+	if err != nil {
+		t.Fatalf("UnmarshalState ownerPrizeAfterRemove: %v", err)
+	}
+
+	assert.Equal(t, ownerPrizeBefore.Amount, ownerPrizeAfterRemove.Amount)
+
+	// ------------------
+	//  ADD PRIZE AGAIN
+	// ------------------
+	addPrizeOut, err = c.AddRafflePrize(
+		raffleAddress,
+		prizeToken.Address,
+		prizeAmount,
+		prizeToken.TokenType,
+		prizeUUID,
+	)
+	if err != nil {
+		t.Fatalf("AddRafflePrize again: %v", err)
+	}
+	require.NotEmpty(t, addPrizeOut.Logs)
+
+	addPrizeLog, err = utils.UnmarshalLog[log.Log](addPrizeOut.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (AddRafflePrize again.Logs[0]): %v", err)
+	}
+	assert.Equal(t, raffleV1Domain.RAFFLE_ADDED_PRIZES_LOG, addPrizeLog.LogType)
+
+	addPrizeEvent, err = utils.UnmarshalEvent[raffleV1Domain.RafflePrize](addPrizeLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (AddRafflePrize again.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, raffleAddress, addPrizeEvent.RaffleAddress)
+	assert.Equal(t, owner.PublicKey, addPrizeEvent.Sponsor)
+	assert.Equal(t, prizeToken.Address, addPrizeEvent.TokenAddress)
+	assert.Equal(t, prizeAmount, addPrizeEvent.Amount)
+	assert.NotEmpty(t, addPrizeEvent.UUID)
+
+	// ------------------
 	//    UPDATE RAFFLE
 	// ------------------
 	newTicketPrice := "5"
