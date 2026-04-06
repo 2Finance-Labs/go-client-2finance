@@ -15,7 +15,6 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/seed"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
-	"fmt"
 )
 
 func TestRaffleFlowFungible(t *testing.T) {
@@ -354,8 +353,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 		raffleAddress,
 		prizeToken.Address,
 		prizeAmount,
-		prizeToken.TokenType,
-		prizeUUID,
+		uuidNFTs,
 	)
 	if err != nil {
 		t.Fatalf("AddRafflePrize again: %v", err)
@@ -675,8 +673,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	//       CLAIM
 	// ------------------
 	_, err = c.GetTokenBalance(prizeToken.Address, winnerPrize.Winner)
-	assert.Contains(t, err.Error(), "record not found")
-
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "record not found")
 
 	rafflePrizeBeforeClaimOut, err := c.GetTokenBalance(prizeToken.Address, raffleAddress)
 	if err != nil {
@@ -729,15 +727,14 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalState winnerPrizeAfter: %v", err)
 	}
+
 	winnerPrizeBefore := "0"
 	expectedWinnerPrizeAfter, err := utils.AddBigIntStrings(winnerPrizeBefore, prizeAmount)
 	if err != nil {
 		t.Fatalf("AddBigIntStrings winnerPrizeBefore + prizeAmount: %v", err)
 	}
 	assert.Equal(t, expectedWinnerPrizeAfter, winnerPrizeAfter.Amount)
-	fmt.Println("Winner Prize After Claim:", winnerPrizeAfter.Amount)
-	fmt.Println("Expected Winner Prize After Claim:", expectedWinnerPrizeAfter)
-	
+
 	// ------------------
 	//      WITHDRAW
 	// ------------------
@@ -835,7 +832,6 @@ func TestRaffleFlowFungible(t *testing.T) {
 		}
 	}
 	assert.True(t, found, "expected to find claimed raffle prize in ListPrizes")
-
 
 	// ------------------
 	//     GET PRIZE
