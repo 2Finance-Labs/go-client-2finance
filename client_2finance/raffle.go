@@ -418,15 +418,12 @@ func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-func (c *networkClient) RemoveRafflePrize(raffleAddress string, tokenType string, uuid string) (types.ContractOutput, error) {
+func (c *networkClient) RemoveRafflePrize(raffleAddress string, uuid string) (types.ContractOutput, error) {
 	if raffleAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("raffle address not set")
 	}
 	if err := keys.ValidateEDDSAPublicKeyHex(raffleAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid raffle address: %w", err)
-	}
-	if tokenType == "" {
-		return types.ContractOutput{}, fmt.Errorf("tokenType not set")
 	}
 	if uuid == "" {
 		return types.ContractOutput{}, fmt.Errorf("uuid not set")
@@ -442,7 +439,7 @@ func (c *networkClient) RemoveRafflePrize(raffleAddress string, tokenType string
 
 	to := raffleAddress
 	method := raffleV1.METHOD_REMOVE_RAFFLE_PRIZE
-	data := map[string]interface{}{"raffle_address": raffleAddress, "uuid": uuid, "token_type": tokenType}
+	data := map[string]interface{}{"raffle_address": raffleAddress, "uuid": uuid}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
