@@ -1,22 +1,24 @@
 package e2e_test
 
 import (
-	"testing"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"testing"
+	"time"
+
+	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/2finance/2finance-network/blockchain/log"
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
-	"gitlab.com/2finance/2finance-network/blockchain/utils"
-	"gitlab.com/2finance/2finance-network/blockchain/types"
-	dropV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/domain"
-	dropV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/models"
-	dropV1Inputs "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/inputs"
+	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
-	"time"
-	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
-	
-
+	dropV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/domain"
+	dropV1Inputs "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/inputs"
+	dropV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/models"
+	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/log"
+	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 type dropCreateFixture struct {
@@ -138,7 +140,7 @@ func assertDropState(
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetDrop.States[0]): %v", err)
 	}
-	
+
 	assert.Equal(t, input.Address, state.Address)
 	assert.Equal(t, input.ProgramAddress, state.ProgramAddress)
 	assert.Equal(t, input.TokenAddress, state.TokenAddress)
@@ -740,6 +742,123 @@ func assertClaimDropLog(
 	return claimedDrop
 }
 
+func createDropWithCouponHelper(
+	t *testing.T,
+	c client2f.Client2FinanceNetwork,
+	ownerPub string,
+	tokenAddress string,
+) {
+	t.Helper()
+
+	// --------------------------------------------------------------------
+	// Deploy Drop contract for coupon drop
+	// --------------------------------------------------------------------
+	deployedCouponDropContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
+	if err != nil {
+		t.Fatalf("DeployContract (coupon drop): %v", err)
+	}
+
+	couponDropContractLog, err := utils.UnmarshalLog[log.Log](deployedCouponDropContract.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (Coupon Drop Deploy Logs[0]): %v", err)
+	}
+
+	couponDropAddress := couponDropContractLog.ContractAddress
+
+	// --------------------------------------------------------------------
+	// Deploy Coupon contract
+	// --------------------------------------------------------------------
+	deployedCouponContract, err := c.DeployContract1(couponV1.COUPON_CONTRACT_V1)
+	if err != nil {
+		t.Fatalf("DeployCouponContract: %v", err)
+	}
+
+	couponContractLog, err := utils.UnmarshalLog[log.Log](deployedCouponContract.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (Coupon Deploy Logs[0]): %v", err)
+	}
+
+	couponAddress := couponContractLog.ContractAddress
+
+	// --------------------------------------------------------------------
+	// Create Coupon
+	// --------------------------------------------------------------------
+	passcodePlain := "coupon-test-passcode"
+	passcodeHashBytes := sha256.Sum256([]byte(passcodePlain))
+	passcodeHash := hex.EncodeToString(passcodeHashBytes[:])
+
+	couponStartAt := time.Now().Add(10 * time.Second)
+	couponExpireAt := couponStartAt.Add(24 * time.Hour)
+
+		uuid7, err := utils.NewUUID7()
+	if err != nil {
+		t.Fatalf("NewUUID7: %v", err)
+	}
+
+	couponSymbol := "CPN-" + uuid7[len(uuid7)-8:]
+	couponName := "Coupon Test " + uuid7[len(uuid7)-8:]
+
+	_, err = c.AddCoupon(
+		couponAddress,
+		"percentage",
+		"1000",
+		"",
+		"",
+		couponStartAt,
+		couponExpireAt,
+		false,
+		true,
+		100,
+		1,
+		passcodeHash,
+		ownerPub,
+		couponSymbol,
+		couponName,
+		"100",
+		"coupon for drop test",
+		"https://image.test/coupon.png",
+		"https://site.test/coupon",
+		map[string]string{"x": "https://x.com/test"},
+		map[string]string{"category": "promo"},
+		map[string]string{"env": "test"},
+		"2Finance",
+		"https://2finance.com",
+		"https://asset.test/model.glb",
+	)
+	if err != nil {
+		t.Fatalf("AddCoupon: %v", err)
+	}
+
+	// --------------------------------------------------------------------
+	// Create Drop using Coupon as programAddress
+	// --------------------------------------------------------------------
+	couponDropStartAt := time.Now().Add(10 * time.Second)
+	couponDropExpireAt := couponDropStartAt.Add(24 * time.Hour)
+
+	inputCouponDrop := buildNewDropInput(
+		couponDropAddress,
+		couponAddress,
+		tokenAddress,
+		ownerPub,
+		couponDropStartAt,
+		couponDropExpireAt,
+	)
+
+	outCouponDrop, err := c.NewDrop(inputCouponDrop)
+	if err != nil {
+		t.Fatalf("NewDrop (coupon program): %v", err)
+	}
+
+	couponDrop := assertCreatedDropLog(t, outCouponDrop, inputCouponDrop)
+
+	gotCouponDrop, err := c.GetDrop(couponDrop.Address)
+	if err != nil {
+		t.Fatalf("GetDrop (coupon program): %v", err)
+	}
+
+	assertDropState(t, gotCouponDrop, inputCouponDrop)
+}
+
 func TestDropFlow(t *testing.T) {
 	c := setupClient(t)
 
@@ -758,7 +877,13 @@ func TestDropFlow(t *testing.T) {
 	if _, err := c.MintToken(tok.Address, owner.PublicKey, amount); err != nil {
 		t.Fatalf("MintToken: %v", err)
 	}
-	// // --------------------------------------------------------------------
+
+	// --------------------------------------------------------------------
+	// Create Drop with Coupon 
+	// --------------------------------------------------------------------
+	createDropWithCouponHelper(t, c, owner.PublicKey, tok.Address)
+
+	// --------------------------------------------------------------------
 	// Deploy Drop contract
 	// --------------------------------------------------------------------
 	deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
@@ -867,7 +992,6 @@ func TestDropFlow(t *testing.T) {
 
 	assertDropAllowedOraclesState(t, gotUpdatedDrop, resultAllowedOracles)
 
-	
 	// PAUSE / UNPAUSE
 	outPause := mustPauseDrop(t, c, address)
 	assertPauseDropLog(t, outPause, drop.Address)
@@ -881,7 +1005,6 @@ func TestDropFlow(t *testing.T) {
 	}
 
 	assertDropPausedState(t, gotUpdatedDrop, false)
-		
 
 	// ATTEST ELIGIBILITY (ORACLE)
 
@@ -906,8 +1029,7 @@ func TestDropFlow(t *testing.T) {
 		true,
 		dropV1Domain.VERIFICATION_TYPE_ORACLE,
 	)
-	
-	
+
 	// // Deposit Funds
 	amountDeposit := "10"
 	outDepositFunds := mustDepositDrop(
@@ -950,7 +1072,7 @@ func TestDropFlow(t *testing.T) {
 		owner.PublicKey,
 		amountWithdraw,
 	)
-	
+
 	// Claim Drop
 	userPub, userPriv := genKey(t, c)
 
@@ -977,7 +1099,6 @@ func TestDropFlow(t *testing.T) {
 		inputUpdateDrop.ClaimAmount,
 	)
 }
-
 
 func mustGetDrop(
 	t *testing.T,
