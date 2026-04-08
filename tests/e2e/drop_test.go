@@ -1136,6 +1136,81 @@ func TestClient_GetDrop(t *testing.T) {
 	})
 }
 
+func TestClient_LastClaimedDrop(t *testing.T) {
+	c := setupClient(t)
+
+	owner, ownerPriv := createWallet(t, c)
+	c.SetPrivateKey(ownerPriv)
+
+	deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
+	if err != nil {
+		t.Fatalf("DeployContract: %v", err)
+	}
+
+	deployLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (DeployContract.Logs[0]): %v", err)
+	}
+
+	dropAddress := deployLog.ContractAddress
+	programAddress, _ := genKey(t, c)
+	tokenAddress, _ := genKey(t, c)
+
+	startAt := time.Now()
+	expireAt := time.Now().Add(24 * time.Hour)
+
+	input := dropV1Inputs.InputNewDrop{
+		Address:              dropAddress,
+		ProgramAddress:       programAddress,
+		TokenAddress:         tokenAddress,
+		Owner:                owner.PublicKey,
+		Title:                "drop last claimed test",
+		Description:          "desc",
+		ShortDescription:     "short",
+		ImageURL:             "https://img.png",
+		BannerURL:            "https://banner.png",
+		Categories:           map[string]bool{"airdrop": true},
+		SocialRequirements:   map[string]bool{"follow_x": true},
+		PostLinks:            map[string]bool{"https://x.com/post/1": true},
+		VerificationType:     dropV1Domain.VERIFICATION_TYPE_ORACLE,
+		StartAt:              startAt,
+		ExpireAt:             expireAt,
+		RequestLimit:         100,
+		ClaimAmount:          "10",
+		ClaimIntervalSeconds: 3600,
+	}
+
+	_, err = c.NewDrop(input)
+	if err != nil {
+		t.Fatalf("NewDrop: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		_, err := c.LastClaimed(dropAddress, owner.PublicKey)
+		if err != nil {
+			t.Fatalf("LastClaimedDrops: %v", err)
+		}
+	})
+
+	t.Run("error when drop address is empty", func(t *testing.T) {
+		_, err := c.LastClaimed("", owner.PublicKey)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "drop address must be set")
+	})
+
+	t.Run("error when drop address is invalid", func(t *testing.T) {
+		_, err := c.LastClaimed("invalid-address", owner.PublicKey)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid drop address")
+	})
+
+	t.Run("error when wallet address is invalid", func(t *testing.T) {
+		_, err := c.LastClaimed(dropAddress, "invalid-wallet")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid wallet address")
+	})
+}
+
 func TestClient_ListDrops(t *testing.T) {
 	c := setupClient(t)
 

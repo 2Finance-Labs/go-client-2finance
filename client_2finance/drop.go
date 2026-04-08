@@ -397,7 +397,6 @@ func (c *networkClient) GetDrop(address string) (types.ContractOutput, error) {
 	return contractOutput, nil
 }
 
-
 func (c *networkClient) ListDrops(
 	owner string,
 	page, limit int,
@@ -443,3 +442,41 @@ func (c *networkClient) ListDrops(
 	return contractOutput, nil
 }
 
+func (c *networkClient) LastClaimed(address string, wallet string) (types.ContractOutput, error) {
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("drop address must be set")
+	}
+	if wallet == "" {
+		return types.ContractOutput{}, fmt.Errorf("wallet must be set")
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid drop address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(wallet); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid wallet address: %w", err)
+	}
+
+	method := dropV1.METHOD_LAST_CLAIMED_DROP
+
+	data := map[string]interface{}{
+		"wallet": wallet,
+	}
+
+	contractOutput, err := c.GetState(address, method, data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
+	}
+
+	return contractOutput, nil
+}
