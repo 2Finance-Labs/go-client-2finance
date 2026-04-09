@@ -3,17 +3,18 @@ package e2e_test
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"testing"
 	"time"
-	"gitlab.com/2finance/2finance-network/blockchain/utils"
-	"gitlab.com/2finance/2finance-network/blockchain/log"
+
 	"github.com/stretchr/testify/assert"
 	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
 	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
 	couponV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/models"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
-
+	"gitlab.com/2finance/2finance-network/blockchain/log"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 func TestCouponFlow_NonFungible(t *testing.T) {
@@ -37,7 +38,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	pcHash := hex.EncodeToString(raw[:])
 
 	discountType := couponV1Domain.DISCOUNT_TYPE_PERCENTAGE
-	percentageBPS := "1000" 
+	percentageBPS := "1000"
 	fixedAmount := ""
 	minOrder := "50"
 	startAt := start
@@ -63,17 +64,17 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	assetGLBUri := "https://example.com/asset.glb"
 
 	outAddCoupon, err := c.AddCoupon(
-		address, 
-		discountType, 
-		percentageBPS, 
-		fixedAmount, 
-		minOrder, 
-		startAt, 
-		expiredAt, 
-		paused, 
-		stackable, 
-		maxRedemptions, 
-		perUserLimit, 
+		address,
+		discountType,
+		percentageBPS,
+		fixedAmount,
+		minOrder,
+		startAt,
+		expiredAt,
+		paused,
+		stackable,
+		maxRedemptions,
+		perUserLimit,
 		passcodeHash,
 		voucherOwner,
 		symbol,
@@ -92,7 +93,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AddCoupon: %v", err)
 	}
-	
+
 	couponLog, err := utils.UnmarshalLog[log.Log](outAddCoupon.Logs[0])
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddCoupon.Logs[0]): %v", err)
@@ -103,7 +104,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddToken.Logs[0]): %v", err)
 	}
-	
+
 	assert.Equal(t, address, coupon.Address, "coupon address empty")
 	assert.NotNil(t, coupon.TokenAddress, "coupon token address mismatch")
 	assert.Equal(t, discountType, coupon.DiscountType, "coupon discount type mismatch")
@@ -116,7 +117,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	assert.Equal(t, stackable, coupon.Stackable, "coupon stackable mismatch")
 	assert.Equal(t, maxRedemptions, coupon.MaxRedemptions, "coupon max redemptions mismatch")
 	assert.Equal(t, perUserLimit, coupon.PerUserLimit, "coupon per user limit mismatch")
-	assert.Equal(t, passcodeHash, coupon.PasscodeHash, "coupon passcode hash mismatch")	
+	assert.Equal(t, passcodeHash, coupon.PasscodeHash, "coupon passcode hash mismatch")
 
 	delegatedCreatedToken := outAddCoupon.DelegatedCall[0]
 	assert.NotNil(t, delegatedCreatedToken)
@@ -132,8 +133,10 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalLog (AddCoupon.DelegatedCall[1].Logs[0]): %v", err)
 	}
 	assert.Equal(t, tokenV1Domain.TOKEN_TRANSFERRED_NFT_LOG, delegatedTokenTransferLog.LogType, "delegated token transfer log type mismatch")
+	
+	fmt.Printf("Coupon Address: %s, Token Address: %s\n", coupon.Address, coupon.TokenAddress)
 
-	outBalance, err := c.ListTokenBalances(coupon.TokenAddress, address, tokenV1Domain.NON_FUNGIBLE, 1, 3, true)
+	outBalance, err := c.ListTokenBalances(coupon.TokenAddress, voucherOwner, tokenV1Domain.NON_FUNGIBLE, 1, 3, true)
 	if err != nil {
 		t.Fatalf("GetTokenBalance: %v", err)
 	}
@@ -143,14 +146,16 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalState (GetTokenBalance.States[0]): %v", err)
 	}
 
+	fmt.Printf("Balance States: %+v\n", balanceStates)	
+
 	assert.Equal(t, coupon.TokenAddress, balanceStates[0].TokenAddress, "balance token address mismatch")
-	assert.Equal(t, address, balanceStates[0].OwnerAddress, "balance wallet address mismatch")
+	assert.Equal(t, voucherOwner, balanceStates[0].OwnerAddress, "balance wallet address mismatch")
 	assert.Equal(t, "1", balanceStates[0].Amount, "balance amount mismatch for NFT token")
 	assert.NotNil(t, balanceStates[0].TokenUUID, "balance token uuid mismatch for NFT token")
-	
+
 	// Update coupon to fixed amount
 	updatedDiscountType := couponV1Domain.DISCOUNT_TYPE_FIXED
-	updatedPercentageBPS := "" 
+	updatedPercentageBPS := ""
 	updatedFixedAmount := "10000"
 	updatedMinOrder := "50"
 	updatedStart := time.Now().Add(1 * time.Second)
@@ -162,19 +167,19 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	updatedPerUserLimit := 2
 
 	outUpdateCoupon, err := c.UpdateCoupon(
-		coupon.Address, 
-		coupon.TokenAddress, 
-		updatedDiscountType, 
-		updatedPercentageBPS, 
-		updatedFixedAmount, 
-		updatedMinOrder, 
-		updatedStart, 
-		updatedExp, 
-		updatedStackable, 
-		updatedMaxRedemptions, 
-		updatedPerUserLimit, 
+		coupon.Address,
+		coupon.TokenAddress,
+		updatedDiscountType,
+		updatedPercentageBPS,
+		updatedFixedAmount,
+		updatedMinOrder,
+		updatedStart,
+		updatedExp,
+		updatedStackable,
+		updatedMaxRedemptions,
+		updatedPerUserLimit,
 		updatedPcHash,
-	) 
+	)
 	if err != nil {
 		t.Fatalf("UpdateCoupon: %v", err)
 	}
@@ -272,7 +277,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	assert.Equal(t, tokenUUID, redeemedVoucher.VoucherUUID, "redeemed voucher token UUID mismatch")
 
 	// pause/unpause & getters
-	pausedOutput, err := c.PauseCoupon(coupon.Address, true);
+	pausedOutput, err := c.PauseCoupon(coupon.Address, true)
 	if err != nil {
 		t.Fatalf("PauseCoupon: %v", err)
 	}
@@ -302,7 +307,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	}
 	assert.Equal(t, coupon.Address, unpausedCoupon.Address, "unpaused coupon address mismatch")
 	assert.Equal(t, false, unpausedCoupon.Paused, "coupon paused state mismatch after unpausing")
-	
+
 	// getters
 	couponStateOutput, err := c.GetCoupon(coupon.Address)
 	if err != nil {

@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -166,6 +167,7 @@ func TestDropFlowNFT(t *testing.T) {
 	c.SetPrivateKey(ownerPriv)
 
 	depositUUIDs := []string{uuid1, uuid2}
+	fmt.Printf("Depositing NFTs with UUIDs: %v\n", depositUUIDs)
 
 	_, err = c.DepositDrop(
 		drop.Address,
@@ -188,6 +190,17 @@ func TestDropFlowNFT(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	getBalance, err := c.ListTokenBalances(nftTokenAddress, drop.Address, tokenV1Domain.NON_FUNGIBLE, 1, 10, true)
+	require.NoError(t, err)
+
+	var balanceList []tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[[]tokenV1Models.BalanceStateModel](getBalance.States[0].Object, &balanceList)
+	require.NoError(t, err)
+
+	assert.Len(t, balanceList, 1)
+	assert.Len(t, getBalance.States, 1)
+	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, balanceList[0].TokenType)
+
 	// --------------------------------------------------------------------
 	// Claim
 	// --------------------------------------------------------------------
@@ -195,7 +208,7 @@ func TestDropFlowNFT(t *testing.T) {
 
 	outClaim, err := c.ClaimDrop(drop.Address)
 	require.NoError(t, err)
-
+	
 	assertClaimDropLog(
 		t,
 		outClaim,
