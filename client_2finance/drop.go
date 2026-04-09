@@ -2,6 +2,7 @@ package client_2finance
 
 import (
 	"fmt"
+
 	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/inputs"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
@@ -74,7 +75,7 @@ func (c *networkClient) UpdateDropMetadata(
 	from := c.publicKey
 
 	method := dropV1.METHOD_UPDATE_DROP_METADATA
-		data := map[string]interface{}{
+	data := map[string]interface{}{
 		"address":                in.Address,
 		"program_address":        in.ProgramAddress,
 		"token_address":          in.TokenAddress,
@@ -101,7 +102,6 @@ func (c *networkClient) UpdateDropMetadata(
 
 	return c.SignAndSendTransaction(c.chainId, from, in.Address, method, data, version, uuid7)
 }
-
 
 func (c *networkClient) AllowOracles(address string, oracles map[string]bool) (types.ContractOutput, error) {
 	if address == "" {
@@ -163,7 +163,7 @@ func (c *networkClient) DepositDrop(
 	from := c.publicKey
 	method := dropV1.METHOD_DEPOSIT_DROP
 	version := uint8(1)
-	
+
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
@@ -172,8 +172,8 @@ func (c *networkClient) DepositDrop(
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"program_address": programAddress,
 		"token_address":   tokenAddress,
-		"amount":     amount,
-		"uuid":       uuid,
+		"amount":          amount,
+		"uuids":           uuid,
 	}, version, uuid7)
 }
 
@@ -191,8 +191,7 @@ func (c *networkClient) ClaimDrop(address string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
-	}, version, uuid7)
+	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{}, version, uuid7)
 }
 
 func (c *networkClient) WithdrawDrop(
@@ -220,8 +219,8 @@ func (c *networkClient) WithdrawDrop(
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"program_address": programAddress,
 		"token_address":   tokenAddress,
-		"amount":     amount,
-		"uuid":       uuid,
+		"amount":          amount,
+		"uuids":           uuid,
 	}, version, uuid7)
 }
 
