@@ -3,7 +3,6 @@ package e2e_test
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"testing"
 	"time"
 
@@ -133,8 +132,6 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalLog (AddCoupon.DelegatedCall[1].Logs[0]): %v", err)
 	}
 	assert.Equal(t, tokenV1Domain.TOKEN_TRANSFERRED_NFT_LOG, delegatedTokenTransferLog.LogType, "delegated token transfer log type mismatch")
-	
-	fmt.Printf("Coupon Address: %s, Token Address: %s\n", coupon.Address, coupon.TokenAddress)
 
 	outBalance, err := c.ListTokenBalances(coupon.TokenAddress, voucherOwner, tokenV1Domain.NON_FUNGIBLE, 1, 3, true)
 	if err != nil {
@@ -145,8 +142,6 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetTokenBalance.States[0]): %v", err)
 	}
-
-	fmt.Printf("Balance States: %+v\n", balanceStates)	
 
 	assert.Equal(t, coupon.TokenAddress, balanceStates[0].TokenAddress, "balance token address mismatch")
 	assert.Equal(t, voucherOwner, balanceStates[0].OwnerAddress, "balance wallet address mismatch")
