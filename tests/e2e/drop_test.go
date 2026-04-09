@@ -746,6 +746,7 @@ func createDropWithCouponHelper(
 	t *testing.T,
 	c client2f.Client2FinanceNetwork,
 	ownerPub string,
+	ownerPriv string,
 	tokenAddress string,
 ) {
 	t.Helper()
@@ -790,7 +791,7 @@ func createDropWithCouponHelper(
 	couponStartAt := time.Now().Add(10 * time.Second)
 	couponExpireAt := couponStartAt.Add(24 * time.Hour)
 
-		uuid7, err := utils.NewUUID7()
+	uuid7, err := utils.NewUUID7()
 	if err != nil {
 		t.Fatalf("NewUUID7: %v", err)
 	}
@@ -851,12 +852,82 @@ func createDropWithCouponHelper(
 
 	couponDrop := assertCreatedDropLog(t, outCouponDrop, inputCouponDrop)
 
-	gotCouponDrop, err := c.GetDrop(couponDrop.Address)
-	if err != nil {
-		t.Fatalf("GetDrop (coupon program): %v", err)
+	// --------------------------------------------------------------------
+	// Allow oracle
+	// --------------------------------------------------------------------
+	oracles := buildOracleFixture(t, c)
+
+	allowedMap := map[string]bool{
+		oracles.Oracle1: true,
 	}
 
-	assertDropState(t, gotCouponDrop, inputCouponDrop)
+	allowOraclesOut := mustAllowOracles(t, c, couponDrop.Address, allowedMap)
+	assertAllowOraclesLog(t, allowOraclesOut, couponDrop.Address, allowedMap)
+
+	// --------------------------------------------------------------------
+	// Deposit funds
+	// --------------------------------------------------------------------
+	c.SetPrivateKey(ownerPriv)
+
+	amountDeposit := "2000"
+	outDepositFunds := mustDepositDrop(
+		t,
+		c,
+		inputCouponDrop.Address,
+		inputCouponDrop.ProgramAddress,
+		inputCouponDrop.TokenAddress,
+		amountDeposit,
+		[]string{},
+	)
+
+	assertDepositDropLog(
+		t,
+		outDepositFunds,
+		inputCouponDrop.Address,
+		inputCouponDrop.ProgramAddress,
+		inputCouponDrop.TokenAddress,
+		ownerPub,
+		amountDeposit,
+	)
+
+	// --------------------------------------------------------------------
+	// Wait start time to avoid "drop not started"
+	// --------------------------------------------------------------------
+	time.Sleep(11 * time.Second)
+
+	// --------------------------------------------------------------------
+	// User tries to claim without eligibility
+	// --------------------------------------------------------------------
+	userPub, userPriv := genKey(t, c)
+
+	c.SetPrivateKey(userPriv)
+	_, err = c.ClaimDrop(couponDrop.Address)
+	assertClaimDropError(t, err, "is not eligible for this drop")
+
+	// --------------------------------------------------------------------
+	// Oracle attests eligibility
+	// --------------------------------------------------------------------
+	c.SetPrivateKey(oracles.Oracle1Priv)
+	_, err = c.AttestParticipantEligibility(couponDrop.Address, userPub, true)
+	if err != nil {
+		t.Fatalf("AttestParticipantEligibility (coupon drop): %v", err)
+	}
+
+	// --------------------------------------------------------------------
+	// Claim drop
+	// --------------------------------------------------------------------
+	c.SetPrivateKey(userPriv)
+	outClaimDropEligible := mustClaimDrop(t, c, couponDrop.Address)
+
+	assertClaimDropLog(
+		t,
+		outClaimDropEligible,
+		couponDrop.Address,
+		userPub,
+		inputCouponDrop.ProgramAddress,
+		inputCouponDrop.TokenAddress,
+		inputCouponDrop.ClaimAmount,
+	)
 }
 
 func TestDropFlow(t *testing.T) {
@@ -881,7 +952,7 @@ func TestDropFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Create Drop with Coupon 
 	// --------------------------------------------------------------------
-	createDropWithCouponHelper(t, c, owner.PublicKey, tok.Address)
+	createDropWithCouponHelper(t, c, owner.PublicKey, ownerPriv, tok.Address)
 
 	// --------------------------------------------------------------------
 	// Deploy Drop contract
@@ -899,6 +970,7 @@ func TestDropFlow(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Create Drop
 	// --------------------------------------------------------------------
+	c.SetPrivateKey(ownerPriv)
 	programAddress, _ := genKey(t, c)
 	tokenAddress, _ := genKey(t, c)
 
