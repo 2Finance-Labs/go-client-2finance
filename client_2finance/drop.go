@@ -2,6 +2,7 @@ package client_2finance
 
 import (
 	"fmt"
+
 	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/inputs"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
@@ -74,7 +75,7 @@ func (c *networkClient) UpdateDropMetadata(
 	from := c.publicKey
 
 	method := dropV1.METHOD_UPDATE_DROP_METADATA
-		data := map[string]interface{}{
+	data := map[string]interface{}{
 		"address":                in.Address,
 		"program_address":        in.ProgramAddress,
 		"token_address":          in.TokenAddress,
@@ -101,7 +102,6 @@ func (c *networkClient) UpdateDropMetadata(
 
 	return c.SignAndSendTransaction(c.chainId, from, in.Address, method, data, version, uuid7)
 }
-
 
 func (c *networkClient) AllowOracles(address string, oracles map[string]bool) (types.ContractOutput, error) {
 	if address == "" {
@@ -163,7 +163,7 @@ func (c *networkClient) DepositDrop(
 	from := c.publicKey
 	method := dropV1.METHOD_DEPOSIT_DROP
 	version := uint8(1)
-	
+
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
@@ -172,8 +172,8 @@ func (c *networkClient) DepositDrop(
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"program_address": programAddress,
 		"token_address":   tokenAddress,
-		"amount":     amount,
-		"uuid":       uuid,
+		"amount":          amount,
+		"uuids":           uuid,
 	}, version, uuid7)
 }
 
@@ -191,8 +191,7 @@ func (c *networkClient) ClaimDrop(address string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
-	}, version, uuid7)
+	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{}, version, uuid7)
 }
 
 func (c *networkClient) WithdrawDrop(
@@ -220,8 +219,8 @@ func (c *networkClient) WithdrawDrop(
 	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
 		"program_address": programAddress,
 		"token_address":   tokenAddress,
-		"amount":     amount,
-		"uuid":       uuid,
+		"amount":          amount,
+		"uuids":           uuid,
 	}, version, uuid7)
 }
 
@@ -397,7 +396,6 @@ func (c *networkClient) GetDrop(address string) (types.ContractOutput, error) {
 	return contractOutput, nil
 }
 
-
 func (c *networkClient) ListDrops(
 	owner string,
 	page, limit int,
@@ -443,3 +441,41 @@ func (c *networkClient) ListDrops(
 	return contractOutput, nil
 }
 
+func (c *networkClient) LastClaimed(address string, wallet string) (types.ContractOutput, error) {
+	from := c.publicKey
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
+
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("drop address must be set")
+	}
+	if wallet == "" {
+		return types.ContractOutput{}, fmt.Errorf("wallet must be set")
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid drop address: %w", err)
+	}
+
+	if err := keys.ValidateEDDSAPublicKeyHex(wallet); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid wallet address: %w", err)
+	}
+
+	method := dropV1.METHOD_LAST_CLAIMED_DROP
+
+	data := map[string]interface{}{
+		"wallet": wallet,
+	}
+
+	contractOutput, err := c.GetState(address, method, data)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to get state: %w", err)
+	}
+
+	return contractOutput, nil
+}

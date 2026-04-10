@@ -164,6 +164,11 @@ type Client2FinanceNetwork interface {
 	ClaimDrop(
 		address string,
 	) (types.ContractOutput, error)
+	
+	LastClaimed(
+		address string, 
+		wallet string,
+	) (types.ContractOutput, error)
 
 	WithdrawDrop(
 		address string,
