@@ -113,7 +113,7 @@ func (c *networkClient) AddToken(
 		"creator_website":          creatorWebsite,
 		"allowed_users":            allowedUsers,
 		"blocked_users":            blockedUsers,
-		"frozen_accounts":			frozenAccounts,
+		"frozen_accounts":          frozenAccounts,
 		"freeze_authority_revoked": freezeAuthorityRevoked,
 		"mint_authority_revoked":   mintAuthorityRevoked,
 		"update_authority_revoked": updateAuthorityRevoked,
@@ -181,8 +181,8 @@ func (c *networkClient) MintToken(to, mintTo, amount string) (types.ContractOutp
 
 	method := tokenV1.METHOD_MINT_TOKEN
 	data := map[string]interface{}{
-		"mint_to":    mintTo,
-		"amount":     amount,
+		"mint_to": mintTo,
+		"amount":  amount,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -223,7 +223,7 @@ func (c *networkClient) BurnToken(to, amount string, tokenUUIDList []string) (ty
 	method := tokenV1.METHOD_BURN_TOKEN
 	data := map[string]interface{}{}
 	if len(tokenUUIDList) > 0 {
-		data["token_uuid_list"] = tokenUUIDList
+		data["uuids"] = tokenUUIDList
 	}
 	if amount != "" {
 		data["amount"] = amount
@@ -397,7 +397,7 @@ func (c *networkClient) UnfreezeWallet(tokenAddress string, wallet string) (type
 	return contractOutput, nil
 }
 
-func (c *networkClient) AddAllowedUsers(tokenAddress string,allowedUsers map[string]bool) (types.ContractOutput, error) {
+func (c *networkClient) AddAllowedUsers(tokenAddress string, allowedUsers map[string]bool) (types.ContractOutput, error) {
 	from := c.publicKey
 
 	if tokenAddress == "" {
@@ -608,7 +608,7 @@ func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 
 	method := tokenV1.METHOD_REVOKE_FREEZE_AUTHORITY
 	data := map[string]interface{}{
-		"freeze_authority_revoked": revoke,
+		"revoked": revoke,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -647,7 +647,7 @@ func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 
 	method := tokenV1.METHOD_REVOKE_MINT_AUTHORITY
 	data := map[string]interface{}{
-		"mint_authority_revoked": revoke,
+		"revoked": revoke,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -686,7 +686,7 @@ func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 
 	method := tokenV1.METHOD_REVOKE_UPDATE_AUTHORITY
 	data := map[string]interface{}{
-		"update_authority_revoked": revoke,
+		"revoked": revoke,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -970,7 +970,7 @@ func (c *networkClient) UpdateGlbFile(tokenAddress string, newAssetGLBUri string
 
 	method := tokenV1.METHOD_UPDATE_GLB_FILE
 	data := map[string]interface{}{
-		"asset_glb_uri": newAssetGLBUri,
+		"new_asset_glb_uri": newAssetGLBUri,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -1239,7 +1239,7 @@ func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress, tokenType 
 		"page":             page,
 		"limit":            limit,
 		"ascending":        ascending,
-		"token_address":    tokenAddress,
+		"address":          tokenAddress,
 		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
 	}
 	if tokenType != "" {
