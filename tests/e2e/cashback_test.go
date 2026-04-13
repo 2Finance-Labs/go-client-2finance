@@ -2,193 +2,487 @@ package e2e_test
 
 import (
 	"testing"
-	// "time"
+	"time"
 
-	// "gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
-	// cashbackV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1/domain"
-	// "gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
-	// tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
+	cashbackV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1/domain"
+	cashbackV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1/models"
+	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/log"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 func TestCashbackFlow(t *testing.T) {
-	// c := setupClient(t)
+	c := setupClient(t)
 
-	// owner, ownerPriv := createWallet(t, c)
-	// c.SetPrivateKey(ownerPriv)
+	// ------------------
+	//      WALLETS
+	// ------------------
+	owner, ownerPriv := createWallet(t, c)
+	customer, customerPriv := createWallet(t, c)
 
-	// dec := 1
-	// stablecoin := false
-	// tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE, stablecoin)
-	// _ = createMint(t, c, tok, owner.PublicKey, "10000", dec, tok.TokenType)
+	// ------------------
+	//      TOKEN
+	// ------------------
+	c.SetPrivateKey(ownerPriv)
 
-	// merchant, _ := createWallet(t, c)
-	// c.SetPrivateKey(ownerPriv)
+	cashbackToken := createBasicToken(
+		t,
+		c,
+		owner.PublicKey,
+		6,
+		false,
+		tokenV1Domain.FUNGIBLE,
+		false,
+	)
 
-	// if _, err := c.AllowUsers(tok.Address, map[string]bool{
-	// 	merchant.PublicKey: true,
-	// }); err != nil {
-	// 	t.Fatalf("AllowUsers: %v", err)
-	// }
+	require.Equal(t, tokenV1Domain.FUNGIBLE, cashbackToken.TokenType, "cashback token must be fungible")
 
-	// c.SetPrivateKey(ownerPriv)
-	// _ = createTransfer(t, c, tok, merchant.PublicKey, "50", dec, tok.TokenType, "")
+	// ------------------
+	//   DEPLOY CASHBACK
+	// ------------------
+	deployedContract, err := c.DeployContract1(cashbackV1.CASHBACK_CONTRACT_V1)
+	if err != nil {
+		t.Fatalf("DeployContract cashback: %v", err)
+	}
+	require.NotEmpty(t, deployedContract.Logs)
 
-	// start := time.Now().Add(2 * time.Second)
-	// exp := time.Now().Add(30 * time.Minute)
+	deployLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (DeployContract cashback.Logs[0]): %v", err)
+	}
 
-	// contractState := models.ContractStateModel{}
-	// deployedContract, err := c.DeployContract1(cashbackV1.CASHBACK_CONTRACT_V1)
-	// if err != nil {
-	// 	t.Fatalf("DeployContract: %v", err)
-	// }
-	// unmarshalState(t, deployedContract.States[0].Object, &contractState)
-	// address := contractState.Address
+	cashbackAddress := deployLog.ContractAddress
+	require.NotEmpty(t, cashbackAddress)
 
-	// out, err := c.AddCashback(address, merchant.PublicKey, tok.Address, cashbackV1Domain.PROGRAM_TYPE_FIXED, "250", start, exp, false)
-	// if err != nil {
-	// 	t.Fatalf("AddCashback: %v", err)
-	// }
-	// var cb cashbackV1Domain.Cashback
-	// unmarshalState(t, out.States[0].Object, &cb)
-	// if cb.Address == "" {
-	// 	t.Fatalf("cashback addr empty")
-	// }
+	// ------------------
+	//   ALLOW USERS
+	// ------------------
+	c.SetPrivateKey(ownerPriv)
 
-	// _, _ = c.AllowUsers(tok.Address, map[string]bool{cb.Address: true})
-	// if _, err := c.DepositCashbackFunds(cb.Address, tok.Address, amt(1000, dec), tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("DepositCashbackFunds: %v", err)
-	// }
-	// if _, err := c.UpdateCashback(cb.Address, tok.Address, cashbackV1Domain.PROGRAM_TYPE_FIXED, "300", start, exp); err != nil {
-	// 	t.Fatalf("UpdateCashback: %v", err)
-	// }
-	// _, _ = c.PauseCashback(cb.Address, true)
-	// _, _ = c.UnpauseCashback(cb.Address, false)
+	_, err = c.AddAllowedUsers(cashbackToken.Address, map[string]bool{
+		owner.PublicKey:    true,
+		customer.PublicKey: true,
+		cashbackAddress:    true,
+	})
+	if err != nil {
+		t.Fatalf("AddAllowedUsers cashback token: %v", err)
+	}
 
-	// time.Sleep(2 * time.Second)
-	// // claim as user (best-effort)
-	// user, userPriv := createWallet(t, c)
-	// c.SetPrivateKey(ownerPriv)
-	// _, err = c.AllowUsers(tok.Address, map[string]bool{user.PublicKey: true})
-	// if err != nil {
-	// 	t.Fatalf("AllowUsers: %v", err)
-	// }
+	// ------------------
+	//   FUND OWNER
+	// ------------------
+	ownerBalanceBeforeOut, err := c.GetTokenBalance(cashbackToken.Address, owner.PublicKey)
+	if err != nil {
+		t.Fatalf("GetTokenBalance owner before: %v", err)
+	}
+	var ownerBalanceBefore tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerBalanceBeforeOut.States[0].Object, &ownerBalanceBefore)
+	if err != nil {
+		t.Fatalf("UnmarshalState ownerBalanceBefore: %v", err)
+	}
 
-	// c.SetPrivateKey(userPriv)
-	// if _, err := c.ClaimCashback(cb.Address, amt(100, dec), tokenV1Domain.FUNGIBLE, ""); err != nil {
-	// 	t.Fatalf("ClaimCashback warning: %v", err)
-	// }
+	var customerBalanceBefore tokenV1Models.BalanceStateModel
+	customerBalanceBeforeOut, err := c.GetTokenBalance(cashbackToken.Address, customer.PublicKey)
+	if err != nil {
+		require.Contains(t, err.Error(), "record not found")
+		customerBalanceBefore = tokenV1Models.BalanceStateModel{
+			TokenAddress: cashbackToken.Address,
+			OwnerAddress: customer.PublicKey,
+			Amount:       "0",
+			TokenType:    tokenV1Domain.FUNGIBLE,
+		}
+	} else {
+		err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](customerBalanceBeforeOut.States[0].Object, &customerBalanceBefore)
+		if err != nil {
+			t.Fatalf("UnmarshalState customerBalanceBefore: %v", err)
+		}
+	}
 
-	// // getters
-	// if _, err := c.GetCashback(cb.Address); err != nil {
-	// 	t.Fatalf("GetCashback: %v", err)
-	// }
-	// if _, err := c.ListCashbacks(merchant.PublicKey, tok.Address, "", false, 1, 10, true); err != nil {
-	// 	t.Fatalf("ListCashbacks: %v", err)
-	// }
-}
+	// ------------------
+	//   ADD CASHBACK
+	// ------------------
+	startAt := time.Now().Add(2 * time.Second)
+	expiredAt := time.Now().Add(24 * time.Hour)
+	programType := "fixed-percentage"
+	percentage := "1000"
 
-func TestCashbackFlow_NonFungible(t *testing.T) {
-	// c := setupClient(t)
+	c.SetPrivateKey(ownerPriv)
+	addOut, err := c.AddCashback(
+		cashbackAddress,
+		owner.PublicKey,
+		cashbackToken.Address,
+		programType,
+		percentage,
+		startAt,
+		expiredAt,
+		false,
+	)
+	if err != nil {
+		t.Fatalf("AddCashback: %v", err)
+	}
+	require.NotEmpty(t, addOut.Logs)
 
-	// owner, ownerPriv := createWallet(t, c)
-	// c.SetPrivateKey(ownerPriv)
+	addLog, err := utils.UnmarshalLog[log.Log](addOut.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (AddCashback.Logs[0]): %v", err)
+	}
 
-	// dec := 0
-	// tokenType := tokenV1Domain.NON_FUNGIBLE
-	// stablecoin := false
+	// Ajuste este log se o nome exato no domínio estiver diferente
+	assert.Equal(t, cashbackV1Domain.CASHBACK_CREATED_LOG, addLog.LogType)
 
-	// tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenType, stablecoin)
+	addEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](addLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (AddCashback.Logs[0]): %v", err)
+	}
 
-	// amount := "1"
+	assert.Equal(t, cashbackAddress, addEvent.Address)
+	assert.Equal(t, owner.PublicKey, addEvent.Owner)
+	assert.Equal(t, cashbackToken.Address, addEvent.TokenAddress)
+	assert.Equal(t, programType, addEvent.ProgramType)
+	assert.Equal(t, percentage, addEvent.Percentage)
+	assert.False(t, addEvent.Paused)
+	if !addEvent.StartAt.IsZero() {
+		assert.WithinDuration(t, startAt, addEvent.StartAt, time.Second)
+	}
+	if !addEvent.ExpiredAt.IsZero() {
+		assert.WithinDuration(t, expiredAt, addEvent.ExpiredAt, time.Second)
+	}
 
-	// // Mint NFT
-	// mintOut, err := c.MintToken(tok.Address, owner.PublicKey, amount, dec, tok.TokenType)
-	// if err != nil {
-	// 	t.Fatalf("MintToken NFT: %v", err)
-	// }
+	getCashbackOut, err := c.GetCashback(cashbackAddress)
+	if err != nil {
+		t.Fatalf("GetCashback after add: %v", err)
+	}
+	require.NotEmpty(t, getCashbackOut.States)
 
-	// var mint tokenV1Domain.Mint
-	// unmarshalState(t, mintOut.States[0].Object, &mint)
-	// if len(mint.TokenUUIDList) != 1 {
-	// 	t.Fatalf("expected 1 NFT uuid, got %d", len(mint.TokenUUIDList))
-	// }
-	// nftUUID := mint.TokenUUIDList[0]
+	var cashbackState cashbackV1Models.CashbackStateModel
+	err = utils.UnmarshalState[cashbackV1Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetCashback.States[0]): %v", err)
+	}
 
-	// merchant, merchantPriv := createWallet(t, c)
+	assert.Equal(t, cashbackAddress, cashbackState.Address)
+	assert.Equal(t, owner.PublicKey, cashbackState.Owner)
+	assert.Equal(t, cashbackToken.Address, cashbackState.TokenAddress)
+	assert.Equal(t, programType, cashbackState.ProgramType)
+	assert.Equal(t, percentage, cashbackState.Percentage)
+	assert.False(t, cashbackState.Paused)
+	if cashbackState.StartAt != nil && !cashbackState.StartAt.IsZero() {
+		assert.WithinDuration(t, startAt, *cashbackState.StartAt, time.Second)
+	}
+	if cashbackState.ExpiredAt != nil && !cashbackState.ExpiredAt.IsZero() {
+		assert.WithinDuration(t, expiredAt, *cashbackState.ExpiredAt, time.Second)
+	}
 
-	// c.SetPrivateKey(ownerPriv)
-	// if _, err := c.AllowUsers(tok.Address, map[string]bool{merchant.PublicKey: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(merchant): %v", err)
-	// }
+	// ------------------
+	//      UPDATE
+	// ------------------
+	updatedPercentage := "1500"
+	updatedExpiredAt := time.Now().Add(48 * time.Hour)
 
-	// if _, err := c.TransferToken(tok.Address, merchant.PublicKey, amount, dec, tok.TokenType, nftUUID); err != nil {
-	// 	t.Fatalf("Transfer NFT: %v", err)
-	// }
+	c.SetPrivateKey(ownerPriv)
+	updateOut, err := c.UpdateCashback(
+		cashbackAddress,
+		cashbackToken.Address,
+		programType,
+		updatedPercentage,
+		startAt,
+		updatedExpiredAt,
+	)
+	if err != nil {
+		t.Fatalf("UpdateCashback: %v", err)
+	}
+	require.NotEmpty(t, updateOut.Logs)
 
-	// // Cashback Contract
-	// start := time.Now().Add(2 * time.Second)
-	// exp := time.Now().Add(30 * time.Minute)
+	updateLog, err := utils.UnmarshalLog[log.Log](updateOut.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (UpdateCashback.Logs[0]): %v", err)
+	}
 
-	// contractState := models.ContractStateModel{}
-	// deployedContract, err := c.DeployContract1(cashbackV1.CASHBACK_CONTRACT_V1)
-	// if err != nil {
-	// 	t.Fatalf("DeployContract: %v", err)
-	// }
-	// unmarshalState(t, deployedContract.States[0].Object, &contractState)
-	// address := contractState.Address
+	assert.Equal(t, cashbackV1Domain.CASHBACK_UPDATED_LOG, updateLog.LogType)
 
-	// // Merchant cria cashback
-	// c.SetPrivateKey(merchantPriv)
+	updateEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](updateLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (UpdateCashback.Logs[0]): %v", err)
+	}
 
-	// out, err := c.AddCashback(address, merchant.PublicKey, tok.Address, cashbackV1Domain.PROGRAM_TYPE_FIXED, "10000", start, exp, false)
-	// if err != nil {
-	// 	t.Fatalf("AddCashback: %v", err)
-	// }
+	assert.Equal(t, cashbackAddress, updateEvent.Address)
+	assert.Equal(t, updatedPercentage, updateEvent.Percentage)
 
-	// var cb cashbackV1Domain.Cashback
-	// unmarshalState(t, out.States[0].Object, &cb)
-	// if cb.Address == "" {
-	// 	t.Fatalf("cashback addr empty")
-	// }
+	getCashbackOut, err = c.GetCashback(cashbackAddress)
+	if err != nil {
+		t.Fatalf("GetCashback after update: %v", err)
+	}
+	err = utils.UnmarshalState[cashbackV1Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetCashback after update): %v", err)
+	}
 
-	// c.SetPrivateKey(ownerPriv)
-	// if _, err := c.AllowUsers(tok.Address, map[string]bool{cb.Address: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(cashback contract): %v", err)
-	// }
+	assert.Equal(t, updatedPercentage, cashbackState.Percentage)
+	if cashbackState.ExpiredAt != nil && !cashbackState.ExpiredAt.IsZero() {
+		assert.WithinDuration(t, updatedExpiredAt, *cashbackState.ExpiredAt, time.Second)
+	}
 
-	// // Deposit NFT (MERCHANT assina)
-	// c.SetPrivateKey(merchantPriv)
-	// if _, err := c.DepositCashbackFunds(cb.Address, tok.Address, amount, tokenV1Domain.NON_FUNGIBLE, nftUUID); err != nil {
-	// 	t.Fatalf("DepositCashbackFunds NFT: %v", err)
-	// }
+	// ------------------
+	//       PAUSE
+	// ------------------
+	c.SetPrivateKey(ownerPriv)
+	pauseOut, err := c.PauseCashback(cashbackAddress, true)
+	if err != nil {
+		t.Fatalf("PauseCashback: %v", err)
+	}
+	require.NotEmpty(t, pauseOut.Logs)
 
-	// // Update / Pause / Unpause
-	// if _, err := c.UpdateCashback(cb.Address, tok.Address, cashbackV1Domain.PROGRAM_TYPE_FIXED, "10000", start, exp); err != nil {
-	// 	t.Fatalf("UpdateCashback: %v", err)
-	// }
-	// _, _ = c.PauseCashback(cb.Address, true)
-	// _, _ = c.UnpauseCashback(cb.Address, false)
+	pauseLog, err := utils.UnmarshalLog[log.Log](pauseOut.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (PauseCashback.Logs[0]): %v", err)
+	}
 
-	// time.Sleep(2 * time.Second)
+	assert.Equal(t, cashbackV1Domain.CASHBACK_PAUSED_LOG, pauseLog.LogType)
 
-	// // Claim as user
-	// user, userPriv := createWallet(t, c)
+	pauseEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](pauseLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (PauseCashback.Logs[0]): %v", err)
+	}
 
-	// c.SetPrivateKey(ownerPriv)
-	// if _, err := c.AllowUsers(tok.Address, map[string]bool{user.PublicKey: true}); err != nil {
-	// 	t.Fatalf("AllowUsers(user): %v", err)
-	// }
+	assert.Equal(t, cashbackAddress, pauseEvent.Address)
+	assert.True(t, pauseEvent.Paused)
 
-	// c.SetPrivateKey(userPriv)
-	// if _, err := c.ClaimCashback(cb.Address, amount, tokenV1Domain.NON_FUNGIBLE, nftUUID); err != nil {
-	// 	t.Fatalf("ClaimCashback NFT: %v", err)
-	// }
+	getCashbackOut, err = c.GetCashback(cashbackAddress)
+	if err != nil {
+		t.Fatalf("GetCashback after pause: %v", err)
+	}
+	err = utils.UnmarshalState[cashbackV1Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetCashback after pause): %v", err)
+	}
+	assert.True(t, cashbackState.Paused)
 
-	// // Getters
-	// if _, err := c.GetCashback(cb.Address); err != nil {
-	// 	t.Fatalf("GetCashback: %v", err)
-	// }
-	// if _, err := c.ListCashbacks(merchant.PublicKey, tok.Address, "", false, 1, 10, true); err != nil {
-	// 	t.Fatalf("ListCashbacks: %v", err)
-	// }
+	// ------------------
+	//      UNPAUSE
+	// ------------------
+	c.SetPrivateKey(ownerPriv)
+	unpauseOut, err := c.UnpauseCashback(cashbackAddress, false)
+	if err != nil {
+		t.Fatalf("UnpauseCashback: %v", err)
+	}
+	require.NotEmpty(t, unpauseOut.Logs)
+
+	unpauseLog, err := utils.UnmarshalLog[log.Log](unpauseOut.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (UnpauseCashback.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, cashbackV1Domain.CASHBACK_UNPAUSED_LOG, unpauseLog.LogType)
+
+	unpauseEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](unpauseLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (UnpauseCashback.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, cashbackAddress, unpauseEvent.Address)
+	assert.False(t, unpauseEvent.Paused)
+
+	getCashbackOut, err = c.GetCashback(cashbackAddress)
+	if err != nil {
+		t.Fatalf("GetCashback after unpause: %v", err)
+	}
+	err = utils.UnmarshalState[cashbackV1Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
+	if err != nil {
+		t.Fatalf("UnmarshalState (GetCashback after unpause): %v", err)
+	}
+	assert.False(t, cashbackState.Paused)
+
+	// ------------------
+	//      DEPOSIT
+	// ------------------
+	depositAmount := "200"
+
+	c.SetPrivateKey(ownerPriv)
+	depositOut, err := c.DepositCashbackFunds(
+		cashbackAddress,
+		cashbackToken.Address,
+		depositAmount,
+		tokenV1Domain.FUNGIBLE,
+		"",
+	)
+	if err != nil {
+		t.Fatalf("DepositCashbackFunds: %v", err)
+	}
+	require.NotEmpty(t, depositOut.Logs)
+
+	depositLog, err := utils.UnmarshalLog[log.Log](depositOut.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (DepositCashbackFunds.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, cashbackV1Domain.CASHBACK_DEPOSITED_LOG, depositLog.LogType)
+
+	depositEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](depositLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (DepositCashbackFunds.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, cashbackAddress, depositEvent.Address)
+
+	ownerBalanceAfterDepositOut, err := c.GetTokenBalance(cashbackToken.Address, owner.PublicKey)
+	if err != nil {
+		t.Fatalf("GetTokenBalance owner after deposit: %v", err)
+	}
+	var ownerBalanceAfterDeposit tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerBalanceAfterDepositOut.States[0].Object, &ownerBalanceAfterDeposit)
+	if err != nil {
+		t.Fatalf("UnmarshalState ownerBalanceAfterDeposit: %v", err)
+	}
+
+	expectedOwnerBalanceAfterDeposit, err := utils.SubBigIntStrings(ownerBalanceBefore.Amount, depositAmount)
+	if err != nil {
+		t.Fatalf("SubBigIntStrings ownerBalanceBefore - depositAmount: %v", err)
+	}
+	assert.Equal(t, expectedOwnerBalanceAfterDeposit, ownerBalanceAfterDeposit.Amount)
+
+	// ------------------
+	//       CLAIM
+	// ------------------
+	wait := time.Until(startAt) + 500*time.Millisecond
+	if wait > 0 {
+		time.Sleep(wait)
+	}
+
+	claimAmount := "100"
+
+	c.SetPrivateKey(customerPriv)
+	claimOut, err := c.ClaimCashback(
+		cashbackAddress,
+		claimAmount,
+		tokenV1Domain.FUNGIBLE,
+		"",
+	)
+	if err != nil {
+		t.Fatalf("ClaimCashback: %v", err)
+	}
+	require.NotEmpty(t, claimOut.Logs)
+
+	claimLog, err := utils.UnmarshalLog[log.Log](claimOut.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (ClaimCashback.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, cashbackV1Domain.CASHBACK_CLAIMED_LOG, claimLog.LogType)
+
+	claimEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](claimLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (ClaimCashback.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, cashbackAddress, claimEvent.Address)
+
+	customerBalanceAfterClaimOut, err := c.GetTokenBalance(cashbackToken.Address, customer.PublicKey)
+	if err != nil {
+		t.Fatalf("GetTokenBalance customer after claim: %v", err)
+	}
+	var customerBalanceAfterClaim tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](customerBalanceAfterClaimOut.States[0].Object, &customerBalanceAfterClaim)
+	if err != nil {
+		t.Fatalf("UnmarshalState customerBalanceAfterClaim: %v", err)
+	}
+
+	cashbackReceived := "15"
+
+	expectedCustomerBalanceAfterClaim, err := utils.AddBigIntStrings(customerBalanceBefore.Amount, cashbackReceived)
+	if err != nil {
+		t.Fatalf("AddBigIntStrings customerBalanceBefore + cashbackReceived: %v", err)
+	}
+	assert.Equal(t, expectedCustomerBalanceAfterClaim, customerBalanceAfterClaim.Amount)
+
+	// ------------------
+	//      WITHDRAW
+	// ------------------
+	withdrawAmount := "100"
+
+	c.SetPrivateKey(ownerPriv)
+	withdrawOut, err := c.WithdrawCashbackFunds(
+		cashbackAddress,
+		cashbackToken.Address,
+		withdrawAmount,
+		tokenV1Domain.FUNGIBLE,
+		"",
+	)
+	if err != nil {
+		t.Fatalf("WithdrawCashbackFunds: %v", err)
+	}
+	require.NotEmpty(t, withdrawOut.Logs)
+
+	withdrawLog, err := utils.UnmarshalLog[log.Log](withdrawOut.Logs[0])
+	if err != nil {
+		t.Fatalf("UnmarshalLog (WithdrawCashbackFunds.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, cashbackV1Domain.CASHBACK_WITHDRAWN_LOG, withdrawLog.LogType)
+
+	withdrawEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](withdrawLog.Event)
+	if err != nil {
+		t.Fatalf("UnmarshalEvent (WithdrawCashbackFunds.Logs[0]): %v", err)
+	}
+
+	assert.Equal(t, cashbackAddress, withdrawEvent.Address)
+
+	ownerBalanceAfterWithdrawOut, err := c.GetTokenBalance(cashbackToken.Address, owner.PublicKey)
+	if err != nil {
+		t.Fatalf("GetTokenBalance owner after withdraw: %v", err)
+	}
+	var ownerBalanceAfterWithdraw tokenV1Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerBalanceAfterWithdrawOut.States[0].Object, &ownerBalanceAfterWithdraw)
+	if err != nil {
+		t.Fatalf("UnmarshalState ownerBalanceAfterWithdraw: %v", err)
+	}
+
+	expectedOwnerBalanceAfterWithdraw, err := utils.AddBigIntStrings(ownerBalanceAfterDeposit.Amount, withdrawAmount)
+	if err != nil {
+		t.Fatalf("AddBigIntStrings ownerBalanceAfterDeposit + withdrawAmount: %v", err)
+	}
+	assert.Equal(t, expectedOwnerBalanceAfterWithdraw, ownerBalanceAfterWithdraw.Amount)
+
+	// ------------------
+	//   LIST CASHBACKS
+	// ------------------
+	listOut, err := c.ListCashbacks(
+		owner.PublicKey,
+		cashbackToken.Address,
+		programType,
+		false,
+		1,
+		10,
+		true,
+	)
+	if err != nil {
+		t.Fatalf("ListCashbacks: %v", err)
+	}
+	require.NotEmpty(t, listOut.States)
+
+	var cashbacks []cashbackV1Models.CashbackStateModel
+	err = utils.UnmarshalState[[]cashbackV1Models.CashbackStateModel](listOut.States[0].Object, &cashbacks)
+	if err != nil {
+		t.Fatalf("UnmarshalState (ListCashbacks.States[0]): %v", err)
+	}
+
+	require.NotEmpty(t, cashbacks)
+
+	var found bool
+	for _, cb := range cashbacks {
+		if cb.Address == cashbackAddress {
+			found = true
+			assert.Equal(t, owner.PublicKey, cb.Owner)
+			assert.Equal(t, cashbackToken.Address, cb.TokenAddress)
+			assert.Equal(t, programType, cb.ProgramType)
+			assert.Equal(t, updatedPercentage, cb.Percentage)
+			assert.False(t, cb.Paused)
+			break
+		}
+	}
+
+	assert.True(t, found, "expected to find cashback program in ListCashbacks")
 }
