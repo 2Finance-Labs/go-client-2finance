@@ -686,16 +686,16 @@ func (c *networkClient) GetState(
 }
 
 func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time, hash string, previousHash string,
-	merkleRoot string,
+	transactionMerkleRoot string,
 	page, limit int,
 	ascending bool) ([]block.Block, error) {
 
 	blockParams := block.BlockParams{
-		BlockNumber:    blockNumber,
-		BlockTimestamp: blockTimestamp,
+		Number:    blockNumber,
+		Timestamp: blockTimestamp,
 		Hash:           hash,
 		PreviousHash:   previousHash,
-		MerkleRoot:     merkleRoot,
+		TransactionsMerkleRoot: transactionMerkleRoot,
 		Page:           page,
 		Limit:          limit,
 		Ascending:      ascending,
