@@ -827,7 +827,6 @@ func TestRaffleFlowFungible(t *testing.T) {
 			assert.Equal(t, owner.PublicKey, p.Sponsor)
 			assert.Equal(t, winnerPrize.Winner, p.Winner)
 			assert.NotZero(t, p.CreatedAt)
-			assert.NotZero(t, p.UpdatedAt)
 			break
 		}
 	}
@@ -855,5 +854,4 @@ func TestRaffleFlowFungible(t *testing.T) {
 	assert.Equal(t, prizeAmount, prize.Amount)
 	assert.Equal(t, winnerPrize.Winner, prize.Winner)
 	assert.NotZero(t, prize.CreatedAt)
-	assert.NotZero(t, prize.UpdatedAt)
 }

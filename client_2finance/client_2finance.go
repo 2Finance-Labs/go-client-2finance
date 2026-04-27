@@ -404,7 +404,7 @@ type Client2FinanceNetwork interface {
 }
 
 type networkClient struct {
-	mqttClient mqtt.MQTT
+	mqttClient mqtt.IMQTT
 	privateKey string
 	publicKey  string
 	replyTo    string
@@ -413,7 +413,7 @@ type networkClient struct {
 
 // New creates a new client
 func New(broker, clientID string, debug bool) Client2FinanceNetwork {
-
+	
 	mqttClient := mqtt.New(broker, clientID, debug)
 	mqttClient.Connect()
 	replyTo := uuid.NewString()

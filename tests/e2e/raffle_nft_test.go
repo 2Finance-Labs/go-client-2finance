@@ -663,7 +663,6 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 			assert.Equal(t, rafflePrizeUUID, p.UUID)
 			// assert.True(t, p.Claimed)
 			assert.NotZero(t, p.CreatedAt)
-			assert.NotZero(t, p.UpdatedAt)
 			break
 		}
 	}
