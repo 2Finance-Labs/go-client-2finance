@@ -7,6 +7,7 @@ go 1.24.7
 // replace gitlab.com/2finance/2finance-network => /home/ghausmann/Trabalho/2finance-network
 
 require (
+	github.com/google/tink/go v1.7.0
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.11.1
 	gitlab.com/2finance/2finance-network v0.0.0-20260430205123-057d5fe53e4c
@@ -59,6 +60,7 @@ require (
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
+	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
