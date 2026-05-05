@@ -25,30 +25,30 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	manager := wallet_manager.NewWalletManager(owner, walletPath)
 
 	// -------------------------
-	// ACT: LOCK
+	// ACT: CREATE LOCAL WALLET
 	// -------------------------
-	privateKeyToLock := cloneBytes(originalPrivateKey)
+	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
 
-	err := manager.Lock(privateKeyToLock, password)
+	err := manager.CreateLocalWallet(privateKeyToCreateWallet, password)
 
 	// -------------------------
-	// ASSERT: LOCK
+	// ASSERT: CREATE LOCAL WALLET
 	// -------------------------
 	require.NoError(t, err)
 
 	_, err = os.Stat(walletPath)
 	require.NoError(t, err, "wallet file should be created locally")
 
-	require.False(t, manager.IsUnlocked(), "wallet should be locked after Lock()")
+	require.False(t, manager.IsUnlocked(), "wallet should be locked after CreateLocalWallet()")
 
 	require.NotEqual(
 		t,
 		originalPrivateKey,
-		privateKeyToLock,
-		"Lock() should clear the input private key slice from memory",
+		privateKeyToCreateWallet,
+		"CreateLocalWallet() should clear the input private key slice from memory",
 	)
 
-	for _, b := range privateKeyToLock {
+	for _, b := range privateKeyToCreateWallet {
 		require.Equal(t, byte(0), b, "private key input slice should be zeroed")
 	}
 
@@ -104,12 +104,12 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	require.Equal(t, originalPrivateKey, exportedPrivateKey)
 
 	// -------------------------
-	// ACT: FORCE LOCK
+	// ACT: LOCK
 	// -------------------------
-	err = manager.ForceLock()
+	err = manager.Lock()
 
 	// -------------------------
-	// ASSERT: FORCE LOCK
+	// ASSERT: LOCK
 	// -------------------------
 	require.NoError(t, err)
 	require.False(t, manager.IsUnlocked())
@@ -144,11 +144,11 @@ func TestWalletManagerE2E_UnlockAfterNewManagerInstance(t *testing.T) {
 	firstManager := wallet_manager.NewWalletManager(owner, walletPath)
 
 	// -------------------------
-	// ACT: FIRST INSTANCE LOCKS WALLET
+	// ACT: FIRST INSTANCE CREATES LOCAL WALLET
 	// -------------------------
-	privateKeyToLock := cloneBytes(originalPrivateKey)
+	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
 
-	err := firstManager.Lock(privateKeyToLock, password)
+	err := firstManager.CreateLocalWallet(privateKeyToCreateWallet, password)
 	require.NoError(t, err)
 
 	require.False(t, firstManager.IsUnlocked())
@@ -189,7 +189,7 @@ func TestWalletManagerE2E_OwnerMismatch(t *testing.T) {
 
 	manager := wallet_manager.NewWalletManager(owner, walletPath)
 
-	err := manager.Lock(privateKey, password)
+	err := manager.CreateLocalWallet(privateKey, password)
 	require.NoError(t, err)
 
 	anotherManager := wallet_manager.NewWalletManager(anotherOwner, walletPath)
@@ -213,11 +213,11 @@ func TestWalletManagerE2E_InvalidInputs(t *testing.T) {
 
 	manager := wallet_manager.NewWalletManager("owner-address-test", walletPath)
 
-	err := manager.Lock(nil, "StrongPassword123!")
+	err := manager.CreateLocalWallet(nil, "StrongPassword123!")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "private key is required")
 
-	err = manager.Lock([]byte("private-key"), "")
+	err = manager.CreateLocalWallet([]byte("private-key"), "")
 	require.EqualError(t, err, "password is required")
 
 	err = manager.Unlock("")

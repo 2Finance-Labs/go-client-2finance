@@ -36,7 +36,8 @@ type WalletManager struct {
 }
 
 type IWalletManager interface {
-	Lock(privateKey []byte, password string) error
+	CreateLocalWallet(privateKey []byte, password string) error
+	Lock() error
 	Unlock(password string) error
 	ForceLock() error
 	IsUnlocked() bool
@@ -57,7 +58,7 @@ func NewWalletManager(owner string, filePath string) IWalletManager {
 	}
 }
 
-func (w *WalletManager) Lock(privateKey []byte, password string) error {
+func (w *WalletManager) CreateLocalWallet(privateKey []byte, password string) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -112,14 +113,32 @@ func (w *WalletManager) Lock(privateKey []byte, password string) error {
 
 	encryptionFile := NewEncryptionFile(w.filePath)
 
-	if err := encryptionFile.EncryptAndWrite(walletPayload, password); err != nil {
+	localEncryptedWalletFile, err := encryptionFile.Encrypt(walletPayload, password)
+	if err != nil {
 		return fmt.Errorf("failed to encrypt wallet file: %w", err)
+	}
+
+	if err := encryptionFile.Write(*localEncryptedWalletFile); err != nil {
+		return fmt.Errorf("failed to write wallet file: %w", err)
 	}
 
 	clearBytes(privateKey)
 	w.lockMemoryLocked()
 
 	return nil
+}
+
+func (w *WalletManager) Lock() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.lockMemoryLocked()
+
+	return nil
+}
+
+func (w *WalletManager) ForceLock() error {
+	return w.Lock()
 }
 
 func (w *WalletManager) Unlock(password string) error {
@@ -140,9 +159,14 @@ func (w *WalletManager) Unlock(password string) error {
 
 	encryptionFile := NewEncryptionFile(w.filePath)
 
-	walletPayload, err := encryptionFile.ReadAndDecrypt(password)
+	localEncryptedWalletFile, err := encryptionFile.Read()
 	if err != nil {
-		return fmt.Errorf("failed to read and decrypt wallet file: %w", err)
+		return fmt.Errorf("failed to read wallet file: %w", err)
+	}
+
+	walletPayload, err := encryptionFile.Decrypt(*localEncryptedWalletFile, password)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt wallet file: %w", err)
 	}
 
 	var walletFile WalletFile
@@ -180,17 +204,8 @@ func (w *WalletManager) Unlock(password string) error {
 	w.unlockedUntil = time.Now().Add(unlockDuration)
 
 	w.lockTimer = time.AfterFunc(unlockDuration, func() {
-		_ = w.ForceLock()
+		_ = w.Lock()
 	})
-
-	return nil
-}
-
-func (w *WalletManager) ForceLock() error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	w.lockMemoryLocked()
 
 	return nil
 }

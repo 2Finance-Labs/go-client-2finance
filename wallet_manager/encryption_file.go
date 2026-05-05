@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"gitlab.com/2finance/2finance-network/blockchain/encryption/encryptor"
 )
 
+const walletFileAssociatedData = "wallet-manager-file:v1"
+
 type LocalEncryptedWalletFile struct {
-	Env    encryptor.ChainEnvelope `json:"env"`
-	Cipher []byte                  `json:"cipher"`
+	KDF    KeysetKDFParams `json:"kdf"`
+	Cipher []byte          `json:"cipher"`
 }
 
 type EncryptionFile struct {
@@ -20,8 +20,10 @@ type EncryptionFile struct {
 }
 
 type IEncryptionFile interface {
-	EncryptAndWrite(data []byte, password string) error
-	ReadAndDecrypt(password string) ([]byte, error)
+	Encrypt(data []byte, password string) (*LocalEncryptedWalletFile, error)
+	Decrypt(localFile LocalEncryptedWalletFile, password string) ([]byte, error)
+	Write(localFile LocalEncryptedWalletFile) error
+	Read() (*LocalEncryptedWalletFile, error)
 }
 
 func NewEncryptionFile(filePath string) IEncryptionFile {
@@ -30,60 +32,49 @@ func NewEncryptionFile(filePath string) IEncryptionFile {
 	}
 }
 
-func (e *EncryptionFile) EncryptAndWrite(data []byte, password string) error {
+func (e *EncryptionFile) Encrypt(data []byte, password string) (*LocalEncryptedWalletFile, error) {
 	if password == "" {
-		return errors.New("password is required")
+		return nil, errors.New("password is required")
 	}
 
 	if len(data) == 0 {
-		return fmt.Errorf("wallet data is required")
+		return nil, fmt.Errorf("wallet data is required")
 	}
 
+	kdf, err := NewKeysetKDFParams()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create wallet file KDF params: %w", err)
+	}
+
+	passwordAEAD, err := NewPasswordAEAD(password, kdf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create wallet file AEAD: %w", err)
+	}
+
+	cipherBytes, err := passwordAEAD.Encrypt(data, []byte(walletFileAssociatedData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt wallet file data: %w", err)
+	}
+
+	return &LocalEncryptedWalletFile{
+		KDF:    kdf,
+		Cipher: cipherBytes,
+	}, nil
+}
+
+func (e *EncryptionFile) Write(localFile LocalEncryptedWalletFile) error {
 	if e.FilePath == "" {
 		return fmt.Errorf("wallet file path is required")
+	}
+
+	if len(localFile.Cipher) == 0 {
+		return fmt.Errorf("wallet encrypted data is required")
 	}
 
 	dir := filepath.Dir(e.FilePath)
 
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return fmt.Errorf("failed to create wallet directory: %w", err)
-	}
-
-	tmpFile, err := os.CreateTemp(dir, ".wallet-plain-*")
-	if err != nil {
-		return fmt.Errorf("failed to create temporary wallet file: %w", err)
-	}
-
-	tmpPath := tmpFile.Name()
-
-	defer func() {
-		_ = os.Remove(tmpPath)
-	}()
-
-	if err := tmpFile.Chmod(0600); err != nil {
-		_ = tmpFile.Close()
-		return fmt.Errorf("failed to chmod temporary wallet file: %w", err)
-	}
-
-	if _, err := tmpFile.Write(data); err != nil {
-		_ = tmpFile.Close()
-		return fmt.Errorf("failed to write temporary wallet file: %w", err)
-	}
-
-	if err := tmpFile.Close(); err != nil {
-		return fmt.Errorf("failed to close temporary wallet file: %w", err)
-	}
-
-	env, cipherBytes, err := encryptor.EncryptFile(tmpPath, password)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt wallet file: %w", err)
-	}
-
-	env = encryptor.WithLocation(env, e.FilePath)
-
-	localFile := LocalEncryptedWalletFile{
-		Env:    env,
-		Cipher: cipherBytes,
 	}
 
 	finalBytes, err := json.Marshal(localFile)
@@ -98,11 +89,7 @@ func (e *EncryptionFile) EncryptAndWrite(data []byte, password string) error {
 	return nil
 }
 
-func (e *EncryptionFile) ReadAndDecrypt(password string) ([]byte, error) {
-	if password == "" {
-		return nil, errors.New("password is required")
-	}
-
+func (e *EncryptionFile) Read() (*LocalEncryptedWalletFile, error) {
 	if e.FilePath == "" {
 		return nil, fmt.Errorf("wallet file path is required")
 	}
@@ -117,13 +104,30 @@ func (e *EncryptionFile) ReadAndDecrypt(password string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to unmarshal encrypted wallet file: %w", err)
 	}
 
-	if err := encryptor.VerifyCipher(localFile.Env, localFile.Cipher); err != nil {
-		return nil, fmt.Errorf("wallet file integrity check failed: %w", err)
+	if len(localFile.Cipher) == 0 {
+		return nil, fmt.Errorf("wallet encrypted data is required")
 	}
 
-	plaintext, err := encryptor.DecryptFile(localFile.Env, password, localFile.Cipher)
+	return &localFile, nil
+}
+
+func (e *EncryptionFile) Decrypt(localFile LocalEncryptedWalletFile, password string) ([]byte, error) {
+	if password == "" {
+		return nil, errors.New("password is required")
+	}
+
+	if len(localFile.Cipher) == 0 {
+		return nil, fmt.Errorf("wallet encrypted data is required")
+	}
+
+	passwordAEAD, err := NewPasswordAEAD(password, localFile.KDF)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt wallet file: %w", err)
+		return nil, fmt.Errorf("failed to create wallet file AEAD: %w", err)
+	}
+
+	plaintext, err := passwordAEAD.Decrypt(localFile.Cipher, []byte(walletFileAssociatedData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt wallet file data: %w", err)
 	}
 
 	return plaintext, nil
