@@ -9,7 +9,7 @@ go 1.24.7
 require (
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.11.1
-	gitlab.com/2finance/2finance-network v0.0.0-00010101000000-000000000000
+	gitlab.com/2finance/2finance-network v0.0.0-20260430205123-057d5fe53e4c
 )
 
 require (
@@ -34,7 +34,7 @@ require (
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/ethereum/go-ethereum v1.15.11 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
-	github.com/golang/mock v1.3.1 // indirect
+	github.com/golang/mock v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/holiman/uint256 v1.3.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect

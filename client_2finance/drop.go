@@ -191,7 +191,10 @@ func (c *networkClient) ClaimDrop(address string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
 
-	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{}, version, uuid7)
+	return c.SignAndSendTransaction(c.chainId, from, address, method, map[string]interface{}{
+		"address": address,
+		"wallet":  from,
+	}, version, uuid7)
 }
 
 func (c *networkClient) WithdrawDrop(
