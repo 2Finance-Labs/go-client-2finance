@@ -240,7 +240,7 @@ func Test_EndToEnd_MinimalFlow(t *testing.T) {
 	if txs, err := c.ListTransactions(w.PublicKey, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
 		_, _ = c.ListLogs([]string{"wallet_created"}, 0, txs[0].Hash, nil, "", 1, 10, true)
 	}
-	_, _ = c.ListBlocks(0, time.Time{}, "", "", 1, 5, true)
+	_, _ = c.ListBlocks(0, time.Time{}, "", "", "", 1, 5, true)
 }
 
 // (Optional) tiny compile-time/proto sanity check for Transaction serialization

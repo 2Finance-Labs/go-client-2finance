@@ -63,7 +63,7 @@ type Client2FinanceNetwork interface {
 		to string,
 		method string,
 		data map[string]interface{}) (types.ContractOutput, error)
-	ListBlocks(blockNumber uint64, blockTimestamp time.Time, hash string, previousHash string,
+	ListBlocks(blockNumber uint64, blockTimestamp time.Time, hash string, previousHash string, transactionMerkleRoot string,
 		page, limit int,
 		ascending bool) ([]block.Block, error)
 
