@@ -29,7 +29,7 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	// -------------------------
 	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
 
-	err := manager.SetupWallet(privateKeyToCreateWallet, password)
+	err := manager.ImportWallet(privateKeyToCreateWallet, password)
 
 	// -------------------------
 	// ASSERT: CREATE LOCAL WALLET
@@ -148,7 +148,7 @@ func TestWalletManagerE2E_UnlockAfterNewManagerInstance(t *testing.T) {
 	// -------------------------
 	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
 
-	err := firstManager.SetupWallet(privateKeyToCreateWallet, password)
+	err := firstManager.ImportWallet(privateKeyToCreateWallet, password)
 	require.NoError(t, err)
 
 	require.False(t, firstManager.IsUnlocked())
@@ -189,7 +189,7 @@ func TestWalletManagerE2E_OwnerMismatch(t *testing.T) {
 
 	manager := wallet_manager.NewWalletManager(owner, walletPath)
 
-	err := manager.SetupWallet(privateKey, password)
+	err := manager.ImportWallet(privateKey, password)
 	require.NoError(t, err)
 
 	anotherManager := wallet_manager.NewWalletManager(anotherOwner, walletPath)
@@ -213,11 +213,11 @@ func TestWalletManagerE2E_InvalidInputs(t *testing.T) {
 
 	manager := wallet_manager.NewWalletManager("owner-address-test", walletPath)
 
-	err := manager.SetupWallet(nil, "StrongPassword123!")
+	err := manager.ImportWallet(nil, "StrongPassword123!")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "private key is required")
 
-	err = manager.SetupWallet([]byte("private-key"), "")
+	err = manager.ImportWallet([]byte("private-key"), "")
 	require.EqualError(t, err, "password is required")
 
 	err = manager.Unlock("")
@@ -244,7 +244,7 @@ func TestWalletManagerE2E_RotatePassword(t *testing.T) {
 
 	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
 
-	err := manager.SetupWallet(privateKeyToCreateWallet, currentPassword)
+	err := manager.ImportWallet(privateKeyToCreateWallet, currentPassword)
 	require.NoError(t, err)
 
 	_, err = os.Stat(walletPath)
@@ -307,7 +307,7 @@ func TestWalletManagerE2E_RotatePasswordInvalidInputs(t *testing.T) {
 
 	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
 
-	err := manager.SetupWallet(privateKeyToCreateWallet, currentPassword)
+	err := manager.ImportWallet(privateKeyToCreateWallet, currentPassword)
 	require.NoError(t, err)
 
 	err = manager.RotatePassword("", newPassword)
