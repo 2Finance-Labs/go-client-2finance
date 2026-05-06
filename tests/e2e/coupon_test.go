@@ -243,7 +243,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalState (GetTokenBalance.States[0]): %v", err)
 	}
 
-	time.Sleep(2 * time.Second) // wait for state to update before redeeming
+	time.Sleep(25 * time.Second) // wait for state to update before redeeming
 
 	orderAmount := "100"
 	passcode := "e2e-passcode-2"
