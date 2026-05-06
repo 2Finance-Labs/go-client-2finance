@@ -36,12 +36,13 @@ type WalletManager struct {
 }
 
 type IWalletManager interface {
-	SetupWallet(privateKey []byte, password string) error
+	ImportWallet(privateKey []byte, password string) error
 	Lock() error
 	Unlock(password string) error
 	ForceLock() error
 	IsUnlocked() bool
 	RequiresPassword(methodName string) bool
+	RotatePassword(currentPassword string, newPassword string) error
 	GetPrivateKey(methodName string, password string) ([]byte, error)
 }
 
@@ -58,7 +59,7 @@ func NewWalletManager(owner string, filePath string) IWalletManager {
 	}
 }
 
-func (w *WalletManager) SetupWallet(privateKey []byte, password string) error {
+func (w *WalletManager) ImportWallet(privateKey []byte, password string) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -267,4 +268,87 @@ func (w *WalletManager) lockMemoryLocked() {
 
 	w.privateKey = nil
 	w.unlockedUntil = time.Time{}
+}
+
+func (w *WalletManager) RotatePassword(currentPassword string, newPassword string) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if currentPassword == "" {
+		return errors.New("current password is required")
+	}
+
+	if newPassword == "" {
+		return errors.New("new password is required")
+	}
+
+	if currentPassword == newPassword {
+		return errors.New("new password must be different from current password")
+	}
+
+	if w.owner == "" {
+		return fmt.Errorf("owner is required")
+	}
+
+	if w.filePath == "" {
+		return fmt.Errorf("wallet file path is required")
+	}
+
+	encryptionFile := NewEncryptionFile(w.filePath)
+
+	localEncryptedWalletFile, err := encryptionFile.Read()
+	if err != nil {
+		return fmt.Errorf("failed to read wallet file: %w", err)
+	}
+
+	walletPayload, err := encryptionFile.Decrypt(*localEncryptedWalletFile, currentPassword)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt wallet file with current password: %w", err)
+	}
+	defer clearBytes(walletPayload)
+
+	var walletFile WalletFile
+	if err := json.Unmarshal(walletPayload, &walletFile); err != nil {
+		return fmt.Errorf("failed to unmarshal wallet file: %w", err)
+	}
+
+	if walletFile.Version != walletVersion {
+		return fmt.Errorf("unsupported wallet version: %d", walletFile.Version)
+	}
+
+	if walletFile.Owner != w.owner {
+		return fmt.Errorf("wallet owner mismatch")
+	}
+
+	kh, err := UnwrapTinkKeyset(walletFile.WrappedKeyset, currentPassword)
+	if err != nil {
+		return fmt.Errorf("failed to unwrap keyset with current password: %w", err)
+	}
+
+	newWrappedKeyset, err := WrapTinkKeyset(kh, newPassword)
+	if err != nil {
+		return fmt.Errorf("failed to wrap keyset with new password: %w", err)
+	}
+
+	walletFile.WrappedKeyset = newWrappedKeyset
+	walletFile.UpdatedAt = time.Now()
+
+	updatedWalletPayload, err := json.Marshal(walletFile)
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated wallet file: %w", err)
+	}
+	defer clearBytes(updatedWalletPayload)
+
+	newLocalEncryptedWalletFile, err := encryptionFile.Encrypt(updatedWalletPayload, newPassword)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt wallet file with new password: %w", err)
+	}
+
+	if err := encryptionFile.Write(*newLocalEncryptedWalletFile); err != nil {
+		return fmt.Errorf("failed to write rotated wallet file: %w", err)
+	}
+
+	w.lockMemoryLocked()
+
+	return nil
 }
