@@ -36,7 +36,7 @@ type WalletManager struct {
 }
 
 type IWalletManager interface {
-	CreateLocalWallet(privateKey []byte, password string) error
+	SetupWallet(privateKey []byte, password string) error
 	Lock() error
 	Unlock(password string) error
 	ForceLock() error
@@ -58,7 +58,7 @@ func NewWalletManager(owner string, filePath string) IWalletManager {
 	}
 }
 
-func (w *WalletManager) CreateLocalWallet(privateKey []byte, password string) error {
+func (w *WalletManager) SetupWallet(privateKey []byte, password string) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 

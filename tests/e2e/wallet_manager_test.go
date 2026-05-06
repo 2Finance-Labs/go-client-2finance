@@ -29,7 +29,7 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	// -------------------------
 	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
 
-	err := manager.CreateLocalWallet(privateKeyToCreateWallet, password)
+	err := manager.SetupWallet(privateKeyToCreateWallet, password)
 
 	// -------------------------
 	// ASSERT: CREATE LOCAL WALLET
@@ -148,7 +148,7 @@ func TestWalletManagerE2E_UnlockAfterNewManagerInstance(t *testing.T) {
 	// -------------------------
 	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
 
-	err := firstManager.CreateLocalWallet(privateKeyToCreateWallet, password)
+	err := firstManager.SetupWallet(privateKeyToCreateWallet, password)
 	require.NoError(t, err)
 
 	require.False(t, firstManager.IsUnlocked())
@@ -189,7 +189,7 @@ func TestWalletManagerE2E_OwnerMismatch(t *testing.T) {
 
 	manager := wallet_manager.NewWalletManager(owner, walletPath)
 
-	err := manager.CreateLocalWallet(privateKey, password)
+	err := manager.SetupWallet(privateKey, password)
 	require.NoError(t, err)
 
 	anotherManager := wallet_manager.NewWalletManager(anotherOwner, walletPath)
@@ -213,11 +213,11 @@ func TestWalletManagerE2E_InvalidInputs(t *testing.T) {
 
 	manager := wallet_manager.NewWalletManager("owner-address-test", walletPath)
 
-	err := manager.CreateLocalWallet(nil, "StrongPassword123!")
+	err := manager.SetupWallet(nil, "StrongPassword123!")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "private key is required")
 
-	err = manager.CreateLocalWallet([]byte("private-key"), "")
+	err = manager.SetupWallet([]byte("private-key"), "")
 	require.EqualError(t, err, "password is required")
 
 	err = manager.Unlock("")

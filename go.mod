@@ -4,7 +4,7 @@ go 1.25.0
 
 // replace gitlab.com/2finance/2finance-network => /home/luiz/myrepo/2finance-network
 
-replace gitlab.com/2finance/2finance-network => /home/ghausmann/Trabalho/2finance-network
+// replace gitlab.com/2finance/2finance-network => /home/ghausmann/Trabalho/2finance-network
 
 require (
 	github.com/google/tink/go v1.7.0
