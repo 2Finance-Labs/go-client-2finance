@@ -226,3 +226,100 @@ func TestWalletManagerE2E_InvalidInputs(t *testing.T) {
 	_, err = manager.GetPrivateKey("SignTransaction", "")
 	require.ErrorContains(t, err, "wallet is locked")
 }
+
+func TestWalletManagerE2E_RotatePassword(t *testing.T) {
+	// -------------------------
+	// ARRANGE
+	// -------------------------
+	owner := "owner-address-test"
+	currentPassword := "StrongPassword123!"
+	newPassword := "NewStrongPassword123!"
+
+	originalPrivateKey := []byte("test-private-key-value")
+
+	walletDir := t.TempDir()
+	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
+
+	manager := wallet_manager.NewWalletManager(owner, walletPath)
+
+	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
+
+	err := manager.SetupWallet(privateKeyToCreateWallet, currentPassword)
+	require.NoError(t, err)
+
+	_, err = os.Stat(walletPath)
+	require.NoError(t, err, "wallet file should be created locally")
+
+	// -------------------------
+	// ASSERT: CURRENT PASSWORD WORKS BEFORE ROTATION
+	// -------------------------
+	err = manager.Unlock(currentPassword)
+	require.NoError(t, err)
+	require.True(t, manager.IsUnlocked())
+
+	keyBeforeRotation, err := manager.GetPrivateKey("SignTransaction", "")
+	require.NoError(t, err)
+	require.Equal(t, originalPrivateKey, keyBeforeRotation)
+
+	err = manager.Lock()
+	require.NoError(t, err)
+	require.False(t, manager.IsUnlocked())
+
+	// -------------------------
+	// ACT: ROTATE PASSWORD
+	// -------------------------
+	err = manager.RotatePassword(currentPassword, newPassword)
+	require.NoError(t, err)
+
+	require.False(t, manager.IsUnlocked(), "wallet should be locked after password rotation")
+
+	// -------------------------
+	// ASSERT: OLD PASSWORD DOES NOT WORK
+	// -------------------------
+	err = manager.Unlock(currentPassword)
+	require.Error(t, err, "old password should not unlock wallet after rotation")
+
+	require.False(t, manager.IsUnlocked())
+
+	// -------------------------
+	// ASSERT: NEW PASSWORD WORKS
+	// -------------------------
+	err = manager.Unlock(newPassword)
+	require.NoError(t, err)
+	require.True(t, manager.IsUnlocked())
+
+	keyAfterRotation, err := manager.GetPrivateKey("SignTransaction", "")
+	require.NoError(t, err)
+	require.Equal(t, originalPrivateKey, keyAfterRotation)
+}
+
+func TestWalletManagerE2E_RotatePasswordInvalidInputs(t *testing.T) {
+	owner := "owner-address-test"
+	currentPassword := "StrongPassword123!"
+	newPassword := "NewStrongPassword123!"
+
+	originalPrivateKey := []byte("test-private-key-value")
+
+	walletDir := t.TempDir()
+	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
+
+	manager := wallet_manager.NewWalletManager(owner, walletPath)
+
+	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
+
+	err := manager.SetupWallet(privateKeyToCreateWallet, currentPassword)
+	require.NoError(t, err)
+
+	err = manager.RotatePassword("", newPassword)
+	require.EqualError(t, err, "current password is required")
+
+	err = manager.RotatePassword(currentPassword, "")
+	require.EqualError(t, err, "new password is required")
+
+	err = manager.RotatePassword(currentPassword, currentPassword)
+	require.EqualError(t, err, "new password must be different from current password")
+
+	err = manager.RotatePassword("WrongPassword123!", newPassword)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "failed to decrypt wallet file with current password")
+}
