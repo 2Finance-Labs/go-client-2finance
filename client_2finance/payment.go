@@ -12,7 +12,7 @@ import (
 
 // CreatePayment creates a new payment intent.
 func (c *networkClient) CreatePayment(in inputs.InputCreate) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -92,7 +92,7 @@ func (c *networkClient) CreatePayment(in inputs.InputCreate) (types.ContractOutp
 
 // DirectPay creates + authorizes + captures in one step.
 func (c *networkClient) DirectPay(in inputs.InputDirectPay) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -179,7 +179,7 @@ func (c *networkClient) AuthorizePayment(in inputs.InputAuthorize) (types.Contra
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -208,7 +208,7 @@ func (c *networkClient) CapturePayment(in inputs.InputCapture) (types.ContractOu
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -240,7 +240,7 @@ func (c *networkClient) RefundPayment(in inputs.InputRefund) (types.ContractOutp
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -270,7 +270,7 @@ func (c *networkClient) VoidPayment(in inputs.InputVoidPayment) (types.ContractO
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -302,7 +302,7 @@ func (c *networkClient) PausePayment(in inputs.InputPause) (types.ContractOutput
 		return types.ContractOutput{}, fmt.Errorf("paused must be true: Pause: %t", in.Paused)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -335,7 +335,7 @@ func (c *networkClient) UnpausePayment(in inputs.InputPause) (types.ContractOutp
 		return types.ContractOutput{}, fmt.Errorf("paused must be false: Pause: %t", in.Paused)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -358,7 +358,7 @@ func (c *networkClient) UnpausePayment(in inputs.InputPause) (types.ContractOutp
 
 // GetPayment reads a single payment state.
 func (c *networkClient) GetPayment(address string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -377,7 +377,7 @@ func (c *networkClient) GetPayment(address string) (types.ContractOutput, error)
 
 // ListPayments queries payments with filters + pagination.
 func (c *networkClient) ListPayments(in inputs.InputList) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)

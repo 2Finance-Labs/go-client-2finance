@@ -16,19 +16,21 @@ import (
 )
 
 func TestCashbackFlow(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
 	// ------------------
 	//      WALLETS
 	// ------------------
-	owner, ownerPriv := createWallet(t, c)
-	customer, customerPriv := createWallet(t, c)
+	owner, ownerPriv := createWallet(t, c, wm)
+	customer, customerPriv := createWallet(t, c, wm)
+	if err := wm.SetOwner(owner.PublicKey); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
 
 	// ------------------
 	//      TOKEN
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
-
 	cashbackToken := createBasicToken(
 		t,
 		c,
@@ -44,6 +46,7 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//   DEPLOY CASHBACK
 	// ------------------
+	wm.SetPrivateKey(ownerPriv)
 	deployedContract, err := c.DeployContract1(cashbackV1.CASHBACK_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract cashback: %v", err)
@@ -61,7 +64,10 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//   ALLOW USERS
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	if err := wm.SetOwner(owner.PublicKey); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
+	wm.SetPrivateKey(ownerPriv)
 
 	_, err = c.AddAllowedUsers(cashbackToken.Address, map[string]bool{
 		owner.PublicKey:    true,
@@ -105,12 +111,16 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//   ADD CASHBACK
 	// ------------------
+	if err := wm.SetOwner(owner.PublicKey); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
+
 	startAt := time.Now().Add(2 * time.Second)
 	expiredAt := time.Now().Add(24 * time.Hour)
 	programType := "fixed-percentage"
 	percentage := "1000"
 
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 	addOut, err := c.AddCashback(
 		cashbackAddress,
 		owner.PublicKey,
@@ -180,10 +190,14 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//      UPDATE
 	// ------------------
+	if err := wm.SetOwner(owner.PublicKey); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
+
 	updatedPercentage := "1500"
 	updatedExpiredAt := time.Now().Add(48 * time.Hour)
 
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 	updateOut, err := c.UpdateCashback(
 		cashbackAddress,
 		cashbackToken.Address,
@@ -229,7 +243,11 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//       PAUSE
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	if err := wm.SetOwner(owner.PublicKey); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
+
+	wm.SetPrivateKey(ownerPriv)
 	pauseOut, err := c.PauseCashback(cashbackAddress, true)
 	if err != nil {
 		t.Fatalf("PauseCashback: %v", err)
@@ -264,7 +282,11 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//      UNPAUSE
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	if err := wm.SetOwner(owner.PublicKey); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
+
+	wm.SetPrivateKey(ownerPriv)
 	unpauseOut, err := c.UnpauseCashback(cashbackAddress, false)
 	if err != nil {
 		t.Fatalf("UnpauseCashback: %v", err)
@@ -299,9 +321,13 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//      DEPOSIT
 	// ------------------
+	if err := wm.SetOwner(owner.PublicKey); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
+
 	depositAmount := "200"
 
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 	depositOut, err := c.DepositCashbackFunds(
 		cashbackAddress,
 		cashbackToken.Address,
@@ -347,6 +373,10 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//       CLAIM
 	// ------------------
+	if err := wm.SetOwner(customer.PublicKey); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
+
 	wait := time.Until(startAt) + 500*time.Millisecond
 	if wait > 0 {
 		time.Sleep(wait)
@@ -354,7 +384,7 @@ func TestCashbackFlow(t *testing.T) {
 
 	claimAmount := "100"
 
-	c.SetPrivateKey(customerPriv)
+	wm.SetPrivateKey(customerPriv)
 	claimOut, err := c.ClaimCashback(
 		cashbackAddress,
 		claimAmount,
@@ -401,9 +431,13 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//      WITHDRAW
 	// ------------------
+	if err := wm.SetOwner(owner.PublicKey); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
+
 	withdrawAmount := "100"
 
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 	withdrawOut, err := c.WithdrawCashbackFunds(
 		cashbackAddress,
 		cashbackToken.Address,

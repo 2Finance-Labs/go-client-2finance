@@ -17,9 +17,8 @@ import (
 
 
 func TestContractDeployment1(t *testing.T) {
-	c := setupClient(t)
-	_, priv := createWallet(t, c)
-	c.SetPrivateKey(priv)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
 	contractOutput, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
     if err != nil {
@@ -45,11 +44,11 @@ func TestContractDeployment1(t *testing.T) {
 }
 
 func TestContractDeployment2(t *testing.T) {
-	c := setupClient(t)
-	_, priv := createWallet(t, c)
-	c.SetPrivateKey(priv)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
-	genKeyPub, _ := genKey(t, c)
+	genKeyPub, genKeyPriv := genKey(t, wm)
+	wm.SetPrivateKey(genKeyPriv)
 
 	contractOutput, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, genKeyPub)
 	if err != nil {
@@ -75,15 +74,15 @@ func TestContractDeployment2(t *testing.T) {
 }
 
 func Test_SetPrivateKey_Getters(t *testing.T) {
-	c := setupClient(t)
-	_, priv := genKey(t, c)
+	wm := setupWalletManager(t)
+	_, priv := genKey(t, wm)
+	wm.SetPrivateKey(priv)
 
 	// Set and read back
-	c.SetPrivateKey(priv)
-	if got := c.GetPrivateKey(); got != priv {
-		t.Fatalf("GetPrivateKey mismatch")
-	}
-	gotPub := c.GetPublicKey()
+	// if got := c.GetPrivateKey(); got != priv {
+	// 	t.Fatalf("GetPrivateKey mismatch")
+	// }
+	gotPub := wm.GetPublicKey()
 	if gotPub == "" {
 		t.Fatalf("GetPublicKey returned empty")
 	}
@@ -102,8 +101,8 @@ func Test_SetPrivateKey_Getters(t *testing.T) {
 }
 
 func Test_GenerateKeyEd25519(t *testing.T) {
-	c := setupClient(t)
-	pub, priv, err := c.GenerateEd25519KeyPairHex()
+	wm := setupWalletManager(t)
+	pub, priv, err := wm.GenerateEd25519KeyPairHex()
 	if err != nil {
 		t.Fatalf("GenerateKeyEd25519: %v", err)
 	}
@@ -116,7 +115,8 @@ func Test_GenerateKeyEd25519(t *testing.T) {
 }
 
 func Test_ListTransactions_Validation(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
 	// all empty
 	if _, err := c.ListTransactions("", "", "", nil, 0, 1, 10, true); err == nil {
@@ -133,7 +133,8 @@ func Test_ListTransactions_Validation(t *testing.T) {
 }
 
 func Test_ListLogs_Validation(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 	// no logType, txHash, or contractAddress -> invalid
 	if _, err := c.ListLogs(nil, 0, "", nil, "", 1, 10, true); err == nil {
 		t.Fatalf("expected error when no filters are provided")
@@ -141,10 +142,10 @@ func Test_ListLogs_Validation(t *testing.T) {
 }
 
 func Test_SignTransaction(t *testing.T) {
-	c := setupClient(t)
-	fromPub, fromPriv := genKey(t, c)
-	toPub, _ := genKey(t, c)
-	c.SetPrivateKey(fromPriv)
+	wm := setupWalletManager(t)
+	fromPub, fromPriv := genKey(t, wm)
+	toPub, _ := genKey(t, wm)
+	wm.SetPrivateKey(fromPriv)
 	chainId := uint8(1)
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -155,7 +156,7 @@ func Test_SignTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MapToJSONB: %v", err)
 	}
-	signed, err := c.SignTransaction(chainId, fromPub, toPub, "noop_method", jb, version, uuid7)
+	signed, err := wm.SignTransaction(chainId, fromPub, toPub, "noop_method", jb, version, uuid7)
 	if err != nil {
 		t.Fatalf("SignTransaction: %v", err)
 	}
@@ -176,7 +177,8 @@ func Test_SignTransaction(t *testing.T) {
 }
 
 func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
 	// without SetPrivateKey -> no public key in client
 	if _, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1); err == nil {
@@ -184,8 +186,8 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 	}
 
 	// set signer
-	_, priv := genKey(t, c)
-	c.SetPrivateKey(priv)
+	_, priv := genKey(t, wm)
+	wm.SetPrivateKey(priv)
 
 	// empty contract version
 	if _, err := c.DeployContract1(""); err == nil {
@@ -211,7 +213,8 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 	assert.NotEmpty(t, contractDomain.Address, "deployed contract address should not be empty")
 	assert.Equal(t, contractDomain.ContractVersion, walletV1.WALLET_CONTRACT_V1, "deployed contract version mismatch")
 
-	pub, priv := genKey(t, c)
+	pub, priv := genKey(t, wm)
+	wm.SetPrivateKey(priv)
 
 	deployed2, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, pub)
 	if err != nil {
@@ -230,11 +233,12 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 }
 
 func Test_EndToEnd_MinimalFlow(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
 	// create a wallet (deploys + sends tx)
-	w, priv := createWallet(t, c)
-	c.SetPrivateKey(priv)
+	w, priv := createWallet(t, c, wm)
+	wm.SetPrivateKey(priv)
 
 	// Best-effort: transactions/logs/blocks (may be empty depending on backend retention)
 	if txs, err := c.ListTransactions(w.PublicKey, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
@@ -245,7 +249,10 @@ func Test_EndToEnd_MinimalFlow(t *testing.T) {
 
 // (Optional) tiny compile-time/proto sanity check for Transaction serialization
 func Test_TransactionRoundtrip_Sanity(t *testing.T) {
-	pub, _ := genKey(t, setupClient(t))
+	wm := setupWalletManager(t)
+	pub, priv := genKey(t, wm)
+	wm.SetPrivateKey(priv)
+
 	chainId := uint8(1)
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()

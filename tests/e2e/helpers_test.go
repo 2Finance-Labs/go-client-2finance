@@ -1,27 +1,29 @@
 package e2e_test
 
 import (
-	"testing"
-	"time"
 	"crypto/sha256"
 	"encoding/hex"
+	"testing"
+	"time"
+
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
+	"github.com/2Finance-Labs/go-client-2finance/wallet_manager"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/domain"
+	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
+	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
 	walletV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
-	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
-	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
-func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (wallet walletV1Domain.Wallet, walletPrivateKey string) {
+func createWallet(t *testing.T, c client2f.Client2FinanceNetwork, wm wallet_manager.IWalletManager) (wallet walletV1Domain.Wallet, walletPrivateKey string) {
 	t.Helper()
 
-	pub, priv := genKey(t, c)
-	c.SetPrivateKey(priv)
+	pub, priv := genKey(t, wm)
+	wm.SetPrivateKey(priv)
 
 	deployedContract, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
 	if err != nil {
@@ -271,7 +273,7 @@ func createBasicCoupon(
 	percentageBPS := ""
 	fixedAmount := ""
 	minOrder := "50"
-	
+
 	switch discountType {
 	case couponV1Domain.DISCOUNT_TYPE_PERCENTAGE:
 		percentageBPS = "1000"

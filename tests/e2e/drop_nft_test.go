@@ -16,14 +16,15 @@ import (
 )
 
 func TestDropFlowNFT(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
-	owner, ownerPriv := createWallet(t, c)
+	owner, ownerPriv := createWallet(t, c, wm)
 
 	// --------------------------------------------------------------------
 	// Token setup (NFT - SEM createBasicToken)
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
 	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
 	require.NoError(t, err)
@@ -101,10 +102,10 @@ func TestDropFlowNFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Create Drop
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
-	programAddress, _ := genKey(t, c)
-	tokenAddress, _ := genKey(t, c)
+	programAddress, _ := genKey(t, wm)
+	tokenAddress, _ := genKey(t, wm)
 
 	startAt := time.Now()
 	expireAt := time.Now().Add(24 * time.Hour)
@@ -143,7 +144,7 @@ func TestDropFlowNFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Oracles
 	// --------------------------------------------------------------------
-	oracles := buildOracleFixture(t, c)
+	oracles := buildOracleFixture(t, wm)
 
 	mustAllowOracles(t, c, drop.Address, map[string]bool{
 		oracles.Oracle1: true,
@@ -152,19 +153,19 @@ func TestDropFlowNFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Eligibility
 	// --------------------------------------------------------------------
-	userPub, userPriv := genKey(t, c)
+	userPub, userPriv := genKey(t, wm)
 
 	_, err = c.ClaimDrop(drop.Address)
 	assertClaimDropError(t, err, "is not eligible")
 
-	c.SetPrivateKey(oracles.Oracle1Priv)
+	wm.SetPrivateKey(oracles.Oracle1Priv)
 	_, err = c.AttestParticipantEligibility(drop.Address, userPub, true)
 	require.NoError(t, err)
 
 	// --------------------------------------------------------------------
 	// Deposit NFTs
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
 	depositUUIDs := []string{uuid1, uuid2}
 	fmt.Printf("Depositing NFTs with UUIDs: %v\n", depositUUIDs)
@@ -204,11 +205,11 @@ func TestDropFlowNFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Claim
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(userPriv)
+	wm.SetPrivateKey(userPriv)
 
 	outClaim, err := c.ClaimDrop(drop.Address)
 	require.NoError(t, err)
-	
+
 	assertClaimDropLog(
 		t,
 		outClaim,

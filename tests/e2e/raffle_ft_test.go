@@ -18,19 +18,20 @@ import (
 )
 
 func TestRaffleFlowFungible(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
 	// ------------------
 	//      WALLETS
 	// ------------------
-	owner, ownerPriv := createWallet(t, c)
-	player1, player1Priv := createWallet(t, c)
-	player2, player2Priv := createWallet(t, c)
+	owner, ownerPriv := createWallet(t, c, wm)
+	player1, player1Priv := createWallet(t, c, wm)
+	player2, player2Priv := createWallet(t, c, wm)
 
 	// ------------------
 	//      TOKENS
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
 	payToken := createBasicToken(
 		t,
@@ -75,7 +76,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//   ALLOW USERS
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
 	_, err = c.AddAllowedUsers(payToken.Address, map[string]bool{
 		owner.PublicKey:   true,
@@ -166,7 +167,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 		"image":       "https://example.com/raffle.png",
 	}
 
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 	addRaffleOut, err := c.AddRaffle(
 		raffleAddress,
 		owner.PublicKey,
@@ -521,7 +522,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//    ENTER RAFFLE
 	// ------------------
-	c.SetPrivateKey(player1Priv)
+	wm.SetPrivateKey(player1Priv)
 	enter1Out, err := c.EnterRaffle(
 		raffleAddress,
 		2,
@@ -552,7 +553,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	assert.Equal(t, "10", enter1Event.Paid)
 	assert.NotEmpty(t, enter1Event.UUID)
 
-	c.SetPrivateKey(player2Priv)
+	wm.SetPrivateKey(player2Priv)
 	enter2Out, err := c.EnterRaffle(
 		raffleAddress,
 		1,
@@ -629,7 +630,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//       DRAW
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 	drawOut, err := c.DrawRaffle(raffleAddress, revealSeed)
 	if err != nil {
 		t.Fatalf("DrawRaffle: %v", err)
@@ -688,9 +689,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 
 	switch winnerPrize.Winner {
 	case player1.PublicKey:
-		c.SetPrivateKey(player1Priv)
+		wm.SetPrivateKey(player1Priv)
 	case player2.PublicKey:
-		c.SetPrivateKey(player2Priv)
+		wm.SetPrivateKey(player2Priv)
 	default:
 		t.Fatalf("unexpected winner: %s", winnerPrize.Winner)
 	}
@@ -738,7 +739,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//      WITHDRAW
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
 	withdrawAmount := "10"
 	withdrawUUID := "withdraw-ft-001"

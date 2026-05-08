@@ -1,7 +1,6 @@
 package e2e_test
 
 import (
-	
 	"testing"
 	// "time"
 	// "fmt"
@@ -15,13 +14,13 @@ import (
 
 func TestMgMFlow(t *testing.T) {
 
-	// c := setupClient(t)
+	// c := setupClient(t, wm)
 
 	// // --------------------------------------------------------------------
 	// // Owner + base token
 	// // --------------------------------------------------------------------
-	// owner, ownerPriv := createWallet(t, c)
-	// c.SetPrivateKey(ownerPriv)
+	// owner, ownerPriv := createWallet(t, c, wm)
+	// wm.SetPrivateKey(ownerPriv)
 	// dec := 6
 	// stablecoin := true
 	// tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE, stablecoin)
@@ -116,10 +115,10 @@ func TestMgMFlow(t *testing.T) {
 	// // --------------------------------------------------------------------
 	// // Inviter lifecycle
 	// // --------------------------------------------------------------------
-	// inviter, inviterPriv := createWallet(t, c)
-	// invited, _ := createWallet(t, c)
+	// inviter, inviterPriv := createWallet(t, c, wm)
+	// invited, _ := createWallet(t, c, wm)
 
-	// c.SetPrivateKey(ownerPriv)
+	// wm.SetPrivateKey(ownerPriv)
 	// if _, err := c.AddInviterMember(mgmAddress, inviter.PublicKey, "pw1"); err != nil {
 	// 	t.Fatalf("AddInviterMember: %v", err)
 	// }
@@ -139,7 +138,7 @@ func TestMgMFlow(t *testing.T) {
 	// waitUntil(t, 10*time.Second, func() bool { return time.Now().After(start) })
 
 	// // Best-effort claim reward (may depend on backend rules)
-	// c.SetPrivateKey(inviterPriv)
+	// wm.SetPrivateKey(inviterPriv)
 	// if _, err := c.ClaimReward(mgmAddress, invited.PublicKey, "pw2"); err != nil {
 	// 	t.Fatalf("ClaimReward warning: %v", err)
 	// }
@@ -159,13 +158,13 @@ func TestMgMFlow(t *testing.T) {
 }
 
 func TestMgMFlow_NonFungible(t *testing.T) {
-	// c := setupClient(t)
+	// c := setupClient(t, wm)
 
 	// // --------------------------------------------------------------------
 	// // Owner + base token (NFT)
 	// // --------------------------------------------------------------------
-	// owner, ownerPriv := createWallet(t, c)
-	// c.SetPrivateKey(ownerPriv)
+	// owner, ownerPriv := createWallet(t, c, wm)
+	// wm.SetPrivateKey(ownerPriv)
 
 	// dec := 0
 	// tokenType := tokenV1Domain.NON_FUNGIBLE
@@ -325,10 +324,10 @@ func TestMgMFlow_NonFungible(t *testing.T) {
 	// // --------------------------------------------------------------------
 	// // Inviter lifecycle
 	// // --------------------------------------------------------------------
-	// inviter, inviterPriv := createWallet(t, c)
-	// invited, _ := createWallet(t, c)
+	// inviter, inviterPriv := createWallet(t, c, wm)
+	// invited, _ := createWallet(t, c, wm)
 
-	// c.SetPrivateKey(ownerPriv)
+	// wm.SetPrivateKey(ownerPriv)
 	// if _, err := c.AddInviterMember(mgmAddress, inviter.PublicKey, "pw1"); err != nil {
 	// 	t.Fatalf("AddInviterMember: %v", err)
 	// }
@@ -351,7 +350,7 @@ func TestMgMFlow_NonFungible(t *testing.T) {
 	// 	return time.Now().After(start)
 	// })
 
-	// c.SetPrivateKey(inviterPriv)
+	// wm.SetPrivateKey(inviterPriv)
 	// if _, err := c.ClaimReward(
 	// 	mgmAddress,
 	// 	invited.PublicKey,

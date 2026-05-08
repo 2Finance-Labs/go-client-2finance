@@ -4,8 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"sync"
 	"time"
+
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
+	"gitlab.com/2finance/2finance-network/blockchain/transaction"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 const (
@@ -28,7 +33,11 @@ type WalletManager struct {
 	filePath string
 	owner    string
 
-	privateKey    []byte
+	privateKey []byte
+
+	privateKeyHex string
+	publicKey     string
+
 	unlockedUntil time.Time
 	lockTimer     *time.Timer
 
@@ -44,6 +53,12 @@ type IWalletManager interface {
 	RequiresPassword(methodName string) bool
 	RotatePassword(currentPassword string, newPassword string) error
 	GetPrivateKey(methodName string, password string) ([]byte, error)
+
+	SetPrivateKey(privateKey string)
+	SetOwner(owner string) error
+	GetPublicKey() string
+	GenerateEd25519KeyPairHex() (string, string, error)
+	SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8, uuid7 string) (*transaction.Transaction, error)
 }
 
 func NewWalletManager(owner string, filePath string) IWalletManager {
@@ -351,4 +366,88 @@ func (w *WalletManager) RotatePassword(currentPassword string, newPassword strin
 	w.lockMemoryLocked()
 
 	return nil
+}
+
+func (w *WalletManager) GenerateEd25519KeyPairHex() (string, string, error) {
+	publicKey, privateKey, err := keys.GenerateEd25519KeyPair()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate public key: %w", err)
+	}
+
+	w.privateKeyHex = keys.PrivateKeyToHex(privateKey)
+	w.publicKey = keys.PublicKeyToHex(publicKey)
+
+	return w.publicKey, w.privateKeyHex, nil
+}
+
+func (w *WalletManager) SetOwner(owner string) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if owner == "" {
+		return fmt.Errorf("owner is required")
+	}
+
+	if w.owner == owner {
+		w.publicKey = owner
+		return nil
+	}
+
+	if w.isUnlockedLocked() {
+		return fmt.Errorf("cannot change owner while wallet is unlocked")
+	}
+
+	if len(w.privateKey) > 0 {
+		return fmt.Errorf("cannot change owner while private key is loaded")
+	}
+
+	w.owner = owner
+	w.publicKey = owner
+
+	return nil
+}
+
+func (w *WalletManager) SetPrivateKey(privateKey string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if privateKey == "" {
+		log.Fatalf("private key is required")
+	}
+
+	w.privateKey = []byte(privateKey)
+	pubKey, err := keys.PublicKeyFromEd25519PrivateHex(privateKey)
+	if err != nil {
+		log.Fatalf("Error getting public key from private key: %v", err)
+	}
+	hex := keys.PublicKeyToHex(pubKey)
+	if err != nil {
+		log.Fatalf("Error converting public key to hex: %v", err)
+	}
+	w.publicKey = hex
+}
+
+func (w *WalletManager) GetPublicKey() string {
+	return w.publicKey
+}
+
+func (w *WalletManager) SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8, uuid7 string) (*transaction.Transaction, error) {
+
+	dataRawMessage, err := utils.MapToRawMessage(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert data to RawMessage: %w", err)
+	}
+
+	// 1. create new tx
+	newTx := transaction.NewTransaction(chainId, from, to, method, dataRawMessage, version, uuid7)
+
+	// 2. get serialized form (here it's just the object)
+	tx := newTx.Get()
+
+	// 3. sign
+	signedTx, err := transaction.SignTransactionHexKey(string(w.privateKey), tx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign transaction: %w", err)
+	}
+	return signedTx, nil
 }

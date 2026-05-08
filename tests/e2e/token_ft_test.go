@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"testing"
 	"time"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
@@ -14,9 +15,10 @@ import (
 )
 
 func TestTokenFlowFungible(t *testing.T) {
-	c := setupClient(t)
-	owner, ownerPriv := createWallet(t, c)
-	c.SetPrivateKey(ownerPriv)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
+	owner, ownerPriv := createWallet(t, c, wm)
+	wm.SetPrivateKey(ownerPriv)
 
 	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
 	if err != nil {
@@ -46,19 +48,19 @@ func TestTokenFlowFungible(t *testing.T) {
 	tags := map[string]string{"tag1": "DeFi", "tag2": "Blockchain"}
 	creator := "2Finance Test"
 	creatorWebsite := "https://creator.example"
-	allowedUser, _ := genKey(t, c)
+	allowedUser, _ := genKey(t, wm)
 	allowedUsers := map[string]bool{
 		allowedUser: true,
 	}
-	blockedUser, _ := genKey(t, c)
+	blockedUser, _ := genKey(t, wm)
 	blockedUsers := map[string]bool{
 		blockedUser: true,
 	}
-	userPubFrozenAccount, _ := genKey(t, c)
+	userPubFrozenAccount, _ := genKey(t, wm)
 	frozenAccounts := map[string]bool{
 		userPubFrozenAccount: true,
 	}
-	
+
 	feeTiers := []map[string]interface{}{
 		{
 			"min_amount": "0",
@@ -69,7 +71,7 @@ func TestTokenFlowFungible(t *testing.T) {
 		},
 	}
 
-	feeAddress, _ := genKey(t, c)
+	feeAddress, _ := genKey(t, wm)
 	freezeAuthorityRevoked := false
 	mintAuthorityRevoked := false
 	updateAuthorityRevoked := false
@@ -175,7 +177,7 @@ func TestTokenFlowFungible(t *testing.T) {
 		t.Fatalf("UnmarshalEvent (AddToken.Logs[2]): %v", err)
 	}
 
-	assert.Equal(t, tok.Address, balance.TokenAddress,  "balance token address mismatch")
+	assert.Equal(t, tok.Address, balance.TokenAddress, "balance token address mismatch")
 	assert.Equal(t, owner.PublicKey, balance.OwnerAddress, "balance wallet address mismatch")
 	assert.Equal(t, totalSupply, balance.Amount, "balance amount mismatch")
 	assert.Equal(t, tokenType, balance.TokenType, "balance token type mismatch")
@@ -322,13 +324,13 @@ func TestTokenFlowFungible(t *testing.T) {
 	// ------------------
 	//   TRANSFER TOKEN
 	// ------------------
-	receiver, _ := createWallet(t, c)
-	c.SetPrivateKey(ownerPriv)
+	receiver, _ := createWallet(t, c, wm)
+	wm.SetPrivateKey(ownerPriv)
 
 	transferAmount := "5000000000000000"
 	transferToken, err := c.TransferToken(tok.Address, receiver.PublicKey, transferAmount, []string{})
 	assert.Error(t, err, "insufficient balance:")
-	
+
 	_, err = c.AddAllowedUsers(tok.Address, map[string]bool{
 		receiver.PublicKey: true,
 	})
@@ -479,7 +481,6 @@ func TestTokenFlowFungible(t *testing.T) {
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "insufficient balance")
 
-	
 	burnAmount = "1500"
 	burnToken, err = c.BurnToken(tok.Address, burnAmount, []string{})
 	if err != nil {
@@ -560,8 +561,8 @@ func TestTokenFlowFungible(t *testing.T) {
 	// ------------------
 
 	// Add allow users
-	receiverPub, _ := genKey(t, c)
-	anotherPub, _ := genKey(t, c)
+	receiverPub, _ := genKey(t, wm)
+	anotherPub, _ := genKey(t, wm)
 	allowUsers, err := c.AddAllowedUsers(tok.Address, map[string]bool{
 		receiverPub: true,
 		anotherPub:  true,
@@ -1244,8 +1245,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	require.NotNil(t, balanceStateList[0].CreatedAt, "created at is nil for balance in list")
 	require.NotNil(t, balanceStateList[0].UpdatedAt, "updated at is nil for balance in list")
 
-
-	listTokens, err := c.ListTokens(tok.Address, "", "", domain.FUNGIBLE, 1, 1, true);
+	listTokens, err := c.ListTokens(tok.Address, "", "", domain.FUNGIBLE, 1, 1, true)
 	if err != nil {
 		t.Fatalf("ListTokens: %v", err)
 	}
@@ -1288,8 +1288,7 @@ func TestTokenFlowFungible(t *testing.T) {
 	require.NotNil(t, tokenStateList[0].CreatedAt, "created at is nil for token in list")
 	require.NotNil(t, tokenStateList[0].UpdatedAt, "updated at is nil for token in list")
 
-
-	listTokens, err = c.ListTokens("", "", "", domain.FUNGIBLE, 1, 3, true);
+	listTokens, err = c.ListTokens("", "", "", domain.FUNGIBLE, 1, 3, true)
 	if err != nil {
 		t.Fatalf("ListTokens: %v", err)
 	}

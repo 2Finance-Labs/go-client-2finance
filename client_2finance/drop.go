@@ -29,7 +29,7 @@ func (c *networkClient) NewDrop(in inputs.InputNewDrop) (types.ContractOutput, e
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -72,7 +72,7 @@ func (c *networkClient) UpdateDropMetadata(
 		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	method := dropV1.METHOD_UPDATE_DROP_METADATA
 	data := map[string]interface{}{
@@ -111,7 +111,7 @@ func (c *networkClient) AllowOracles(address string, oracles map[string]bool) (t
 		return types.ContractOutput{}, fmt.Errorf("oracles map is empty")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	method := dropV1.METHOD_ALLOW_ORACLES
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -132,7 +132,7 @@ func (c *networkClient) DisallowOracles(address string, oracles map[string]bool)
 		return types.ContractOutput{}, fmt.Errorf("oracles map is empty")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	method := dropV1.METHOD_DISALLOW_ORACLES
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -160,7 +160,7 @@ func (c *networkClient) DepositDrop(
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	method := dropV1.METHOD_DEPOSIT_DROP
 	version := uint8(1)
 
@@ -182,7 +182,7 @@ func (c *networkClient) ClaimDrop(address string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	method := dropV1.METHOD_CLAIM_DROP
 	version := uint8(1)
 
@@ -212,7 +212,7 @@ func (c *networkClient) WithdrawDrop(
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	method := dropV1.METHOD_WITHDRAW_DROP
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -232,7 +232,7 @@ func (c *networkClient) PauseDrop(dropAddress string) (types.ContractOutput, err
 		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -263,7 +263,7 @@ func (c *networkClient) UnpauseDrop(dropAddress string) (types.ContractOutput, e
 		return types.ContractOutput{}, fmt.Errorf("drop address not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -305,7 +305,7 @@ func (c *networkClient) AttestParticipantEligibility(
 		return types.ContractOutput{}, fmt.Errorf("invalid wallet address: %w", err)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	method := dropV1.METHOD_ATTEST_ELIGIBILITY
 	version := uint8(1)
 
@@ -326,7 +326,7 @@ func (c *networkClient) ManuallyAttestParticipantEligibility(
 	approved bool,
 ) (types.ContractOutput, error) {
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -372,7 +372,7 @@ func (c *networkClient) ManuallyAttestParticipantEligibility(
 }
 
 func (c *networkClient) GetDrop(address string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -404,7 +404,7 @@ func (c *networkClient) ListDrops(
 	page, limit int,
 	ascending bool,
 ) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -445,7 +445,7 @@ func (c *networkClient) ListDrops(
 }
 
 func (c *networkClient) LastClaimed(address string, wallet string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}

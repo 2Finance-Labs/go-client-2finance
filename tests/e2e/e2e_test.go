@@ -1,11 +1,13 @@
 package e2e_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+
 	//"encoding/json"
 	"fmt"
 	"math/big"
@@ -13,32 +15,53 @@ import (
 	"time"
 
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
+	"github.com/2Finance-Labs/go-client-2finance/wallet_manager"
 	"gitlab.com/2finance/2finance-network/config"
 	// "gitlab.com/2finance/2finance-network/blockchain/log"
-
-	
 )
 
 // ----------------------------------------------------------------------------
 // Helpers
 // ----------------------------------------------------------------------------
 
-func setupClient(t *testing.T) client2f.Client2FinanceNetwork {
+func setupClient(t *testing.T, wallet wallet_manager.IWalletManager) client2f.Client2FinanceNetwork {
 	t.Helper()
+
 	env := os.Getenv("APP_ENV")
-	if env == "" { env = "prod" }
+	if env == "" {
+		env = "prod"
+	}
+
 	config.Load_config(env, "./../../.env")
 
-	emqxHost := fmt.Sprintf("%s://%s:%s", config.EMQX_SCHEME, config.EMQX_HOST, config.EMQX_PORT)
+	emqxHost := fmt.Sprintf(
+		"%s://%s:%s",
+		config.EMQX_SCHEME,
+		config.EMQX_HOST,
+		config.EMQX_PORT,
+	)
 
-	// <<< important: make the client id unique per test run >>>
 	base := config.EMQX_CLIENT_ID
-	if base == "" { base = "e2e" }
+	if base == "" {
+		base = "e2e"
+	}
+
 	id := fmt.Sprintf("%s-%s", base, randSuffix(8))
 
-	c := client2f.New(emqxHost, id, false)
+	c := client2f.New(emqxHost, id, false, wallet)
 	c.SetChainID(config.CHAIN_ID)
+
 	return c
+}
+
+func setupWalletManager(t *testing.T) (wallet_manager.IWalletManager) {
+	t.Helper()
+
+	walletPath := filepath.Join(t.TempDir(), "e2e-wallet.wallet")
+
+	wallet := wallet_manager.NewWalletManager("", walletPath)
+
+	return wallet
 }
 
 func randSuffix(n int) string {
@@ -46,7 +69,6 @@ func randSuffix(n int) string {
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)[:n]
 }
-
 
 // amt builds integer string respecting decimals (unscaled * 10^decimals)
 func amt(unscaled int64, decimals int) string {
@@ -66,14 +88,18 @@ func waitUntil(t *testing.T, d time.Duration, pred func() bool) {
 		case <-ctx.Done():
 			t.Fatalf("timeout waiting for condition")
 		case <-tick.C:
-			if pred() { return }
+			if pred() {
+				return
+			}
 		}
 	}
 }
 
-func genKey(t *testing.T, c client2f.Client2FinanceNetwork) (pub, priv string) {
-	pub, priv, err := c.GenerateEd25519KeyPairHex()
-	if err != nil { t.Fatalf("GenerateEd25519KeyPairHex: %v", err) }
-	return
+func genKey(t *testing.T, w wallet_manager.IWalletManager) (pub, priv string) {
+	pub, priv, err := w.GenerateEd25519KeyPairHex()
+	if err != nil {
+		t.Fatalf("GenerateEd25519KeyPairHex: %v", err)
+	}
+	
+	return pub, priv
 }
-

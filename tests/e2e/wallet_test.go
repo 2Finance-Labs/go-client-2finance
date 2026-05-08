@@ -14,10 +14,11 @@ import (
 
 func TestWalletWorkflow(t *testing.T) {
 	t.Helper()
-	c := setupClient(t)
 
-	pub, priv := genKey(t, c)
-	c.SetPrivateKey(priv)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
+	pub, priv := genKey(t, wm)
+	wm.SetPrivateKey(priv)
 
 	deployedContract, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
 	if err != nil {

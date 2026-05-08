@@ -8,8 +8,8 @@ import (
 
 	"gitlab.com/2finance/2finance-network/blockchain/block"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
-	inputsPaymentV1 "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
 	inputsDropV1 "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/inputs"
+	inputsPaymentV1 "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
@@ -20,6 +20,7 @@ import (
 
 	"strings"
 
+	"github.com/2Finance-Labs/go-client-2finance/wallet_manager"
 	"github.com/google/uuid"
 	"gitlab.com/2finance/2finance-network/infra/event"
 )
@@ -27,11 +28,7 @@ import (
 // Interface exposes the client behavior
 type Client2FinanceNetwork interface {
 	// Client
-	SetPrivateKey(privateKey string)
-	GetPrivateKey() string
-	GetPublicKey() string
 	SetChainID(chainId uint8)
-	GenerateEd25519KeyPairHex() (string, string, error)
 
 	SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error)
 
@@ -49,7 +46,6 @@ type Client2FinanceNetwork interface {
 		contractVersion string,
 		contractAddress string,
 	) (types.ContractOutput, error)
-	SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8, uuid7 string) (*transaction.Transaction, error)
 	SignAndSendTransaction(
 		chainId uint8,
 		from string,
@@ -135,13 +131,13 @@ type Client2FinanceNetwork interface {
 	ListTokenBalances(tokenAddress, ownerAddress, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	NewDrop(
-		in 	inputsDropV1.InputNewDrop,
+		in inputsDropV1.InputNewDrop,
 	) (types.ContractOutput, error)
 
 	UpdateDropMetadata(
 		in inputsDropV1.InputUpdateDropMetadata,
 	) (types.ContractOutput, error)
-	
+
 	AllowOracles(
 		address string,
 		oracles map[string]bool,
@@ -163,9 +159,9 @@ type Client2FinanceNetwork interface {
 	ClaimDrop(
 		address string,
 	) (types.ContractOutput, error)
-	
+
 	LastClaimed(
-		address string, 
+		address string,
 		wallet string,
 	) (types.ContractOutput, error)
 
@@ -302,7 +298,6 @@ type Client2FinanceNetwork interface {
 		voucherUUID string,
 	) (types.ContractOutput, error)
 
-
 	// getters
 	GetCoupon(address string) (types.ContractOutput, error)
 	ListCoupons(owner, tokenAddress, discountType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
@@ -404,35 +399,22 @@ type Client2FinanceNetwork interface {
 
 type networkClient struct {
 	mqttClient mqtt.IMQTT
-	privateKey string
-	publicKey  string
 	replyTo    string
 	chainId    uint8
+	walletManager wallet_manager.IWalletManager
 }
 
 // New creates a new client
-func New(broker, clientID string, debug bool) Client2FinanceNetwork {
-	
+func New(broker, clientID string, debug bool, walletManager wallet_manager.IWalletManager) Client2FinanceNetwork {
+
 	mqttClient := mqtt.New(broker, clientID, debug)
 	mqttClient.Connect()
 	replyTo := uuid.NewString()
 	return &networkClient{
 		mqttClient: mqttClient,
 		replyTo:    replyTo,
+		walletManager: walletManager,
 	}
-}
-
-func (c *networkClient) SetPrivateKey(privateKey string) {
-	c.privateKey = privateKey
-	pubKey, err := keys.PublicKeyFromEd25519PrivateHex(privateKey)
-	if err != nil {
-		log.Fatalf("Error getting public key from private key: %v", err)
-	}
-	hex := keys.PublicKeyToHex(pubKey)
-	if err != nil {
-		log.Fatalf("Error converting public key to hex: %v", err)
-	}
-	c.publicKey = hex
 }
 
 func (c *networkClient) SetChainID(chainId uint8) {
@@ -440,14 +422,6 @@ func (c *networkClient) SetChainID(chainId uint8) {
 		log.Fatalf("invalid chainId: %d, available values are 2 testnet or 1 mainnet", chainId)
 	}
 	c.chainId = chainId
-}
-
-func (c *networkClient) GetPrivateKey() string {
-	return c.privateKey
-}
-
-func (c *networkClient) GetPublicKey() string {
-	return c.publicKey
 }
 
 func (c *networkClient) GetChainID() uint8 {
@@ -466,18 +440,6 @@ func (c *networkClient) sendRequest(topic string, payload interface{}) error {
 	}
 
 	return nil
-}
-
-func (c *networkClient) GenerateEd25519KeyPairHex() (string, string, error) {
-	publicKey, privateKey, err := keys.GenerateEd25519KeyPair()
-	if err != nil {
-		return "", "", fmt.Errorf("failed to generate public key: %w", err)
-	}
-
-	privateKeyHex := keys.PrivateKeyToHex(privateKey)
-	publicKeyHex := keys.PublicKeyToHex(publicKey)
-
-	return publicKeyHex, privateKeyHex, nil
 }
 
 func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[string]interface{}, version uint8,
@@ -636,7 +598,7 @@ func (c *networkClient) SignAndSendTransaction(
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	txSigned, err := c.SignTransaction(chainId, from, to, method, data, version, uuid7)
+	txSigned, err := c.walletManager.SignTransaction(chainId, from, to, method, data, version, uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}
@@ -690,14 +652,14 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 	ascending bool) ([]block.Block, error) {
 
 	blockParams := block.BlockParams{
-		Number:    blockNumber,
-		Timestamp: blockTimestamp,
-		Hash:           hash,
-		PreviousHash:   previousHash,
+		Number:                 blockNumber,
+		Timestamp:              blockTimestamp,
+		Hash:                   hash,
+		PreviousHash:           previousHash,
 		TransactionsMerkleRoot: transactionMerkleRoot,
-		Page:           page,
-		Limit:          limit,
-		Ascending:      ascending,
+		Page:                   page,
+		Limit:                  limit,
+		Ascending:              ascending,
 	}
 
 	blockBytes, err := c.SendTransaction(virtualmachine.REQUEST_METHOD_GET_BLOCKS, blockParams, c.replyTo)
@@ -713,32 +675,15 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 	return blocks, nil
 }
 
-func (c *networkClient) SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8, uuid7 string) (*transaction.Transaction, error) {
-
-	dataRawMessage, err := utils.MapToRawMessage(data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert data to RawMessage: %w", err)
-	}
-
-	// 1. create new tx
-	newTx := transaction.NewTransaction(chainId, from, to, method, dataRawMessage, version, uuid7)
-
-	// 2. get serialized form (here it's just the object)
-	tx := newTx.Get()
-
-	// 3. sign
-	signedTx, err := transaction.SignTransactionHexKey(c.privateKey, tx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign transaction: %w", err)
-	}
-	return signedTx, nil
-}
-
 func (c *networkClient) DeployContract1(contractVersion string) (types.ContractOutput, error) {
-	if c.publicKey == "" {
+	if c.walletManager == nil {
+		return types.ContractOutput{}, fmt.Errorf("wallet manager is required")
+	}
+
+	from := c.walletManager.GetPublicKey()
+	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address is required")
 	}
-	from := c.publicKey
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -750,26 +695,43 @@ func (c *networkClient) DeployContract1(contractVersion string) (types.ContractO
 
 	to := types.DEPLOY_CONTRACT_ADDRESS
 	method := contractV1.METHOD_DEPLOY_CONTRACT
+
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
 	}
+
 	version := uint8(1)
+
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
-	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
+
+	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
+		from,
+		to,
+		method,
+		data,
+		version,
+		uuid7,
+	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deploy contract: %w", err)
 	}
+
 	return contractOutput, nil
 }
 
 func (c *networkClient) DeployContract2(contractVersion, contractAddress string) (types.ContractOutput, error) {
-	if c.publicKey == "" {
+	if c.walletManager == nil {
+		return types.ContractOutput{}, fmt.Errorf("wallet manager is required")
+	}
+
+	from := c.walletManager.GetPublicKey()
+	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address is required")
 	}
-	from := c.publicKey
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -778,25 +740,41 @@ func (c *networkClient) DeployContract2(contractVersion, contractAddress string)
 	if contractVersion == "" {
 		return types.ContractOutput{}, fmt.Errorf("contract version is required")
 	}
+
 	if contractAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("contract address is required")
 	}
+
 	if err := keys.ValidateEDDSAPublicKeyHex(contractAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid contract address: %w", err)
 	}
+
 	to := contractAddress
 	method := contractV1.METHOD_DEPLOY_CONTRACT2
+
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
 	}
+
 	version := uint8(1)
+
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
-	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
+
+	contractOutput, err := c.SignAndSendTransaction(
+		c.chainId,
+		from,
+		to,
+		method,
+		data,
+		version,
+		uuid7,
+	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to deploy contract: %w", err)
 	}
+
 	return contractOutput, nil
 }

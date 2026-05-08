@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"testing"
 	"time"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -14,9 +15,10 @@ import (
 )
 
 func TestTokenFlowNonFungible(t *testing.T) {
-	c := setupClient(t)
-	owner, ownerPriv := createWallet(t, c)
-	c.SetPrivateKey(ownerPriv)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
+	owner, ownerPriv := createWallet(t, c, wm)
+	wm.SetPrivateKey(ownerPriv)
 
 	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
 	if err != nil {
@@ -50,7 +52,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	frozenAccounts := map[string]bool{}
 	feeTiers := []map[string]interface{}{}
 
-	feeAddress, _ := genKey(t, c)
+	feeAddress, _ := genKey(t, wm)
 	freezeAuthorityRevoked := false
 	mintAuthorityRevoked := false
 	updateAuthorityRevoked := false
@@ -241,8 +243,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//   TRANSFER TOKEN
 	// ------------------
-	receiver, receiverPriv := createWallet(t, c)
-	c.SetPrivateKey(ownerPriv)
+	receiver, receiverPriv := createWallet(t, c, wm)
+	wm.SetPrivateKey(ownerPriv)
 
 	_, err = c.AddAllowedUsers(tok.Address, map[string]bool{
 		receiver.PublicKey: true,
@@ -287,7 +289,6 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	assert.Len(t, balanceFrom.TokenUUIDList, 1, "sender balance token uuid list length mismatch after transfer")
 	assert.Equal(t, mintedUUID, balanceFrom.TokenUUIDList[0], "sender balance token uuid mismatch after transfer")
 
-
 	unmarshalLogBalanceTo, err := utils.UnmarshalLog[log.Log](transferToken.Logs[2])
 	if err != nil {
 		t.Fatalf("UnmarshalLog (TransferToken.Logs[2]): %v", err)
@@ -323,7 +324,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//        BURN
 	// ------------------
-	c.SetPrivateKey(receiverPriv)
+	wm.SetPrivateKey(receiverPriv)
 	listOfUUIDs := []string{mintedUUID}
 	burnToken, err := c.BurnToken(tok.Address, "", listOfUUIDs)
 	if err != nil {
@@ -415,7 +416,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//    ALLOW USERS
 	// ------------------
-	anotherUserPub, _ := genKey(t, c)
+	anotherUserPub, _ := genKey(t, wm)
 	allowedUsers, err := c.AddAllowedUsers(tok.Address, map[string]bool{
 		anotherUserPub: true,
 	})
@@ -448,7 +449,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	}
 	assert.Equal(t, true, tokenState5.AllowedUsers[anotherUserPub], "token allowed users mismatch after allow")
 
-	removeAllowedUsers, err := c.RemoveAllowedUsers(tok.Address,  map[string]bool{
+	removeAllowedUsers, err := c.RemoveAllowedUsers(tok.Address, map[string]bool{
 		anotherUserPub: true,
 	})
 	if err != nil {
@@ -552,7 +553,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//       PAUSE
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 	pauseToken, err := c.PauseToken(tok.Address, true)
 	if err != nil {
 		t.Fatalf("PauseToken: %v", err)
@@ -615,7 +616,6 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
 	assert.Equal(t, false, tokenState11.Paused, "token paused state mismatch after unpause")
-
 
 	// ------------------
 	//    FEE ADDRESS

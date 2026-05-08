@@ -17,9 +17,11 @@ import (
 )
 
 func TestCouponFlow_NonFungible(t *testing.T) {
-	c := setupClient(t)
-	ownerPub, ownerPriv := genKey(t, c)
-	c.SetPrivateKey(ownerPriv)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
+	ownerPub, ownerPriv := genKey(t, wm)
+	wm.SetPrivateKey(ownerPriv)
+
 	deployedContract, err := c.DeployContract1(couponV1.COUPON_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)

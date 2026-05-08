@@ -19,19 +19,20 @@ import (
 )
 
 func TestRaffleFlowNonFungible(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
 	// ------------------
 	//      WALLETS
 	// ------------------
-	owner, ownerPriv := createWallet(t, c)
-	player1, player1Priv := createWallet(t, c)
-	player2, player2Priv := createWallet(t, c)
+	owner, ownerPriv := createWallet(t, c, wm)
+	player1, player1Priv := createWallet(t, c, wm)
+	player2, player2Priv := createWallet(t, c, wm)
 
 	// ------------------
 	//    PAY TOKEN FT
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
 	payToken := createBasicToken(
 		t,
@@ -71,7 +72,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	prizeBlockedUsers := map[string]bool{}
 	prizeFrozenAccounts := map[string]bool{}
 	prizeFeeTiers := []map[string]interface{}{}
-	prizeFeeAddress, _ := genKey(t, c)
+	prizeFeeAddress, _ := genKey(t, wm)
 
 	prizeAddOut, err := c.AddToken(
 		prizeTokenAddress,
@@ -163,7 +164,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	// ------------------
 	//   ALLOW USERS
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
 	_, err = c.AddAllowedUsers(payToken.Address, map[string]bool{
 		owner.PublicKey:   true,
@@ -452,7 +453,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	// ------------------
 	//    ENTER RAFFLE
 	// ------------------
-	c.SetPrivateKey(player1Priv)
+	wm.SetPrivateKey(player1Priv)
 	enter1Out, err := c.EnterRaffle(
 		raffleAddress,
 		2,
@@ -473,7 +474,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	assert.Equal(t, 2, enter1Event.Tickets)
 	assert.Equal(t, "10", enter1Event.Paid)
 
-	c.SetPrivateKey(player2Priv)
+	wm.SetPrivateKey(player2Priv)
 	enter2Out, err := c.EnterRaffle(
 		raffleAddress,
 		1,
@@ -524,7 +525,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	// ------------------
 	//       DRAW
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 	drawOut, err := c.DrawRaffle(raffleAddress, revealSeed)
 	require.NoError(t, err)
 	require.NotEmpty(t, drawOut.Logs)
@@ -555,9 +556,9 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 
 	switch winnerPrize.Winner {
 	case player1.PublicKey:
-		c.SetPrivateKey(player1Priv)
+		wm.SetPrivateKey(player1Priv)
 	case player2.PublicKey:
-		c.SetPrivateKey(player2Priv)
+		wm.SetPrivateKey(player2Priv)
 	default:
 		t.Fatalf("unexpected winner: %s", winnerPrize.Winner)
 	}
@@ -594,7 +595,7 @@ func TestRaffleFlowNonFungible(t *testing.T) {
 	// ------------------
 	//      WITHDRAW
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
 	withdrawAmount := "10"
 	withdrawUUID := "withdraw-nft-001"

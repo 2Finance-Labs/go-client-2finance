@@ -7,16 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1"
 	reviewV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1/domain"
+	reviewV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1/models"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
-	reviewV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1/models"
 )
 
 func TestReviewFlow(t *testing.T) {
-	c := setupClient(t)
-	reviewer, reviewerPriv := createWallet(t, c)
-	reviewee, _ := createWallet(t, c)
-	c.SetPrivateKey(reviewerPriv)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
+	reviewer, reviewerPriv := createWallet(t, c, wm)
+	reviewee, _ := createWallet(t, c, wm)
+	wm.SetPrivateKey(reviewerPriv)
 
 	deployedContract, err := c.DeployContract1(reviewV1.REVIEW_CONTRACT_V1)
 	if err != nil {
@@ -194,8 +195,8 @@ func TestReviewFlow(t *testing.T) {
 	// ------------------
 	//   HELPFUL VOTE
 	// ------------------
-	voter, voterPriv := createWallet(t, c)
-	c.SetPrivateKey(voterPriv)
+	voter, voterPriv := createWallet(t, c, wm)
+	wm.SetPrivateKey(voterPriv)
 
 	voteHelpful, err := c.VoteHelpful(address, voter.PublicKey, true)
 	if err != nil {
@@ -243,8 +244,8 @@ func TestReviewFlow(t *testing.T) {
 	// ------------------
 	//   REPORT REVIEW
 	// ------------------
-	reporter, reporterPriv := createWallet(t, c)
-	c.SetPrivateKey(reporterPriv)
+	reporter, reporterPriv := createWallet(t, c, wm)
+	wm.SetPrivateKey(reporterPriv)
 
 	reportReview, err := c.ReportReview(address, reporter.PublicKey, "spam")
 	if err != nil {
@@ -294,7 +295,7 @@ func TestReviewFlow(t *testing.T) {
 	// ------------------
 	//   MODERATE REVIEW
 	// ------------------
-	c.SetPrivateKey(reviewerPriv)
+	wm.SetPrivateKey(reviewerPriv)
 
 	moderateReview, err := c.ModerateReview(address, reviewV1Domain.MODERATE_STATUS_APPROVED, "ok")
 	if err != nil {

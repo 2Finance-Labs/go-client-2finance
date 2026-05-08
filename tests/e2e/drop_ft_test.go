@@ -8,6 +8,7 @@ import (
 	"time"
 
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
+	"github.com/2Finance-Labs/go-client-2finance/wallet_manager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
@@ -242,12 +243,12 @@ type oracleFixture struct {
 	Oracle3     string
 }
 
-func buildOracleFixture(t *testing.T, c client2f.Client2FinanceNetwork) oracleFixture {
+func buildOracleFixture(t *testing.T, wm wallet_manager.IWalletManager) oracleFixture {
 	t.Helper()
 
-	oracle1, oracle1Priv := genKey(t, c)
-	oracle2, _ := genKey(t, c)
-	oracle3, _ := genKey(t, c)
+	oracle1, oracle1Priv := genKey(t, wm)
+	oracle2, _ := genKey(t, wm)
+	oracle3, _ := genKey(t, wm)
 
 	return oracleFixture{
 		Oracle1:     oracle1,
@@ -528,6 +529,7 @@ func assertAttestParticipantEligibilityLog(
 func attestParticipantEligibilityAndAssert(
 	t *testing.T,
 	c client2f.Client2FinanceNetwork,
+	wm wallet_manager.IWalletManager,
 	signerPriv string,
 	dropAddress string,
 	wallet string,
@@ -536,7 +538,7 @@ func attestParticipantEligibilityAndAssert(
 ) dropV1Domain.EligibilityAttested {
 	t.Helper()
 
-	c.SetPrivateKey(signerPriv)
+	wm.SetPrivateKey(signerPriv)
 
 	out := mustAttestParticipantEligibility(t, c, dropAddress, wallet, eligible)
 
@@ -550,9 +552,9 @@ func attestParticipantEligibilityAndAssert(
 	)
 }
 
-func setSigner(t *testing.T, c client2f.Client2FinanceNetwork, priv string) {
+func setSigner(t *testing.T, wm wallet_manager.IWalletManager, priv string) {
 	t.Helper()
-	c.SetPrivateKey(priv)
+	wm.SetPrivateKey(priv)
 }
 
 func mustDepositDrop(
@@ -743,14 +745,15 @@ func assertClaimDropLog(
 }
 
 func TestDropFlowFT(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
-	owner, ownerPriv := createWallet(t, c)
+	owner, ownerPriv := createWallet(t, c, wm)
 
 	// --------------------------------------------------------------------
 	// Token setup
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
 	dec := 6
 	tokenType := tokenV1Domain.FUNGIBLE
@@ -777,9 +780,9 @@ func TestDropFlowFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Create Drop
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(ownerPriv)
-	programAddress, _ := genKey(t, c)
-	tokenAddress, _ := genKey(t, c)
+	wm.SetPrivateKey(ownerPriv)
+	programAddress, _ := genKey(t, wm)
+	tokenAddress, _ := genKey(t, wm)
 
 	startAt := time.Now()
 	expireAt := time.Now().Add(24 * time.Hour)
@@ -841,7 +844,7 @@ func TestDropFlowFT(t *testing.T) {
 	)
 
 	// ALLOW / DISALLOW ORACLES
-	oracles := buildOracleFixture(t, c)
+	oracles := buildOracleFixture(t, wm)
 
 	allowedMap := map[string]bool{
 		oracles.Oracle1: true,
@@ -887,10 +890,11 @@ func TestDropFlowFT(t *testing.T) {
 
 	// ATTEST ELIGIBILITY (ORACLE)
 
-	eligible1, _ := genKey(t, c)
+	eligible1, _ := genKey(t, wm)
 	attestParticipantEligibilityAndAssert(
 		t,
 		c,
+		wm,
 		oracles.Oracle1Priv,
 		drop.Address,
 		eligible1,
@@ -898,10 +902,11 @@ func TestDropFlowFT(t *testing.T) {
 		dropV1Domain.VERIFICATION_TYPE_ORACLE,
 	)
 
-	eligible2, _ := genKey(t, c)
+	eligible2, _ := genKey(t, wm)
 	attestParticipantEligibilityAndAssert(
 		t,
 		c,
+		wm,
 		ownerPriv,
 		drop.Address,
 		eligible2,
@@ -953,19 +958,19 @@ func TestDropFlowFT(t *testing.T) {
 	)
 
 	// Claim Drop
-	userPub, userPriv := genKey(t, c)
+	userPub, userPriv := genKey(t, wm)
 
-	c.SetPrivateKey(userPriv)
+	wm.SetPrivateKey(userPriv)
 	_, err = c.ClaimDrop(drop.Address)
 	assertClaimDropError(t, err, "is not eligible for this drop")
 
-	c.SetPrivateKey(oracles.Oracle1Priv)
+	wm.SetPrivateKey(oracles.Oracle1Priv)
 	_, err = c.AttestParticipantEligibility(drop.Address, userPub, true)
 	if err != nil {
 		t.Fatalf("AttestParticipantEligibility: %v", err)
 	}
 
-	c.SetPrivateKey(userPriv)
+	wm.SetPrivateKey(userPriv)
 	outClaimDropEligible := mustClaimDrop(t, c, drop.Address)
 
 	assertClaimDropLog(
@@ -980,14 +985,15 @@ func TestDropFlowFT(t *testing.T) {
 }
 
 func TestDropFlowCoupon(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
-	owner, ownerPriv := createWallet(t, c)
+	owner, ownerPriv := createWallet(t, c, wm)
 
 	// --------------------------------------------------------------------
 	// Token setup
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
 	dec := 6
 	tokenType := tokenV1Domain.FUNGIBLE
@@ -1103,7 +1109,7 @@ func TestDropFlowCoupon(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Allow oracle
 	// --------------------------------------------------------------------
-	oracles := buildOracleFixture(t, c)
+	oracles := buildOracleFixture(t, wm)
 
 	allowedMap := map[string]bool{
 		oracles.Oracle1: true,
@@ -1115,7 +1121,7 @@ func TestDropFlowCoupon(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Deposit funds
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(ownerPriv)
+	wm.SetPrivateKey(ownerPriv)
 
 	amountDeposit := "2000"
 	outDepositFunds := mustDepositDrop(
@@ -1146,19 +1152,19 @@ func TestDropFlowCoupon(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Claim flow
 	// --------------------------------------------------------------------
-	userPub, userPriv := genKey(t, c)
+	userPub, userPriv := genKey(t, wm)
 
-	c.SetPrivateKey(userPriv)
+	wm.SetPrivateKey(userPriv)
 	_, err = c.ClaimDrop(couponDrop.Address)
 	assertClaimDropError(t, err, "is not eligible for this drop")
 
-	c.SetPrivateKey(oracles.Oracle1Priv)
+	wm.SetPrivateKey(oracles.Oracle1Priv)
 	_, err = c.AttestParticipantEligibility(couponDrop.Address, userPub, true)
 	if err != nil {
 		t.Fatalf("AttestParticipantEligibility: %v", err)
 	}
 
-	c.SetPrivateKey(userPriv)
+	wm.SetPrivateKey(userPriv)
 	outClaimDropEligible := mustClaimDrop(t, c, couponDrop.Address)
 
 	assertClaimDropLog(
@@ -1254,10 +1260,11 @@ func assertListDropsState(
 }
 
 func TestClient_GetDrop(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
-	owner, ownerPriv := createWallet(t, c)
-	c.SetPrivateKey(ownerPriv)
+	owner, ownerPriv := createWallet(t, c, wm)
+	wm.SetPrivateKey(ownerPriv)
 
 	deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
 	if err != nil {
@@ -1270,8 +1277,8 @@ func TestClient_GetDrop(t *testing.T) {
 	}
 
 	dropAddress := deployLog.ContractAddress
-	programAddress, _ := genKey(t, c)
-	tokenAddress, _ := genKey(t, c)
+	programAddress, _ := genKey(t, wm)
+	tokenAddress, _ := genKey(t, wm)
 
 	startAt := time.Now()
 	expireAt := time.Now().Add(24 * time.Hour)
@@ -1330,10 +1337,11 @@ func TestClient_GetDrop(t *testing.T) {
 }
 
 func TestClient_LastClaimedDrop(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
-	owner, ownerPriv := createWallet(t, c)
-	c.SetPrivateKey(ownerPriv)
+	owner, ownerPriv := createWallet(t, c, wm)
+	wm.SetPrivateKey(ownerPriv)
 
 	deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
 	if err != nil {
@@ -1346,8 +1354,8 @@ func TestClient_LastClaimedDrop(t *testing.T) {
 	}
 
 	dropAddress := deployLog.ContractAddress
-	programAddress, _ := genKey(t, c)
-	tokenAddress, _ := genKey(t, c)
+	programAddress, _ := genKey(t, wm)
+	tokenAddress, _ := genKey(t, wm)
 
 	startAt := time.Now()
 	expireAt := time.Now().Add(24 * time.Hour)
@@ -1405,10 +1413,11 @@ func TestClient_LastClaimedDrop(t *testing.T) {
 }
 
 func TestClient_ListDrops(t *testing.T) {
-	c := setupClient(t)
+	wm := setupWalletManager(t)
+	c := setupClient(t, wm)
 
-	owner, ownerPriv := createWallet(t, c)
-	c.SetPrivateKey(ownerPriv)
+	owner, ownerPriv := createWallet(t, c, wm)
+	wm.SetPrivateKey(ownerPriv)
 
 	createDrop := func(title string) string {
 		deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
@@ -1422,8 +1431,8 @@ func TestClient_ListDrops(t *testing.T) {
 		}
 
 		dropAddress := deployLog.ContractAddress
-		programAddress, _ := genKey(t, c)
-		tokenAddress, _ := genKey(t, c)
+		programAddress, _ := genKey(t, wm)
+		tokenAddress, _ := genKey(t, wm)
 
 		input := dropV1Inputs.InputNewDrop{
 			Address:              dropAddress,
