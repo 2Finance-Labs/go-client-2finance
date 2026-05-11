@@ -27,6 +27,7 @@ func TestCashbackFlow(t *testing.T) {
 	if err := wm.SetOwner(owner.PublicKey); err != nil {
 		t.Fatalf("SetOwner: %v", err)
 	}
+	wm.SetPrivateKey(ownerPriv)
 
 	// ------------------
 	//      TOKEN

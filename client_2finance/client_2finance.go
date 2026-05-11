@@ -594,15 +594,32 @@ func (c *networkClient) SignAndSendTransaction(
 	version uint8,
 	uuid7 string,
 ) (types.ContractOutput, error) {
-	// Validate public key (from address)
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
-	txSigned, err := c.walletManager.SignTransaction(chainId, from, to, method, data, version, uuid7)
+
+	if c.walletManager == nil {
+		return types.ContractOutput{}, fmt.Errorf("wallet manager is required")
+	}
+
+	txSigned, err := c.walletManager.SignTransaction(
+		chainId,
+		from,
+		to,
+		method,
+		data,
+		version,
+		uuid7,
+	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}
-	contractOutputBytes, err := c.SendTransaction(virtualmachine.REQUEST_METHOD_SEND, txSigned, c.replyTo)
+
+	contractOutputBytes, err := c.SendTransaction(
+		virtualmachine.REQUEST_METHOD_SEND,
+		txSigned,
+		c.replyTo,
+	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to send transaction: %w", err)
 	}

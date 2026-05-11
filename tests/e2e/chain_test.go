@@ -20,6 +20,14 @@ func TestContractDeployment1(t *testing.T) {
 	wm := setupWalletManager(t)
 	c := setupClient(t, wm)
 
+	fromPub, fromPriv := genKey(t, wm)
+
+	if err := wm.SetOwner(fromPub); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
+
+	wm.SetPrivateKey(fromPriv)
+
 	contractOutput, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
     if err != nil {
         t.Fatalf("DeployContract wallet: %v", err)
@@ -47,10 +55,15 @@ func TestContractDeployment2(t *testing.T) {
 	wm := setupWalletManager(t)
 	c := setupClient(t, wm)
 
-	genKeyPub, genKeyPriv := genKey(t, wm)
-	wm.SetPrivateKey(genKeyPriv)
+	fromPub, fromPriv := genKey(t, wm)
+	contractAddress, _ := genKey(t, wm)
 
-	contractOutput, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, genKeyPub)
+	if err := wm.SetOwner(fromPub); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
+	wm.SetPrivateKey(fromPriv)
+
+	contractOutput, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, contractAddress)
 	if err != nil {
 		t.Fatalf("DeployContract2 wallet: %v", err)
 	}
@@ -66,7 +79,8 @@ func TestContractDeployment2(t *testing.T) {
 	}
 
 	assert.NotEmpty(t, unmarshaledEvent.Address, "deployed contract address should not be empty")
-	assert.Equal(t, unmarshaledEvent.ContractVersion, walletV1.WALLET_CONTRACT_V1, "deployed contract version mismatch")
+	assert.Equal(t, walletV1.WALLET_CONTRACT_V1, unmarshaledEvent.ContractVersion, "deployed contract version mismatch")
+	assert.Equal(t, contractAddress, unmarshaledEvent.Address, "deployed contract address mismatch")
 
 	if txs, err := c.ListTransactions(unmarshaledEvent.Address, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
 		_, _ = c.ListLogs([]string{"deploy contract"}, 0, txs[0].Hash, nil, "", 1, 10, true)
@@ -180,14 +194,18 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 	wm := setupWalletManager(t)
 	c := setupClient(t, wm)
 
-	// without SetPrivateKey -> no public key in client
+	// without SetPrivateKey -> no public key in wallet manager
 	if _, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1); err == nil {
 		t.Fatalf("expected error when from address is not set")
 	}
 
 	// set signer
-	_, priv := genKey(t, wm)
-	wm.SetPrivateKey(priv)
+	fromPub, fromPriv := genKey(t, wm)
+
+	if err := wm.SetOwner(fromPub); err != nil {
+		t.Fatalf("SetOwner: %v", err)
+	}
+	wm.SetPrivateKey(fromPriv)
 
 	// empty contract version
 	if _, err := c.DeployContract1(""); err == nil {
@@ -202,34 +220,38 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 
 	contractLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
 	if err != nil {
-		t.Fatalf("UnmarshalLog (AddWallet.Logs[0]): %v", err)
+		t.Fatalf("UnmarshalLog (DeployContract1.Logs[0]): %v", err)
 	}
 
 	contractDomain, err := utils.UnmarshalEvent[domain.Contract](contractLog.Event)
 	if err != nil {
-		t.Fatalf("UnmarshalEvent (AddWallet.Logs[0]): %v", err)
+		t.Fatalf("UnmarshalEvent (DeployContract1.Logs[0]): %v", err)
 	}
 
 	assert.NotEmpty(t, contractDomain.Address, "deployed contract address should not be empty")
-	assert.Equal(t, contractDomain.ContractVersion, walletV1.WALLET_CONTRACT_V1, "deployed contract version mismatch")
+	assert.Equal(t, walletV1.WALLET_CONTRACT_V1, contractDomain.ContractVersion, "deployed contract version mismatch")
 
-	pub, priv := genKey(t, wm)
-	wm.SetPrivateKey(priv)
+	// DeployContract2 precisa de um endereço de contrato diferente do signer.
+	contractAddress, _ := genKey(t, wm)
 
-	deployed2, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, pub)
+	deployed2, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, contractAddress)
 	if err != nil {
-		t.Fatalf("DeployContract: %v", err)
+		t.Fatalf("DeployContract2: %v", err)
 	}
+
 	contractLog2, err := utils.UnmarshalLog[log.Log](deployed2.Logs[0])
 	if err != nil {
 		t.Fatalf("UnmarshalLog (DeployContract2.Logs[0]): %v", err)
 	}
+
 	contractDomain2, err := utils.UnmarshalEvent[domain.Contract](contractLog2.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (DeployContract2.Logs[0]): %v", err)
 	}
+
 	assert.NotEmpty(t, contractDomain2.Address, "deployed contract address should not be empty")
-	assert.Equal(t, contractDomain2.ContractVersion, walletV1.WALLET_CONTRACT_V1, "deployed contract version mismatch")
+	assert.Equal(t, walletV1.WALLET_CONTRACT_V1, contractDomain2.ContractVersion, "deployed contract version mismatch")
+	assert.Equal(t, contractAddress, contractDomain2.Address, "deployed contract address mismatch")
 }
 
 func Test_EndToEnd_MinimalFlow(t *testing.T) {

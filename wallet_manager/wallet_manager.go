@@ -374,10 +374,10 @@ func (w *WalletManager) GenerateEd25519KeyPairHex() (string, string, error) {
 		return "", "", fmt.Errorf("failed to generate public key: %w", err)
 	}
 
-	w.privateKeyHex = keys.PrivateKeyToHex(privateKey)
-	w.publicKey = keys.PublicKeyToHex(publicKey)
+	privateKeyHex := keys.PrivateKeyToHex(privateKey)
+	publicKeyHex := keys.PublicKeyToHex(publicKey)
 
-	return w.publicKey, w.privateKeyHex, nil
+	return publicKeyHex, privateKeyHex, nil
 }
 
 func (w *WalletManager) SetOwner(owner string) error {
@@ -397,9 +397,7 @@ func (w *WalletManager) SetOwner(owner string) error {
 		return fmt.Errorf("cannot change owner while wallet is unlocked")
 	}
 
-	if len(w.privateKey) > 0 {
-		return fmt.Errorf("cannot change owner while private key is loaded")
-	}
+	w.lockMemoryLocked()
 
 	w.owner = owner
 	w.publicKey = owner
