@@ -35,9 +35,6 @@ type WalletManager struct {
 
 	privateKey []byte
 
-	privateKeyHex string
-	publicKey     string
-
 	unlockedUntil time.Time
 	lockTimer     *time.Timer
 
@@ -388,11 +385,6 @@ func (w *WalletManager) SetOwner(owner string) error {
 		return fmt.Errorf("owner is required")
 	}
 
-	if w.owner == owner {
-		w.publicKey = owner
-		return nil
-	}
-
 	if w.isUnlockedLocked() {
 		return fmt.Errorf("cannot change owner while wallet is unlocked")
 	}
@@ -400,7 +392,6 @@ func (w *WalletManager) SetOwner(owner string) error {
 	w.lockMemoryLocked()
 
 	w.owner = owner
-	w.publicKey = owner
 
 	return nil
 }
@@ -422,11 +413,11 @@ func (w *WalletManager) SetPrivateKey(privateKey string) {
 	if err != nil {
 		log.Fatalf("Error converting public key to hex: %v", err)
 	}
-	w.publicKey = hex
+	w.owner = hex
 }
 
 func (w *WalletManager) GetPublicKey() string {
-	return w.publicKey
+	return w.owner
 }
 
 func (w *WalletManager) SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8, uuid7 string) (*transaction.Transaction, error) {
