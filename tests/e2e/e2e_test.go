@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"context"
@@ -20,9 +21,32 @@ import (
 	// "gitlab.com/2finance/2finance-network/blockchain/log"
 )
 
+const E2E_WALLET_PASSWORD = "E2E-Wallet-Password-123!"
+
 // ----------------------------------------------------------------------------
 // Helpers
 // ----------------------------------------------------------------------------
+type e2eSigner struct {
+	PublicKey  string
+	PrivateKey string
+	Wallet     wallet_manager.IWalletManager
+}
+
+func setupSignerWallet(t *testing.T) e2eSigner {
+	t.Helper()
+
+	wm := setupWalletManager(t)
+
+	pub, priv := genKey(t, wm)
+
+	importAndUnlockWallet(t, wm, pub, priv)
+
+	return e2eSigner{
+		PublicKey:  pub,
+		PrivateKey: priv,
+		Wallet:     wm,
+	}
+}
 
 func setupClient(t *testing.T, wallet wallet_manager.IWalletManager) client2f.Client2FinanceNetwork {
 	t.Helper()
@@ -54,14 +78,41 @@ func setupClient(t *testing.T, wallet wallet_manager.IWalletManager) client2f.Cl
 	return c
 }
 
-func setupWalletManager(t *testing.T) (wallet_manager.IWalletManager) {
+func sanitizeFileName(name string) string {
+	replacer := strings.NewReplacer(
+		"/", "_",
+		"\\", "_",
+		" ", "_",
+		":", "_",
+	)
+
+	return replacer.Replace(name)
+}
+
+const E2E_WALLET_DIR = "wallets"
+
+func setupWalletManager(t *testing.T) wallet_manager.IWalletManager {
 	t.Helper()
 
-	walletPath := filepath.Join(t.TempDir(), "e2e-wallet.wallet")
+	walletDir := os.Getenv("E2E_WALLET_DIR")
+	if walletDir == "" {
+		walletDir = E2E_WALLET_DIR
+	}
 
-	wallet := wallet_manager.NewWalletManager("", walletPath)
+	if err := os.MkdirAll(walletDir, 0700); err != nil {
+		t.Fatalf("MkdirAll wallet dir: %v", err)
+	}
 
-	return wallet
+	walletFileName := fmt.Sprintf(
+		"%s-%d-%s.wallet",
+		sanitizeFileName(t.Name()),
+		time.Now().UnixNano(),
+		randSuffix(8),
+	)
+
+	walletPath := filepath.Join(walletDir, walletFileName)
+
+	return wallet_manager.NewWalletManager(walletPath)
 }
 
 func randSuffix(n int) string {
@@ -100,6 +151,31 @@ func genKey(t *testing.T, w wallet_manager.IWalletManager) (pub, priv string) {
 	if err != nil {
 		t.Fatalf("GenerateEd25519KeyPairHex: %v", err)
 	}
-	
+
 	return pub, priv
+}
+
+func importAndUnlockWallet(t *testing.T, wm wallet_manager.IWalletManager, expectedPublicKey string, privateKey string) {
+	t.Helper()
+
+	privateKeyBytes := []byte(privateKey)
+
+	if err := wm.ImportWallet(privateKeyBytes, E2E_WALLET_PASSWORD); err != nil {
+		t.Fatalf("ImportWallet: %v", err)
+	}
+
+	gotPublicKey := wm.GetPublicKey()
+	if gotPublicKey != expectedPublicKey {
+		t.Fatalf("wallet public key mismatch: want %s, got %s", expectedPublicKey, gotPublicKey)
+	}
+
+	if err := wm.Unlock(E2E_WALLET_PASSWORD); err != nil {
+		t.Fatalf("Unlock: %v", err)
+	}
+}
+
+func useWallet(t *testing.T, c client2f.Client2FinanceNetwork, wm wallet_manager.IWalletManager) {
+	t.Helper()
+
+	c.SetWalletManager(wm)
 }

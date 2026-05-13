@@ -17,20 +17,31 @@ import (
 )
 
 func TestPaymentFlow(t *testing.T) {
-	wm := setupWalletManager(t)
-	c := setupClient(t, wm)
+	// ------------------
+	//   LOCAL WALLETS
+	// ------------------
+	ownerSigner := setupSignerWallet(t)
+	payerSigner := setupSignerWallet(t)
+	payeeSigner := setupSignerWallet(t)
+
+	c := setupClient(t, ownerSigner.Wallet)
 
 	// ------------------
-	//      WALLETS
+	//   ON-CHAIN WALLETS
 	// ------------------
-	owner, ownerPriv := createWallet(t, c, wm)
-	payer, payerPriv := createWallet(t, c, wm)
-	payee, payeePriv := createWallet(t, c, wm)
+	useWallet(t, c, ownerSigner.Wallet)
+	owner := createWallet(t, c, ownerSigner.PublicKey)
+
+	useWallet(t, c, payerSigner.Wallet)
+	payer := createWallet(t, c, payerSigner.PublicKey)
+
+	useWallet(t, c, payeeSigner.Wallet)
+	payee := createWallet(t, c, payeeSigner.PublicKey)
 
 	// ------------------
 	//      TOKEN
 	// ------------------
-	wm.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	payToken := createBasicToken(
 		t,
@@ -47,6 +58,8 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//   DEPLOY PAYMENT
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	deployedContract, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
@@ -64,7 +77,7 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//   ALLOW USERS
 	// ------------------
-	wm.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	_, err = c.AddAllowedUsers(payToken.Address, map[string]bool{
 		owner.PublicKey: true,
@@ -79,6 +92,8 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//  FUND THE PAYER
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	fundAmount := "500"
 	_, err = c.TransferToken(payToken.Address, payer.PublicKey, fundAmount, []string{})
 	if err != nil {
@@ -89,6 +104,7 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance payer before: %v", err)
 	}
+
 	var payerBalanceBefore tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceBeforeOut.States[0].Object, &payerBalanceBefore)
 	if err != nil {
@@ -115,11 +131,12 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//   CREATE PAYMENT
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	orderId := "order-payment-e2e-001"
 	amount := "300"
 	expiredAt := time.Now().Add(2 * time.Hour)
 
-	wm.SetPrivateKey(ownerPriv)
 	createPaymentOut, err := c.CreatePayment(inputs.InputCreate{
 		Address:      paymentAddress,
 		Owner:        owner.PublicKey,
@@ -188,7 +205,8 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//       PAUSE
 	// ------------------
-	wm.SetPrivateKey(payerPriv)
+	useWallet(t, c, payerSigner.Wallet)
+
 	pauseOut, err := c.PausePayment(inputs.InputPause{
 		Address: paymentAddress,
 		Paused:  true,
@@ -224,7 +242,8 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//      UNPAUSE
 	// ------------------
-	wm.SetPrivateKey(payerPriv)
+	useWallet(t, c, payerSigner.Wallet)
+
 	unpauseOut, err := c.UnpausePayment(inputs.InputPause{
 		Address: paymentAddress,
 		Paused:  false,
@@ -260,7 +279,8 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//     AUTHORIZE
 	// ------------------
-	wm.SetPrivateKey(payerPriv)
+	useWallet(t, c, payerSigner.Wallet)
+
 	authorizeOut, err := c.AuthorizePayment(inputs.InputAuthorize{
 		Address: paymentAddress,
 	})
@@ -297,7 +317,8 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//      CAPTURE
 	// ------------------
-	wm.SetPrivateKey(payeePriv)
+	useWallet(t, c, payeeSigner.Wallet)
+
 	captureOut, err := c.CapturePayment(inputs.InputCapture{
 		Address: paymentAddress,
 	})
@@ -367,9 +388,10 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//       REFUND
 	// ------------------
+	useWallet(t, c, payeeSigner.Wallet)
+
 	refundAmount := "100"
 
-	wm.SetPrivateKey(payeePriv)
 	refundOut, err := c.RefundPayment(inputs.InputRefund{
 		Address: paymentAddress,
 		Amount:  refundAmount,
@@ -441,6 +463,8 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//     VOID FLOW
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	deployedContract2, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract second payment: %v", err)
@@ -465,7 +489,8 @@ func TestPaymentFlow(t *testing.T) {
 	voidOrderId := "order-payment-e2e-void-001"
 	voidAmount := "80"
 
-	wm.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
+
 	_, err = c.CreatePayment(inputs.InputCreate{
 		Address:      voidPaymentAddress,
 		Owner:        owner.PublicKey,
@@ -480,7 +505,8 @@ func TestPaymentFlow(t *testing.T) {
 		t.Fatalf("CreatePayment void flow: %v", err)
 	}
 
-	wm.SetPrivateKey(payerPriv)
+	useWallet(t, c, payerSigner.Wallet)
+
 	_, err = c.AuthorizePayment(inputs.InputAuthorize{
 		Address: voidPaymentAddress,
 	})
@@ -499,6 +525,8 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	//     DIRECT PAY
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	deployedContract3, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract direct pay: %v", err)
@@ -543,7 +571,8 @@ func TestPaymentFlow(t *testing.T) {
 		t.Fatalf("UnmarshalState payeeBalanceBeforeDirect: %v", err)
 	}
 
-	wm.SetPrivateKey(payerPriv)
+	useWallet(t, c, payerSigner.Wallet)
+
 	directPayOut, err := c.DirectPay(inputs.InputDirectPay{
 		Address:      directPaymentAddress,
 		Owner:        payer.PublicKey,
@@ -738,22 +767,32 @@ func TestPaymentFlow(t *testing.T) {
 	assert.True(t, foundDirectFlow, "expected to find direct payment in ListPayments")
 }
 
-// More payment scenarios
 func TestPaymentAuthVoidFlow(t *testing.T) {
-	wm := setupWalletManager(t)
-	c := setupClient(t, wm)
+	// ------------------
+	//   LOCAL WALLETS
+	// ------------------
+	ownerSigner := setupSignerWallet(t)
+	payerSigner := setupSignerWallet(t)
+	payeeSigner := setupSignerWallet(t)
+
+	c := setupClient(t, ownerSigner.Wallet)
 
 	// ------------------
-	//      WALLETS
+	//   ON-CHAIN WALLETS
 	// ------------------
-	owner, ownerPriv := createWallet(t, c, wm)
-	payer, payerPriv := createWallet(t, c, wm)
-	payee, _ := createWallet(t, c, wm)
+	useWallet(t, c, ownerSigner.Wallet)
+	owner := createWallet(t, c, ownerSigner.PublicKey)
+
+	useWallet(t, c, payerSigner.Wallet)
+	payer := createWallet(t, c, payerSigner.PublicKey)
+
+	useWallet(t, c, payeeSigner.Wallet)
+	payee := createWallet(t, c, payeeSigner.PublicKey)
 
 	// ------------------
 	//      TOKEN
 	// ------------------
-	wm.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	payToken := createBasicToken(
 		t,
@@ -770,6 +809,8 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	// ------------------
 	//   DEPLOY PAYMENT
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	deployedContract, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
@@ -787,7 +828,7 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	// ------------------
 	//   ALLOW USERS
 	// ------------------
-	wm.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	_, err = c.AddAllowedUsers(payToken.Address, map[string]bool{
 		owner.PublicKey: true,
@@ -802,6 +843,8 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	// ------------------
 	//   FUND PAYER
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	fundAmount := "500"
 	_, err = c.TransferToken(payToken.Address, payer.PublicKey, fundAmount, []string{})
 	if err != nil {
@@ -838,11 +881,12 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	// ------------------
 	//   CREATE PAYMENT
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	orderId := "order-payment-auth-void-e2e-001"
 	amount := "300"
 	expiredAt := time.Now().Add(2 * time.Hour)
 
-	wm.SetPrivateKey(ownerPriv)
 	createPaymentOut, err := c.CreatePayment(inputs.InputCreate{
 		Address:      paymentAddress,
 		Owner:        owner.PublicKey,
@@ -905,7 +949,8 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	// ------------------
 	//     AUTHORIZE
 	// ------------------
-	wm.SetPrivateKey(payerPriv)
+	useWallet(t, c, payerSigner.Wallet)
+
 	authorizeOut, err := c.AuthorizePayment(inputs.InputAuthorize{
 		Address: paymentAddress,
 	})
@@ -947,7 +992,8 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	// ------------------
 	//        VOID
 	// ------------------
-	wm.SetPrivateKey(payerPriv)
+	useWallet(t, c, payerSigner.Wallet)
+
 	voidOut, err := c.VoidPayment(inputs.InputVoidPayment{
 		Address: paymentAddress,
 	})

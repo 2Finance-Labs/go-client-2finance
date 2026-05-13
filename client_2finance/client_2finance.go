@@ -29,6 +29,7 @@ import (
 type Client2FinanceNetwork interface {
 	// Client
 	SetChainID(chainId uint8)
+	SetWalletManager(wallet wallet_manager.IWalletManager)
 
 	SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error)
 
@@ -422,6 +423,13 @@ func (c *networkClient) SetChainID(chainId uint8) {
 		log.Fatalf("invalid chainId: %d, available values are 2 testnet or 1 mainnet", chainId)
 	}
 	c.chainId = chainId
+}
+
+func (c *networkClient) SetWalletManager(wallet wallet_manager.IWalletManager) {
+	if wallet == nil {
+		log.Fatalf("wallet manager cannot be nil")
+	}
+	c.walletManager = wallet
 }
 
 func (c *networkClient) GetChainID() uint8 {

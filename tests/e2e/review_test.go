@@ -13,24 +13,43 @@ import (
 )
 
 func TestReviewFlow(t *testing.T) {
-	wm := setupWalletManager(t)
-	c := setupClient(t, wm)
-	reviewer, reviewerPriv := createWallet(t, c, wm)
-	reviewee, _ := createWallet(t, c, wm)
-	wm.SetPrivateKey(reviewerPriv)
+	// ------------------
+	//   LOCAL WALLETS
+	// ------------------
+	reviewerSigner := setupSignerWallet(t)
+	revieweeSigner := setupSignerWallet(t)
+
+	c := setupClient(t, reviewerSigner.Wallet)
+
+	// ------------------
+	//   ON-CHAIN WALLETS
+	// ------------------
+	useWallet(t, c, reviewerSigner.Wallet)
+	reviewer := createWallet(t, c, reviewerSigner.PublicKey)
+
+	useWallet(t, c, revieweeSigner.Wallet)
+	reviewee := createWallet(t, c, revieweeSigner.PublicKey)
+
+	// ------------------
+	//   DEPLOY REVIEW
+	// ------------------
+	useWallet(t, c, reviewerSigner.Wallet)
 
 	deployedContract, err := c.DeployContract1(reviewV1.REVIEW_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
+
 	contractLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
 	if err != nil {
-		t.Fatalf("UnmarshalLog (AddWallet.Logs[0]): %v", err)
+		t.Fatalf("UnmarshalLog (DeployContract.Logs[0]): %v", err)
 	}
 
 	// ------------------
 	//   CREATE REVIEW
 	// ------------------
+	useWallet(t, c, reviewerSigner.Wallet)
+
 	address := contractLog.ContractAddress
 	subjectType := "order"
 	subjectId := "order-xyz"
@@ -42,7 +61,20 @@ func TestReviewFlow(t *testing.T) {
 	expiredAt := time.Now().Add(24 * time.Hour)
 	hidden := false
 
-	addReview, err := c.AddReview(address, reviewer.PublicKey, reviewee.PublicKey, subjectType, subjectId, rating, comment, tags, mediaHashes, startAt, expiredAt, hidden)
+	addReview, err := c.AddReview(
+		address,
+		reviewer.PublicKey,
+		reviewee.PublicKey,
+		subjectType,
+		subjectId,
+		rating,
+		comment,
+		tags,
+		mediaHashes,
+		startAt,
+		expiredAt,
+		hidden,
+	)
 	if err != nil {
 		t.Fatalf("AddReview: %v", err)
 	}
@@ -51,7 +83,7 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddReview.Logs[0]): %v", err)
 	}
-	assert.Equal(t, unmarshalLogReview.LogType, reviewV1Domain.REVIEW_ADDED_LOG)
+	assert.Equal(t, reviewV1Domain.REVIEW_ADDED_LOG, unmarshalLogReview.LogType)
 
 	review, err := utils.UnmarshalEvent[reviewV1Domain.Review](unmarshalLogReview.Event)
 	if err != nil {
@@ -98,10 +130,22 @@ func TestReviewFlow(t *testing.T) {
 	// ------------------
 	//   UPDATE REVIEW
 	// ------------------
+	useWallet(t, c, reviewerSigner.Wallet)
+
 	newStart := time.Now()
 	newExp := time.Now().Add(48 * time.Hour)
 
-	updateReview, err := c.UpdateReview(address, subjectType, subjectId, 4, "Updated comment", map[string]string{"quality": "4"}, []string{"bafy2"}, &newStart, &newExp)
+	updateReview, err := c.UpdateReview(
+		address,
+		subjectType,
+		subjectId,
+		4,
+		"Updated comment",
+		map[string]string{"quality": "4"},
+		[]string{"bafy2"},
+		&newStart,
+		&newExp,
+	)
 	if err != nil {
 		t.Fatalf("UpdateReview: %v", err)
 	}
@@ -110,7 +154,7 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (UpdateReview.Logs[0]): %v", err)
 	}
-	assert.Equal(t, unmarshalLogUpdate.LogType, reviewV1Domain.REVIEW_UPDATED_LOG)
+	assert.Equal(t, reviewV1Domain.REVIEW_UPDATED_LOG, unmarshalLogUpdate.LogType)
 
 	updatedReview, err := utils.UnmarshalEvent[reviewV1Domain.Review](unmarshalLogUpdate.Event)
 	if err != nil {
@@ -151,6 +195,8 @@ func TestReviewFlow(t *testing.T) {
 	// ------------------
 	//   HIDE REVIEW
 	// ------------------
+	useWallet(t, c, reviewerSigner.Wallet)
+
 	hideReview, err := c.HideReview(address, true)
 	if err != nil {
 		t.Fatalf("HideReview: %v", err)
@@ -160,7 +206,7 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (HideReview.Logs[0]): %v", err)
 	}
-	assert.Equal(t, unmarshalLogHide.LogType, reviewV1Domain.REVIEW_HIDDEN_LOG)
+	assert.Equal(t, reviewV1Domain.REVIEW_HIDDEN_LOG, unmarshalLogHide.LogType)
 
 	hiddenReview, err := utils.UnmarshalEvent[reviewV1Domain.Review](unmarshalLogHide.Event)
 	if err != nil {
@@ -195,8 +241,12 @@ func TestReviewFlow(t *testing.T) {
 	// ------------------
 	//   HELPFUL VOTE
 	// ------------------
-	voter, voterPriv := createWallet(t, c, wm)
-	wm.SetPrivateKey(voterPriv)
+	voterSigner := setupSignerWallet(t)
+
+	useWallet(t, c, voterSigner.Wallet)
+	voter := createWallet(t, c, voterSigner.PublicKey)
+
+	useWallet(t, c, voterSigner.Wallet)
 
 	voteHelpful, err := c.VoteHelpful(address, voter.PublicKey, true)
 	if err != nil {
@@ -207,7 +257,7 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (VoteHelpful.Logs[0]): %v", err)
 	}
-	assert.Equal(t, unmarshalLogVote.LogType, reviewV1Domain.REVIEW_HELPFUL_LOG)
+	assert.Equal(t, reviewV1Domain.REVIEW_HELPFUL_LOG, unmarshalLogVote.LogType)
 
 	votedReview, err := utils.UnmarshalEvent[reviewV1Domain.Vote](unmarshalLogVote.Event)
 	if err != nil {
@@ -244,8 +294,12 @@ func TestReviewFlow(t *testing.T) {
 	// ------------------
 	//   REPORT REVIEW
 	// ------------------
-	reporter, reporterPriv := createWallet(t, c, wm)
-	wm.SetPrivateKey(reporterPriv)
+	reporterSigner := setupSignerWallet(t)
+
+	useWallet(t, c, reporterSigner.Wallet)
+	reporter := createWallet(t, c, reporterSigner.PublicKey)
+
+	useWallet(t, c, reporterSigner.Wallet)
 
 	reportReview, err := c.ReportReview(address, reporter.PublicKey, "spam")
 	if err != nil {
@@ -256,7 +310,7 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (ReportReview.Logs[0]): %v", err)
 	}
-	assert.Equal(t, unmarshalLogReport.LogType, reviewV1Domain.REVIEW_REPORTED_LOG)
+	assert.Equal(t, reviewV1Domain.REVIEW_REPORTED_LOG, unmarshalLogReport.LogType)
 
 	reportedReview, err := utils.UnmarshalEvent[reviewV1Domain.Report](unmarshalLogReport.Event)
 	if err != nil {
@@ -295,7 +349,7 @@ func TestReviewFlow(t *testing.T) {
 	// ------------------
 	//   MODERATE REVIEW
 	// ------------------
-	wm.SetPrivateKey(reviewerPriv)
+	useWallet(t, c, reviewerSigner.Wallet)
 
 	moderateReview, err := c.ModerateReview(address, reviewV1Domain.MODERATE_STATUS_APPROVED, "ok")
 	if err != nil {
@@ -306,7 +360,7 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (ModerateReview.Logs[0]): %v", err)
 	}
-	assert.Equal(t, unmarshalLogModerate.LogType, reviewV1Domain.REVIEW_MODERATED_LOG)
+	assert.Equal(t, reviewV1Domain.REVIEW_MODERATED_LOG, unmarshalLogModerate.LogType)
 
 	moderatedReview, err := utils.UnmarshalEvent[reviewV1Domain.Moderation](unmarshalLogModerate.Event)
 	if err != nil {
@@ -340,7 +394,18 @@ func TestReviewFlow(t *testing.T) {
 	// ------------------
 	//   LIST REVIEWS
 	// ------------------
-	listReviews, err := c.ListReviews(reviewer.PublicKey, reviewee.PublicKey, subjectType, subjectId, nil, 0, 5, 1, 10, true)
+	listReviews, err := c.ListReviews(
+		reviewer.PublicKey,
+		reviewee.PublicKey,
+		subjectType,
+		subjectId,
+		nil,
+		0,
+		5,
+		1,
+		10,
+		true,
+	)
 	if err != nil {
 		t.Fatalf("ListReviews: %v", err)
 	}
@@ -352,6 +417,7 @@ func TestReviewFlow(t *testing.T) {
 		if err != nil {
 			t.Fatalf("UnmarshalState (ListReviews): %v", err)
 		}
+
 		reviews = append(reviews, reviewV1Domain.Review{
 			Address:     r.Address,
 			Reviewer:    r.Reviewer,
