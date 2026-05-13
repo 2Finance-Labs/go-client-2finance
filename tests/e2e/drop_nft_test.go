@@ -16,14 +16,20 @@ import (
 )
 
 func TestDropFlowNFT(t *testing.T) {
-	c := setupClient(t)
+	// --------------------------------------------------------------------
+	// Owner local wallet
+	// --------------------------------------------------------------------
+	ownerSigner := setupSignerWallet(t)
 
-	owner, ownerPriv := createWallet(t, c)
+	c := setupClient(t, ownerSigner.Wallet)
+
+	useWallet(t, c, ownerSigner.Wallet)
+	owner := createWallet(t, c, ownerSigner.PublicKey)
 
 	// --------------------------------------------------------------------
 	// Token setup (NFT - SEM createBasicToken)
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
 	require.NoError(t, err)
@@ -38,8 +44,8 @@ func TestDropFlowNFT(t *testing.T) {
 		nftTokenAddress,
 		"DNFT"+randSuffix(4),
 		"Drop NFT",
-		0,   // decimals
-		"1", // total supply (NFT)
+		0,
+		"1",
 		"drop nft e2e",
 		owner.PublicKey,
 		"https://example.com/image.png",
@@ -73,6 +79,8 @@ func TestDropFlowNFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Mint NFTs
 	// --------------------------------------------------------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	mintOut, err := c.MintToken(nftTokenAddress, owner.PublicKey, "3")
 	require.NoError(t, err)
 
@@ -90,6 +98,8 @@ func TestDropFlowNFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Deploy Drop
 	// --------------------------------------------------------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	deployedDrop, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
 	require.NoError(t, err)
 
@@ -97,14 +107,17 @@ func TestDropFlowNFT(t *testing.T) {
 	require.NoError(t, err)
 
 	dropAddress := dropLog.ContractAddress
+	require.NotEmpty(t, dropAddress)
 
 	// --------------------------------------------------------------------
 	// Create Drop
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
-	programAddress, _ := genKey(t, c)
-	tokenAddress, _ := genKey(t, c)
+	tmpWM := setupWalletManager(t)
+
+	programAddress, _ := genKey(t, tmpWM)
+	tokenAddress, _ := genKey(t, tmpWM)
 
 	startAt := time.Now()
 	expireAt := time.Now().Add(24 * time.Hour)
@@ -130,12 +143,14 @@ func TestDropFlowNFT(t *testing.T) {
 	inputUpdate := buildUpdateDropInput(
 		dropAddress,
 		programAddress,
-		nftTokenAddress, // aqui entra o NFT real
+		nftTokenAddress,
 		startAt,
 		expireAt,
 	)
 
 	inputUpdate.ClaimAmount = "1"
+
+	useWallet(t, c, ownerSigner.Wallet)
 
 	_, err = c.UpdateDropMetadata(inputUpdate)
 	require.NoError(t, err)
@@ -143,28 +158,36 @@ func TestDropFlowNFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Oracles
 	// --------------------------------------------------------------------
-	oracles := buildOracleFixture(t, c)
+	useWallet(t, c, ownerSigner.Wallet)
+
+	oracles := buildOracleFixture(t)
 
 	mustAllowOracles(t, c, drop.Address, map[string]bool{
 		oracles.Oracle1: true,
 	})
 
 	// --------------------------------------------------------------------
-	// Eligibility
+	// Eligibility before attestation
 	// --------------------------------------------------------------------
-	userPub, userPriv := genKey(t, c)
+	userSigner := setupSignerWallet(t)
+
+	useWallet(t, c, userSigner.Wallet)
 
 	_, err = c.ClaimDrop(drop.Address)
 	assertClaimDropError(t, err, "is not eligible")
 
-	c.SetPrivateKey(oracles.Oracle1Priv)
-	_, err = c.AttestParticipantEligibility(drop.Address, userPub, true)
+	// --------------------------------------------------------------------
+	// Oracle attests user eligibility
+	// --------------------------------------------------------------------
+	useWallet(t, c, oracles.Oracle1WM)
+
+	_, err = c.AttestParticipantEligibility(drop.Address, userSigner.PublicKey, true)
 	require.NoError(t, err)
 
 	// --------------------------------------------------------------------
 	// Deposit NFTs
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	depositUUIDs := []string{uuid1, uuid2}
 	fmt.Printf("Depositing NFTs with UUIDs: %v\n", depositUUIDs)
@@ -181,6 +204,8 @@ func TestDropFlowNFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Withdraw 1 NFT
 	// --------------------------------------------------------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	_, err = c.WithdrawDrop(
 		drop.Address,
 		programAddress,
@@ -190,30 +215,37 @@ func TestDropFlowNFT(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	getBalance, err := c.ListTokenBalances(nftTokenAddress, drop.Address, tokenV1Domain.NON_FUNGIBLE, 1, 10, true)
+	getBalance, err := c.ListTokenBalances(
+		nftTokenAddress,
+		drop.Address,
+		tokenV1Domain.NON_FUNGIBLE,
+		1,
+		10,
+		true,
+	)
 	require.NoError(t, err)
 
 	var balanceList []tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[[]tokenV1Models.BalanceStateModel](getBalance.States[0].Object, &balanceList)
 	require.NoError(t, err)
 
-	assert.Len(t, balanceList, 1)
 	assert.Len(t, getBalance.States, 1)
+	assert.Len(t, balanceList, 1)
 	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, balanceList[0].TokenType)
 
 	// --------------------------------------------------------------------
 	// Claim
 	// --------------------------------------------------------------------
-	c.SetPrivateKey(userPriv)
+	useWallet(t, c, userSigner.Wallet)
 
 	outClaim, err := c.ClaimDrop(drop.Address)
 	require.NoError(t, err)
-	
+
 	assertClaimDropLog(
 		t,
 		outClaim,
 		drop.Address,
-		userPub,
+		userSigner.PublicKey,
 		programAddress,
 		nftTokenAddress,
 		"1",
@@ -222,14 +254,14 @@ func TestDropFlowNFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	// Validate user received NFT
 	// --------------------------------------------------------------------
-	userBalanceOut, err := c.GetTokenBalanceNFT(nftTokenAddress, userPub, uuid1)
+	userBalanceOut, err := c.GetTokenBalanceNFT(nftTokenAddress, userSigner.PublicKey, uuid1)
 	require.NoError(t, err)
 
 	var userBalance tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](userBalanceOut.States[0].Object, &userBalance)
 	require.NoError(t, err)
 
-	assert.Equal(t, userPub, userBalance.OwnerAddress)
+	assert.Equal(t, userSigner.PublicKey, userBalance.OwnerAddress)
 	assert.Equal(t, uuid1, userBalance.TokenUUID)
 	assert.Equal(t, "1", userBalance.Amount)
 }

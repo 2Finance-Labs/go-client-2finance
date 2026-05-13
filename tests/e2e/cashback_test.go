@@ -16,18 +16,27 @@ import (
 )
 
 func TestCashbackFlow(t *testing.T) {
-	c := setupClient(t)
+	// ------------------
+	//   LOCAL WALLETS
+	// ------------------
+	ownerSigner := setupSignerWallet(t)
+	customerSigner := setupSignerWallet(t)
+
+	c := setupClient(t, ownerSigner.Wallet)
 
 	// ------------------
-	//      WALLETS
+	//   ON-CHAIN WALLETS
 	// ------------------
-	owner, ownerPriv := createWallet(t, c)
-	customer, customerPriv := createWallet(t, c)
+	useWallet(t, c, ownerSigner.Wallet)
+	owner := createWallet(t, c, ownerSigner.PublicKey)
+
+	useWallet(t, c, customerSigner.Wallet)
+	customer := createWallet(t, c, customerSigner.PublicKey)
 
 	// ------------------
 	//      TOKEN
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	cashbackToken := createBasicToken(
 		t,
@@ -44,6 +53,8 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//   DEPLOY CASHBACK
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	deployedContract, err := c.DeployContract1(cashbackV1.CASHBACK_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract cashback: %v", err)
@@ -61,7 +72,7 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//   ALLOW USERS
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	_, err = c.AddAllowedUsers(cashbackToken.Address, map[string]bool{
 		owner.PublicKey:    true,
@@ -73,12 +84,13 @@ func TestCashbackFlow(t *testing.T) {
 	}
 
 	// ------------------
-	//   FUND OWNER
+	//   BALANCES BEFORE
 	// ------------------
 	ownerBalanceBeforeOut, err := c.GetTokenBalance(cashbackToken.Address, owner.PublicKey)
 	if err != nil {
 		t.Fatalf("GetTokenBalance owner before: %v", err)
 	}
+
 	var ownerBalanceBefore tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerBalanceBeforeOut.States[0].Object, &ownerBalanceBefore)
 	if err != nil {
@@ -86,9 +98,11 @@ func TestCashbackFlow(t *testing.T) {
 	}
 
 	var customerBalanceBefore tokenV1Models.BalanceStateModel
+
 	customerBalanceBeforeOut, err := c.GetTokenBalance(cashbackToken.Address, customer.PublicKey)
 	if err != nil {
 		require.Contains(t, err.Error(), "record not found")
+
 		customerBalanceBefore = tokenV1Models.BalanceStateModel{
 			TokenAddress: cashbackToken.Address,
 			OwnerAddress: customer.PublicKey,
@@ -105,12 +119,13 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//   ADD CASHBACK
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	startAt := time.Now().Add(2 * time.Second)
 	expiredAt := time.Now().Add(24 * time.Hour)
 	programType := "fixed-percentage"
 	percentage := "1000"
 
-	c.SetPrivateKey(ownerPriv)
 	addOut, err := c.AddCashback(
 		cashbackAddress,
 		owner.PublicKey,
@@ -131,7 +146,6 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("UnmarshalLog (AddCashback.Logs[0]): %v", err)
 	}
 
-	// Ajuste este log se o nome exato no domínio estiver diferente
 	assert.Equal(t, cashbackV1Domain.CASHBACK_CREATED_LOG, addLog.LogType)
 
 	addEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](addLog.Event)
@@ -145,6 +159,7 @@ func TestCashbackFlow(t *testing.T) {
 	assert.Equal(t, programType, addEvent.ProgramType)
 	assert.Equal(t, percentage, addEvent.Percentage)
 	assert.False(t, addEvent.Paused)
+
 	if !addEvent.StartAt.IsZero() {
 		assert.WithinDuration(t, startAt, addEvent.StartAt, time.Second)
 	}
@@ -170,6 +185,7 @@ func TestCashbackFlow(t *testing.T) {
 	assert.Equal(t, programType, cashbackState.ProgramType)
 	assert.Equal(t, percentage, cashbackState.Percentage)
 	assert.False(t, cashbackState.Paused)
+
 	if cashbackState.StartAt != nil && !cashbackState.StartAt.IsZero() {
 		assert.WithinDuration(t, startAt, *cashbackState.StartAt, time.Second)
 	}
@@ -180,10 +196,11 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//      UPDATE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	updatedPercentage := "1500"
 	updatedExpiredAt := time.Now().Add(48 * time.Hour)
 
-	c.SetPrivateKey(ownerPriv)
 	updateOut, err := c.UpdateCashback(
 		cashbackAddress,
 		cashbackToken.Address,
@@ -216,12 +233,14 @@ func TestCashbackFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetCashback after update: %v", err)
 	}
+
 	err = utils.UnmarshalState[cashbackV1Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetCashback after update): %v", err)
 	}
 
 	assert.Equal(t, updatedPercentage, cashbackState.Percentage)
+
 	if cashbackState.ExpiredAt != nil && !cashbackState.ExpiredAt.IsZero() {
 		assert.WithinDuration(t, updatedExpiredAt, *cashbackState.ExpiredAt, time.Second)
 	}
@@ -229,7 +248,8 @@ func TestCashbackFlow(t *testing.T) {
 	// ------------------
 	//       PAUSE
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
+
 	pauseOut, err := c.PauseCashback(cashbackAddress, true)
 	if err != nil {
 		t.Fatalf("PauseCashback: %v", err)
@@ -255,16 +275,19 @@ func TestCashbackFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetCashback after pause: %v", err)
 	}
+
 	err = utils.UnmarshalState[cashbackV1Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetCashback after pause): %v", err)
 	}
+
 	assert.True(t, cashbackState.Paused)
 
 	// ------------------
 	//      UNPAUSE
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
+
 	unpauseOut, err := c.UnpauseCashback(cashbackAddress, false)
 	if err != nil {
 		t.Fatalf("UnpauseCashback: %v", err)
@@ -290,18 +313,21 @@ func TestCashbackFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetCashback after unpause: %v", err)
 	}
+
 	err = utils.UnmarshalState[cashbackV1Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetCashback after unpause): %v", err)
 	}
+
 	assert.False(t, cashbackState.Paused)
 
 	// ------------------
 	//      DEPOSIT
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	depositAmount := "200"
 
-	c.SetPrivateKey(ownerPriv)
 	depositOut, err := c.DepositCashbackFunds(
 		cashbackAddress,
 		cashbackToken.Address,
@@ -332,6 +358,7 @@ func TestCashbackFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance owner after deposit: %v", err)
 	}
+
 	var ownerBalanceAfterDeposit tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerBalanceAfterDepositOut.States[0].Object, &ownerBalanceAfterDeposit)
 	if err != nil {
@@ -342,11 +369,14 @@ func TestCashbackFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SubBigIntStrings ownerBalanceBefore - depositAmount: %v", err)
 	}
+
 	assert.Equal(t, expectedOwnerBalanceAfterDeposit, ownerBalanceAfterDeposit.Amount)
 
 	// ------------------
 	//       CLAIM
 	// ------------------
+	useWallet(t, c, customerSigner.Wallet)
+
 	wait := time.Until(startAt) + 500*time.Millisecond
 	if wait > 0 {
 		time.Sleep(wait)
@@ -354,7 +384,6 @@ func TestCashbackFlow(t *testing.T) {
 
 	claimAmount := "100"
 
-	c.SetPrivateKey(customerPriv)
 	claimOut, err := c.ClaimCashback(
 		cashbackAddress,
 		claimAmount,
@@ -384,6 +413,7 @@ func TestCashbackFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance customer after claim: %v", err)
 	}
+
 	var customerBalanceAfterClaim tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](customerBalanceAfterClaimOut.States[0].Object, &customerBalanceAfterClaim)
 	if err != nil {
@@ -396,14 +426,16 @@ func TestCashbackFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AddBigIntStrings customerBalanceBefore + cashbackReceived: %v", err)
 	}
+
 	assert.Equal(t, expectedCustomerBalanceAfterClaim, customerBalanceAfterClaim.Amount)
 
 	// ------------------
 	//      WITHDRAW
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	withdrawAmount := "100"
 
-	c.SetPrivateKey(ownerPriv)
 	withdrawOut, err := c.WithdrawCashbackFunds(
 		cashbackAddress,
 		cashbackToken.Address,
@@ -434,6 +466,7 @@ func TestCashbackFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance owner after withdraw: %v", err)
 	}
+
 	var ownerBalanceAfterWithdraw tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerBalanceAfterWithdrawOut.States[0].Object, &ownerBalanceAfterWithdraw)
 	if err != nil {
@@ -444,6 +477,7 @@ func TestCashbackFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AddBigIntStrings ownerBalanceAfterDeposit + withdrawAmount: %v", err)
 	}
+
 	assert.Equal(t, expectedOwnerBalanceAfterWithdraw, ownerBalanceAfterWithdraw.Amount)
 
 	// ------------------

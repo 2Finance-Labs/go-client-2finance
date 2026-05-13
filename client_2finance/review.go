@@ -1,6 +1,5 @@
 package client_2finance
 
-
 import (
 	"fmt"
 	"time"
@@ -10,7 +9,6 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
-
 
 // AddReview creates a new review (to = DEPLOY address). The tx sender (c.publicKey) becomes owner.
 func (c *networkClient) AddReview(
@@ -22,7 +20,7 @@ func (c *networkClient) AddReview(
 	startAt, expiredAt time.Time,
 	hidden bool,
 ) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -63,18 +61,18 @@ func (c *networkClient) AddReview(
 	method := reviewV1.METHOD_ADD_REVIEW
 
 	data := map[string]interface{}{
-		"address":       address,
-		"reviewer":      reviewer,
-		"reviewee":      reviewee,
-		"subject_type":  subjectType,
-		"subject_id":    subjectID,
-		"rating":        rating,
-		"comment":       comment,
-		"tags":          tags,
-		"media_hashes":  mediaHashes,
-		"start_at":      startAt,
-		"expired_at":    expiredAt,
-		"hidden":        hidden,
+		"address":      address,
+		"reviewer":     reviewer,
+		"reviewee":     reviewee,
+		"subject_type": subjectType,
+		"subject_id":   subjectID,
+		"rating":       rating,
+		"comment":      comment,
+		"tags":         tags,
+		"media_hashes": mediaHashes,
+		"start_at":     startAt,
+		"expired_at":   expiredAt,
+		"hidden":       hidden,
 	}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -100,7 +98,7 @@ func (c *networkClient) UpdateReview(
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -151,7 +149,7 @@ func (c *networkClient) HideReview(address string, hidden bool) (types.ContractO
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -186,7 +184,7 @@ func (c *networkClient) VoteHelpful(address, voter string, isHelpful bool) (type
 		return types.ContractOutput{}, fmt.Errorf("invalid voter address: %w", err)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -225,7 +223,7 @@ func (c *networkClient) ReportReview(address, reporter, reason string) (types.Co
 		return types.ContractOutput{}, fmt.Errorf("reason not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -258,7 +256,7 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 		return types.ContractOutput{}, fmt.Errorf("action not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -281,7 +279,7 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 
 // GetReview retrieves a single review state.
 func (c *networkClient) GetReview(address string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -305,7 +303,7 @@ func (c *networkClient) ListReviews(
 	minRating, maxRating, page, limit int,
 	asc bool,
 ) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -341,15 +339,15 @@ func (c *networkClient) ListReviews(
 
 	method := reviewV1.METHOD_LIST_REVIEWS
 	data := map[string]interface{}{
-		"reviewer":      reviewer,
-		"reviewee":      reviewee,
-		"subject_type":  subjectType,
-		"subject_id":    subjectID,
-		"min_rating":    minRating,
-		"max_rating":    maxRating,
-		"page":          page,
-		"limit":         limit,
-		"ascending":     asc,
+		"reviewer":         reviewer,
+		"reviewee":         reviewee,
+		"subject_type":     subjectType,
+		"subject_id":       subjectID,
+		"min_rating":       minRating,
+		"max_rating":       maxRating,
+		"page":             page,
+		"limit":            limit,
+		"ascending":        asc,
 		"contract_version": reviewV1.REVIEW_CONTRACT_V1,
 	}
 	if includeHidden != nil {

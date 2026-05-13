@@ -20,7 +20,7 @@ func (c *networkClient) AddRaffle(
 	seedCommitHex string,
 	metadata map[string]string,
 ) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -103,7 +103,7 @@ func (c *networkClient) UpdateRaffle(
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -163,7 +163,7 @@ func (c *networkClient) PauseRaffle(address string, paused bool) (types.Contract
 		return types.ContractOutput{}, fmt.Errorf("paused must be true: Pause: %t", paused)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -194,7 +194,7 @@ func (c *networkClient) UnpauseRaffle(address string, paused bool) (types.Contra
 		return types.ContractOutput{}, fmt.Errorf("paused must be false: Pause: %t", paused)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -214,12 +214,14 @@ func (c *networkClient) UnpauseRaffle(address string, paused bool) (types.Contra
 }
 
 func (c *networkClient) EnterRaffle(address string, tickets int, payTokenAddress, tokenType, uuid string) (types.ContractOutput, error) {
-    // Pre-check client state
-    from := c.publicKey
-	if from == "" { return types.ContractOutput{}, fmt.Errorf("from address not set") }
+	// Pre-check client state
+	from := c.walletManager.GetPublicKey()
+	if from == "" {
+		return types.ContractOutput{}, fmt.Errorf("from address not set")
+	}
 
 	// Validate inputs (server/domain will also validate)
-	if err := keys.ValidateEDDSAPublicKeyHex(c.publicKey); err != nil {
+	if err := keys.ValidateEDDSAPublicKeyHex(c.walletManager.GetPublicKey()); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid client public key: %w", err)
 	}
 	if address == "" {
@@ -248,7 +250,7 @@ func (c *networkClient) EnterRaffle(address string, tickets int, payTokenAddress
 	// Exact payload fields expected by the refactored EnterRaffle handler
 	data := map[string]interface{}{
 		"address":           address,
-		"entrant":           c.publicKey,
+		"entrant":           c.walletManager.GetPublicKey(),
 		"tickets":           tickets,
 		"pay_token_address": payTokenAddress,
 		"token_type":        tokenType,
@@ -259,15 +261,15 @@ func (c *networkClient) EnterRaffle(address string, tickets int, payTokenAddress
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
-    return c.SignAndSendTransaction(
-        c.chainId,
-        from,
-        address,
-        raffleV1.METHOD_ENTER_RAFFLE,    // method constant
-        data,
-        version,
-        uuid7,
-    )
+	return c.SignAndSendTransaction(
+		c.chainId,
+		from,
+		address,
+		raffleV1.METHOD_ENTER_RAFFLE, // method constant
+		data,
+		version,
+		uuid7,
+	)
 }
 
 // DrawRaffle reveals the seed and draws winners (commit-reveal). OnlyOwner/Moderator.
@@ -282,7 +284,7 @@ func (c *networkClient) DrawRaffle(address, revealSeed string) (types.ContractOu
 		return types.ContractOutput{}, fmt.Errorf("reveal_seed not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -317,7 +319,7 @@ func (c *networkClient) ClaimRaffle(address, prizeUUID string) (types.ContractOu
 		return types.ContractOutput{}, fmt.Errorf("prizeUUID not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -363,7 +365,7 @@ func (c *networkClient) WithdrawRaffle(address, tokenAddress, amount, tokenType,
 		}
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -399,7 +401,7 @@ func (c *networkClient) AddRafflePrize(raffleAddress string, tokenAddress string
 		return types.ContractOutput{}, fmt.Errorf("amount not set or uuidNFTs not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -429,7 +431,7 @@ func (c *networkClient) RemoveRafflePrize(raffleAddress string, uuid string) (ty
 		return types.ContractOutput{}, fmt.Errorf("uuid not set")
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -450,7 +452,7 @@ func (c *networkClient) RemoveRafflePrize(raffleAddress string, uuid string) (ty
 
 // GetRaffle reads a single raffle state.
 func (c *networkClient) GetRaffle(address string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -471,7 +473,7 @@ func (c *networkClient) GetRaffle(address string) (types.ContractOutput, error) 
 
 // ListRaffles queries raffles with filters + pagination.
 func (c *networkClient) ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -498,11 +500,11 @@ func (c *networkClient) ListRaffles(owner, tokenAddress string, paused *bool, ac
 
 	method := raffleV1.METHOD_LIST_RAFFLES
 	data := map[string]interface{}{
-		"owner":            owner,
-		"page":             page,
-		"limit":            limit,
-		"ascending":        asc,
-		"token_address":    tokenAddress,
+		"owner":         owner,
+		"page":          page,
+		"limit":         limit,
+		"ascending":     asc,
+		"token_address": tokenAddress,
 	}
 	if paused != nil {
 		data["paused"] = *paused
@@ -515,7 +517,7 @@ func (c *networkClient) ListRaffles(owner, tokenAddress string, paused *bool, ac
 }
 
 func (c *networkClient) ListPrizes(raffleAddress string, page, limit int, asc bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -548,7 +550,7 @@ func (c *networkClient) ListPrizes(raffleAddress string, page, limit int, asc bo
 }
 
 func (c *networkClient) GetPrize(address string, prizeUUID string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}

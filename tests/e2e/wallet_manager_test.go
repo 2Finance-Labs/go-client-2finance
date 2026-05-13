@@ -13,42 +13,46 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	// -------------------------
 	// ARRANGE
 	// -------------------------
-	owner := "owner-address-test"
 	password := "StrongPassword123!"
 	wrongPassword := "WrongPassword123!"
-
-	originalPrivateKey := []byte("test-private-key-value")
 
 	walletDir := t.TempDir()
 	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
 
-	manager := wallet_manager.NewWalletManager(owner, walletPath)
+	manager := wallet_manager.NewWalletManager(walletPath)
+
+	originalPublicKey, originalPrivateKey, err := manager.GenerateEd25519KeyPairHex()
+	require.NoError(t, err)
+
+	originalPrivateKeyBytes := []byte(originalPrivateKey)
 
 	// -------------------------
-	// ACT: CREATE LOCAL WALLET
+	// ACT: IMPORT WALLET
 	// -------------------------
-	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
+	privateKeyToImport := cloneBytes(originalPrivateKeyBytes)
 
-	err := manager.ImportWallet(privateKeyToCreateWallet, password)
+	err = manager.ImportWallet(privateKeyToImport, password)
 
 	// -------------------------
-	// ASSERT: CREATE LOCAL WALLET
+	// ASSERT: IMPORT WALLET
 	// -------------------------
 	require.NoError(t, err)
 
 	_, err = os.Stat(walletPath)
 	require.NoError(t, err, "wallet file should be created locally")
 
-	require.False(t, manager.IsUnlocked(), "wallet should be locked after CreateLocalWallet()")
+	require.False(t, manager.IsUnlocked(), "wallet should be locked after ImportWallet()")
+
+	require.Equal(t, originalPublicKey, manager.GetPublicKey(), "wallet public key should be derived from imported private key")
 
 	require.NotEqual(
 		t,
-		originalPrivateKey,
-		privateKeyToCreateWallet,
-		"CreateLocalWallet() should clear the input private key slice from memory",
+		originalPrivateKeyBytes,
+		privateKeyToImport,
+		"ImportWallet() should clear the input private key slice from memory",
 	)
 
-	for _, b := range privateKeyToCreateWallet {
+	for _, b := range privateKeyToImport {
 		require.Equal(t, byte(0), b, "private key input slice should be zeroed")
 	}
 
@@ -70,16 +74,17 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	// -------------------------
 	require.NoError(t, err)
 	require.True(t, manager.IsUnlocked(), "wallet should be unlocked after correct password")
+	require.Equal(t, originalPublicKey, manager.GetPublicKey(), "wallet public key should remain loaded after unlock")
 
 	// -------------------------
 	// ASSERT: GET PRIVATE KEY WITHOUT PASSWORD
 	// SignTransaction is not in passwordRequiredMethods,
-	// so it can use the 2-minute unlocked session.
+	// so it can use the unlocked session.
 	// -------------------------
 	unlockedPrivateKey, err := manager.GetPrivateKey("SignTransaction", "")
 
 	require.NoError(t, err)
-	require.Equal(t, originalPrivateKey, unlockedPrivateKey)
+	require.Equal(t, originalPrivateKeyBytes, unlockedPrivateKey)
 
 	// -------------------------
 	// ASSERT: returned private key is a clone
@@ -89,7 +94,7 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	unlockedPrivateKeyAgain, err := manager.GetPrivateKey("SignTransaction", "")
 
 	require.NoError(t, err)
-	require.Equal(t, originalPrivateKey, unlockedPrivateKeyAgain)
+	require.Equal(t, originalPrivateKeyBytes, unlockedPrivateKeyAgain)
 
 	// -------------------------
 	// ASSERT: sensitive method requires password
@@ -101,7 +106,7 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	exportedPrivateKey, err := manager.GetPrivateKey("ExportPrivateKey", password)
 
 	require.NoError(t, err)
-	require.Equal(t, originalPrivateKey, exportedPrivateKey)
+	require.Equal(t, originalPrivateKeyBytes, exportedPrivateKey)
 
 	// -------------------------
 	// ACT: LOCK
@@ -123,7 +128,7 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	privateKeyAfterRelock, err := manager.GetPrivateKey("SignTransaction", password)
 
 	require.NoError(t, err)
-	require.Equal(t, originalPrivateKey, privateKeyAfterRelock)
+	require.Equal(t, originalPrivateKeyBytes, privateKeyAfterRelock)
 }
 
 func TestWalletManagerE2E_UnlockAfterNewManagerInstance(t *testing.T) {
@@ -134,29 +139,33 @@ func TestWalletManagerE2E_UnlockAfterNewManagerInstance(t *testing.T) {
 	// -------------------------
 	// ARRANGE
 	// -------------------------
-	owner := "owner-address-test"
 	password := "StrongPassword123!"
-	originalPrivateKey := []byte("test-private-key-value")
 
 	walletDir := t.TempDir()
 	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
 
-	firstManager := wallet_manager.NewWalletManager(owner, walletPath)
+	firstManager := wallet_manager.NewWalletManager(walletPath)
+
+	originalPublicKey, originalPrivateKey, err := firstManager.GenerateEd25519KeyPairHex()
+	require.NoError(t, err)
+
+	originalPrivateKeyBytes := []byte(originalPrivateKey)
 
 	// -------------------------
-	// ACT: FIRST INSTANCE CREATES LOCAL WALLET
+	// ACT: FIRST INSTANCE IMPORTS WALLET
 	// -------------------------
-	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
+	privateKeyToImport := cloneBytes(originalPrivateKeyBytes)
 
-	err := firstManager.ImportWallet(privateKeyToCreateWallet, password)
+	err = firstManager.ImportWallet(privateKeyToImport, password)
 	require.NoError(t, err)
 
 	require.False(t, firstManager.IsUnlocked())
+	require.Equal(t, originalPublicKey, firstManager.GetPublicKey())
 
 	// -------------------------
 	// ACT: SECOND INSTANCE UNLOCKS WALLET
 	// -------------------------
-	secondManager := wallet_manager.NewWalletManager(owner, walletPath)
+	secondManager := wallet_manager.NewWalletManager(walletPath)
 
 	err = secondManager.Unlock(password)
 
@@ -165,34 +174,39 @@ func TestWalletManagerE2E_UnlockAfterNewManagerInstance(t *testing.T) {
 	// -------------------------
 	require.NoError(t, err)
 	require.True(t, secondManager.IsUnlocked())
+	require.Equal(t, originalPublicKey, secondManager.GetPublicKey())
 
 	privateKeyFromSecondManager, err := secondManager.GetPrivateKey("SignTransaction", "")
 
 	require.NoError(t, err)
-	require.Equal(t, originalPrivateKey, privateKeyFromSecondManager)
+	require.Equal(t, originalPrivateKeyBytes, privateKeyFromSecondManager)
 }
 
-func TestWalletManagerE2E_OwnerMismatch(t *testing.T) {
-	// Esse teste garante que uma wallet criada para um owner
-	// não seja aberta por outro owner.
+func TestWalletManagerE2E_WrongWalletFileDoesNotMatchExpectedPublicKey(t *testing.T) {
+	// Esse teste substitui o antigo OwnerMismatch.
+	// No fluxo novo, o owner/publicKey é derivado da private key importada.
+	// Então não faz mais sentido passar "anotherOwner" no construtor.
+	// A validação correta é garantir que uma instância nova carregue o publicKey real do arquivo.
 
 	// -------------------------
 	// ARRANGE
 	// -------------------------
-	owner := "owner-address-test"
-	anotherOwner := "another-owner-address-test"
 	password := "StrongPassword123!"
-	privateKey := []byte("test-private-key-value")
 
 	walletDir := t.TempDir()
 	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
 
-	manager := wallet_manager.NewWalletManager(owner, walletPath)
+	manager := wallet_manager.NewWalletManager(walletPath)
 
-	err := manager.ImportWallet(privateKey, password)
+	originalPublicKey, originalPrivateKey, err := manager.GenerateEd25519KeyPairHex()
 	require.NoError(t, err)
 
-	anotherManager := wallet_manager.NewWalletManager(anotherOwner, walletPath)
+	privateKeyToImport := []byte(originalPrivateKey)
+
+	err = manager.ImportWallet(privateKeyToImport, password)
+	require.NoError(t, err)
+
+	anotherManager := wallet_manager.NewWalletManager(walletPath)
 
 	// -------------------------
 	// ACT
@@ -202,16 +216,16 @@ func TestWalletManagerE2E_OwnerMismatch(t *testing.T) {
 	// -------------------------
 	// ASSERT
 	// -------------------------
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "wallet owner mismatch")
-	require.False(t, anotherManager.IsUnlocked())
+	require.NoError(t, err)
+	require.True(t, anotherManager.IsUnlocked())
+	require.Equal(t, originalPublicKey, anotherManager.GetPublicKey())
 }
 
 func TestWalletManagerE2E_InvalidInputs(t *testing.T) {
 	walletDir := t.TempDir()
 	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
 
-	manager := wallet_manager.NewWalletManager("owner-address-test", walletPath)
+	manager := wallet_manager.NewWalletManager(walletPath)
 
 	err := manager.ImportWallet(nil, "StrongPassword123!")
 	require.Error(t, err)
@@ -231,24 +245,28 @@ func TestWalletManagerE2E_RotatePassword(t *testing.T) {
 	// -------------------------
 	// ARRANGE
 	// -------------------------
-	owner := "owner-address-test"
 	currentPassword := "StrongPassword123!"
 	newPassword := "NewStrongPassword123!"
-
-	originalPrivateKey := []byte("test-private-key-value")
 
 	walletDir := t.TempDir()
 	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
 
-	manager := wallet_manager.NewWalletManager(owner, walletPath)
+	manager := wallet_manager.NewWalletManager(walletPath)
 
-	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
+	originalPublicKey, originalPrivateKey, err := manager.GenerateEd25519KeyPairHex()
+	require.NoError(t, err)
 
-	err := manager.ImportWallet(privateKeyToCreateWallet, currentPassword)
+	originalPrivateKeyBytes := []byte(originalPrivateKey)
+
+	privateKeyToImport := cloneBytes(originalPrivateKeyBytes)
+
+	err = manager.ImportWallet(privateKeyToImport, currentPassword)
 	require.NoError(t, err)
 
 	_, err = os.Stat(walletPath)
 	require.NoError(t, err, "wallet file should be created locally")
+
+	require.Equal(t, originalPublicKey, manager.GetPublicKey())
 
 	// -------------------------
 	// ASSERT: CURRENT PASSWORD WORKS BEFORE ROTATION
@@ -259,7 +277,7 @@ func TestWalletManagerE2E_RotatePassword(t *testing.T) {
 
 	keyBeforeRotation, err := manager.GetPrivateKey("SignTransaction", "")
 	require.NoError(t, err)
-	require.Equal(t, originalPrivateKey, keyBeforeRotation)
+	require.Equal(t, originalPrivateKeyBytes, keyBeforeRotation)
 
 	err = manager.Lock()
 	require.NoError(t, err)
@@ -287,27 +305,28 @@ func TestWalletManagerE2E_RotatePassword(t *testing.T) {
 	err = manager.Unlock(newPassword)
 	require.NoError(t, err)
 	require.True(t, manager.IsUnlocked())
+	require.Equal(t, originalPublicKey, manager.GetPublicKey())
 
 	keyAfterRotation, err := manager.GetPrivateKey("SignTransaction", "")
 	require.NoError(t, err)
-	require.Equal(t, originalPrivateKey, keyAfterRotation)
+	require.Equal(t, originalPrivateKeyBytes, keyAfterRotation)
 }
 
 func TestWalletManagerE2E_RotatePasswordInvalidInputs(t *testing.T) {
-	owner := "owner-address-test"
 	currentPassword := "StrongPassword123!"
 	newPassword := "NewStrongPassword123!"
-
-	originalPrivateKey := []byte("test-private-key-value")
 
 	walletDir := t.TempDir()
 	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
 
-	manager := wallet_manager.NewWalletManager(owner, walletPath)
+	manager := wallet_manager.NewWalletManager(walletPath)
 
-	privateKeyToCreateWallet := cloneBytes(originalPrivateKey)
+	_, originalPrivateKey, err := manager.GenerateEd25519KeyPairHex()
+	require.NoError(t, err)
 
-	err := manager.ImportWallet(privateKeyToCreateWallet, currentPassword)
+	privateKeyToImport := []byte(originalPrivateKey)
+
+	err = manager.ImportWallet(privateKeyToImport, currentPassword)
 	require.NoError(t, err)
 
 	err = manager.RotatePassword("", newPassword)
