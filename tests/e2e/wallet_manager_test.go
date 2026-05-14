@@ -7,6 +7,9 @@ import (
 
 	"github.com/2Finance-Labs/go-client-2finance/wallet_manager"
 	"github.com/stretchr/testify/require"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
@@ -341,4 +344,112 @@ func TestWalletManagerE2E_RotatePasswordInvalidInputs(t *testing.T) {
 	err = manager.RotatePassword("WrongPassword123!", newPassword)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "failed to decrypt wallet file with current password")
+}
+
+func TestWalletManagerE2E_SensitiveMethodForcesPasswordEvenWhenUnlocked(t *testing.T) {
+	password := "StrongPassword123!"
+
+	walletDir := t.TempDir()
+	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
+
+	manager := wallet_manager.NewWalletManager(walletPath)
+
+	publicKey, privateKey, err := manager.GenerateEd25519KeyPairHex()
+	require.NoError(t, err)
+
+	err = manager.ImportWallet([]byte(privateKey), password)
+	require.NoError(t, err)
+
+	err = manager.Unlock(password)
+	require.NoError(t, err)
+	require.True(t, manager.IsUnlocked())
+
+	sensitiveMethod := cashbackV1.METHOD_WITHDRAW_CASHBACK
+
+	err = manager.AddRequiredPasswordMethods(sensitiveMethod)
+	require.NoError(t, err)
+
+	data, err := utils.MapToJSONB(map[string]interface{}{
+		"address":       publicKey,
+		"amount":        "100",
+		"token_address": publicKey,
+		"token_type":    "fungible",
+		"uuid":          "",
+	})
+	require.NoError(t, err)
+
+	uuid7, err := utils.NewUUID7()
+	require.NoError(t, err)
+
+	_, err = manager.SignTransaction(
+		1,
+		publicKey,
+		publicKey,
+		sensitiveMethod,
+		data,
+		1,
+		uuid7,
+	)
+
+	require.EqualError(t, err, "password is required")
+
+	signedTx, err := manager.SignTransaction(
+		1,
+		publicKey,
+		publicKey,
+		sensitiveMethod,
+		data,
+		1,
+		uuid7,
+		password,
+	)
+
+	require.NoError(t, err)
+	require.NotNil(t, signedTx)
+	require.NotEmpty(t, signedTx.Signature)
+	require.NotEmpty(t, signedTx.Hash)
+}
+
+func TestWalletManagerE2E_NonSensitiveMethodUsesUnlockedSession(t *testing.T) {
+	password := "StrongPassword123!"
+
+	walletDir := t.TempDir()
+	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
+
+	manager := wallet_manager.NewWalletManager(walletPath)
+
+	publicKey, privateKey, err := manager.GenerateEd25519KeyPairHex()
+	require.NoError(t, err)
+
+	err = manager.ImportWallet([]byte(privateKey), password)
+	require.NoError(t, err)
+
+	err = manager.Unlock(password)
+	require.NoError(t, err)
+	require.True(t, manager.IsUnlocked())
+
+	nonSensitiveMethod := walletV1.METHOD_GET_WALLET_BY_ADDRESS
+
+	data, err := utils.MapToJSONB(map[string]interface{}{
+		"address": publicKey,
+	})
+	require.NoError(t, err)
+
+	uuid7, err := utils.NewUUID7()
+	require.NoError(t, err)
+
+	signedTx, err := manager.SignTransaction(
+		1,
+		publicKey,
+		publicKey,
+		nonSensitiveMethod,
+		data,
+		1,
+		uuid7,
+	)
+
+	require.NoError(t, err)
+	require.NotNil(t, signedTx)
+	require.NotEmpty(t, signedTx.Signature)
+	require.NotEmpty(t, signedTx.Hash)
 }

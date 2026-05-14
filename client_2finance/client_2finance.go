@@ -55,6 +55,7 @@ type Client2FinanceNetwork interface {
 		data map[string]interface{},
 		version uint8,
 		uuid7 string,
+		password ...string,
 	) (types.ContractOutput, error)
 	GetState(
 		to string,
@@ -601,6 +602,7 @@ func (c *networkClient) SignAndSendTransaction(
 	data map[string]interface{},
 	version uint8,
 	uuid7 string,
+	password ...string,
 ) (types.ContractOutput, error) {
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -618,6 +620,7 @@ func (c *networkClient) SignAndSendTransaction(
 		data,
 		version,
 		uuid7,
+		password...,
 	)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
