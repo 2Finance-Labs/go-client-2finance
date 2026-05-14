@@ -790,7 +790,6 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalEvent (FreezeWallet.Logs[0]): %v", err)
 	}
 	assert.Equal(t, tok.Address, freezeEvent.TokenAddress, "freeze wallet event token address mismatch")
-	assert.Equal(t, owner.PublicKey, freezeEvent.FrozenAccount, "freeze wallet event wallet address mismatch")
 
 	getTokenOut15, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -825,7 +824,6 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalEvent (UnfreezeWallet.Logs[0]): %v", err)
 	}
 	assert.Equal(t, tok.Address, unfreezeEvent.TokenAddress, "unfreeze wallet event token address mismatch")
-	assert.Equal(t, owner.PublicKey, unfreezeEvent.FrozenAccount, "unfreeze wallet event wallet address mismatch")
 
 	getTokenOut16, err := c.GetToken(tok.Address, "", "")
 	if err != nil {

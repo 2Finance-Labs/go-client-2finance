@@ -101,8 +101,11 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 
 	// -------------------------
 	// ASSERT: sensitive method requires password
-	// ExportPrivateKey is in passwordRequiredMethods.
+	// ExportPrivateKey is manually added to passwordRequiredMethods.
 	// -------------------------
+	err = manager.AddRequiredPasswordMethods("ExportPrivateKey")
+	require.NoError(t, err)
+
 	_, err = manager.GetPrivateKey("ExportPrivateKey", "")
 	require.EqualError(t, err, "password is required")
 
