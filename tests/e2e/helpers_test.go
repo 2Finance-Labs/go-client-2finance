@@ -1,46 +1,45 @@
 package e2e_test
 
 import (
-	"testing"
-	"time"
 	"crypto/sha256"
 	"encoding/hex"
+	"testing"
+	"time"
+
 	client2f "github.com/2Finance-Labs/go-client-2finance/client_2finance"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/domain"
+	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
+	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
 	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
 	walletV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
-	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
-	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
-func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (wallet walletV1Domain.Wallet, walletPrivateKey string) {
+func createWallet(
+	t *testing.T,
+	c client2f.Client2FinanceNetwork,
+	pub string,
+) walletV1Domain.Wallet {
 	t.Helper()
-
-	pub, priv := genKey(t, c)
-	c.SetPrivateKey(priv)
 
 	deployedContract, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
 
-	// 1) Unmarshal Log (obj -> Log)
 	contractLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
 	if err != nil {
 		t.Fatalf("UnmarshalLog: %v", err)
 	}
 
-	// 2) Unmarshal Event (log.Event bytes -> domain.Contract)
 	contractDomain, err := utils.UnmarshalEvent[domain.Contract](contractLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent: %v", err)
 	}
 
-	// Se você quiser validar:
 	if contractDomain.Address == "" {
 		t.Fatalf("contract address empty (event=%s)", string(contractLog.Event))
 	}
@@ -54,30 +53,21 @@ func createWallet(t *testing.T, c client2f.Client2FinanceNetwork) (wallet wallet
 		t.Fatalf("AddWallet returned no logs")
 	}
 
-	// tenta achar um log que contenha public_key no event
-	var w walletV1Domain.Wallet
-
 	lg, err := utils.UnmarshalLog[log.Log](wOut.Logs[0])
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddWallet.Logs[0]): %v", err)
 	}
 
-	// tenta decodificar o event para Wallet
-	ev, err := utils.UnmarshalEvent[walletV1Domain.Wallet](lg.Event)
+	wallet, err := utils.UnmarshalEvent[walletV1Domain.Wallet](lg.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddWallet.Logs[0]): %v", err)
 	}
 
-	// valida se é o que queremos
-	if ev.PublicKey != "" {
-		w = ev
-	}
-
-	if w.PublicKey == "" {
+	if wallet.PublicKey == "" {
 		t.Fatalf("wallet event not found in AddWallet logs")
 	}
 
-	return w, priv
+	return wallet
 }
 
 // createBasicToken creates a minimal token owned by ownerPub.
@@ -271,7 +261,7 @@ func createBasicCoupon(
 	percentageBPS := ""
 	fixedAmount := ""
 	minOrder := "50"
-	
+
 	switch discountType {
 	case couponV1Domain.DISCOUNT_TYPE_PERCENTAGE:
 		percentageBPS = "1000"

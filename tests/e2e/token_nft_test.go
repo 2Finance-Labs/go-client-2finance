@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"testing"
 	"time"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -14,14 +15,35 @@ import (
 )
 
 func TestTokenFlowNonFungible(t *testing.T) {
-	c := setupClient(t)
-	owner, ownerPriv := createWallet(t, c)
-	c.SetPrivateKey(ownerPriv)
+	// ------------------
+	//   LOCAL WALLETS
+	// ------------------
+	ownerSigner := setupSignerWallet(t)
+	receiverSigner := setupSignerWallet(t)
+
+	c := setupClient(t, ownerSigner.Wallet)
+
+	// ------------------
+	//   ON-CHAIN WALLETS
+	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+	owner := createWallet(t, c, ownerSigner.PublicKey)
+
+	useWallet(t, c, receiverSigner.Wallet)
+	receiver := createWallet(t, c, receiverSigner.PublicKey)
+
+	tmpWM := setupWalletManager(t)
+
+	// ------------------
+	//   DEPLOY TOKEN
+	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
 
 	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
+
 	contractLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
 	if err != nil {
 		t.Fatalf("UnmarshalLog (DeployContract.Logs[0]): %v", err)
@@ -30,6 +52,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//    CREATE TOKEN
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	address := contractLog.ContractAddress
 	decimals := 0
 	tokenType := tokenV1Domain.NON_FUNGIBLE
@@ -50,7 +74,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	frozenAccounts := map[string]bool{}
 	feeTiers := []map[string]interface{}{}
 
-	feeAddress, _ := genKey(t, c)
+	feeAddress, _ := genKey(t, tmpWM)
 	freezeAuthorityRevoked := false
 	mintAuthorityRevoked := false
 	updateAuthorityRevoked := false
@@ -170,6 +194,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//        MINT
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	mintAmount := "10"
 	mintToken, err := c.MintToken(tok.Address, owner.PublicKey, mintAmount)
 	if err != nil {
@@ -241,14 +267,15 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//   TRANSFER TOKEN
 	// ------------------
-	receiver, receiverPriv := createWallet(t, c)
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	_, err = c.AddAllowedUsers(tok.Address, map[string]bool{
 		receiver.PublicKey: true,
 	})
 	assert.NoError(t, err, "AddAllowedUsers failed")
+
 	mintedUUID = mint.TokenUUIDList[0]
+
 	transferToken, err := c.TransferToken(tok.Address, receiver.PublicKey, "", []string{mintedUUID})
 	if err != nil {
 		t.Fatalf("TransferToken: %v", err)
@@ -287,7 +314,6 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	assert.Len(t, balanceFrom.TokenUUIDList, 1, "sender balance token uuid list length mismatch after transfer")
 	assert.Equal(t, mintedUUID, balanceFrom.TokenUUIDList[0], "sender balance token uuid mismatch after transfer")
 
-
 	unmarshalLogBalanceTo, err := utils.UnmarshalLog[log.Log](transferToken.Logs[2])
 	if err != nil {
 		t.Fatalf("UnmarshalLog (TransferToken.Logs[2]): %v", err)
@@ -308,11 +334,13 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance (receiver): %v", err)
 	}
+
 	var balanceReceiver tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](getBalanceReceiver.States[0].Object, &balanceReceiver)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetTokenBalance receiver): %v", err)
 	}
+
 	assert.Equal(t, tok.Address, balanceReceiver.TokenAddress, "receiver balance token address mismatch")
 	assert.Equal(t, receiver.PublicKey, balanceReceiver.OwnerAddress, "receiver balance owner mismatch")
 	assert.Equal(t, mintedUUID, balanceReceiver.TokenUUID, "receiver balance token UUID mismatch after transfer")
@@ -320,10 +348,12 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	assert.NotNil(t, balanceReceiver.CreatedAt, "receiver balance created at should not be nil")
 	assert.NotNil(t, balanceReceiver.UpdatedAt, "receiver balance updated at should not be nil")
 	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, balanceReceiver.TokenType, "receiver balance token type mismatch after transfer")
+
 	// ------------------
 	//        BURN
 	// ------------------
-	c.SetPrivateKey(receiverPriv)
+	useWallet(t, c, receiverSigner.Wallet)
+
 	listOfUUIDs := []string{mintedUUID}
 	burnToken, err := c.BurnToken(tok.Address, "", listOfUUIDs)
 	if err != nil {
@@ -391,17 +421,24 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("AddBigIntStrings: %v", err)
 	}
 
-	assert.Equal(t, sumTotalSupply, tokenState2.TotalSupply, "token total supply mismatch after mint")
+	totalSupplyAfterBurn, err := utils.SubBigIntStrings(sumTotalSupply, "1")
+	if err != nil {
+		t.Fatalf("SubBigIntStrings: %v", err)
+	}
+
+	assert.Equal(t, totalSupplyAfterBurn, tokenState3.TotalSupply, "token total supply mismatch after burn")
 
 	tokenBalanceNFT, err := c.GetTokenBalanceNFT(tok.Address, receiver.PublicKey, mintedUUID)
 	if err != nil {
 		t.Fatalf("GetTokenBalanceNFT: %v", err)
 	}
+
 	var balanceStateAfterBurn tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](tokenBalanceNFT.States[0].Object, &balanceStateAfterBurn)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetTokenBalanceNFT after burn): %v", err)
 	}
+
 	assert.Equal(t, "1", balanceStateAfterBurn.Amount, "receiver balance amount mismatch after burn")
 	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, balanceStateAfterBurn.TokenType, "receiver balance token type mismatch after burn")
 	assert.Equal(t, mintedUUID, balanceStateAfterBurn.TokenUUID, "receiver balance token UUID mismatch after burn")
@@ -415,7 +452,10 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//    ALLOW USERS
 	// ------------------
-	anotherUserPub, _ := genKey(t, c)
+	useWallet(t, c, ownerSigner.Wallet)
+
+	anotherUserPub, _ := genKey(t, tmpWM)
+
 	allowedUsers, err := c.AddAllowedUsers(tok.Address, map[string]bool{
 		anotherUserPub: true,
 	})
@@ -448,7 +488,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	}
 	assert.Equal(t, true, tokenState5.AllowedUsers[anotherUserPub], "token allowed users mismatch after allow")
 
-	removeAllowedUsers, err := c.RemoveAllowedUsers(tok.Address,  map[string]bool{
+	removeAllowedUsers, err := c.RemoveAllowedUsers(tok.Address, map[string]bool{
 		anotherUserPub: true,
 	})
 	if err != nil {
@@ -478,11 +518,15 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
+
 	_, exists := tokenState6.AllowedUsers[anotherUserPub]
 	assert.False(t, exists, "user should have been removed from token allowed users")
 
+	// ------------------
 	//    BLOCKED USERS
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	blockAddUsers, err := c.AddBlockedUsers(tok.Address, map[string]bool{
 		receiver.PublicKey: true,
 	})
@@ -546,13 +590,15 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
+
 	_, exists2 := tokenState9.BlockedUsers[receiver.PublicKey]
 	assert.False(t, exists2, "user should have been removed from token blocked users")
 
 	// ------------------
 	//       PAUSE
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
+
 	pauseToken, err := c.PauseToken(tok.Address, true)
 	if err != nil {
 		t.Fatalf("PauseToken: %v", err)
@@ -586,6 +632,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//      UNPAUSE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	unpauseToken, err := c.UnpauseToken(tok.Address, false)
 	if err != nil {
 		t.Fatalf("UnpauseToken: %v", err)
@@ -616,13 +664,14 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	}
 	assert.Equal(t, false, tokenState11.Paused, "token paused state mismatch after unpause")
 
-
 	// ------------------
 	//    FEE ADDRESS
 	// ------------------
-	updateFeeAddress, er := c.UpdateFeeAddress(tok.Address, feeAddress)
-	if er != nil {
-		t.Fatalf("UpdateFeeAddress: %v", er)
+	useWallet(t, c, ownerSigner.Wallet)
+
+	updateFeeAddress, err := c.UpdateFeeAddress(tok.Address, feeAddress)
+	if err != nil {
+		t.Fatalf("UpdateFeeAddress: %v", err)
 	}
 
 	unmarshalLogFeeAddress, err := utils.UnmarshalLog[log.Log](updateFeeAddress.Logs[0])
@@ -653,6 +702,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//  METADATA UPDATE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	newSymbol := "2NFT-NEW" + randSuffix(4)
 
 	updateMetadata, err := c.UpdateMetadata(
@@ -721,6 +772,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//      FREEZE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	freezeWallet, err := c.FreezeWallet(tok.Address, owner.PublicKey)
 	if err != nil {
 		t.Fatalf("FreezeWallet: %v", err)
@@ -737,7 +790,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalEvent (FreezeWallet.Logs[0]): %v", err)
 	}
 	assert.Equal(t, tok.Address, freezeEvent.TokenAddress, "freeze wallet event token address mismatch")
-	assert.Equal(t, true, freezeEvent.FrozenAccounts[owner.PublicKey], "freeze wallet event wallet address mismatch")
+	assert.Equal(t, owner.PublicKey, freezeEvent.FrozenAccount, "freeze wallet event wallet address mismatch")
 
 	getTokenOut15, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -754,6 +807,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	//      UNFREEZE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	unfreezeWallet, err := c.UnfreezeWallet(tok.Address, owner.PublicKey)
 	if err != nil {
 		t.Fatalf("UnfreezeWallet: %v", err)
@@ -770,7 +825,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalEvent (UnfreezeWallet.Logs[0]): %v", err)
 	}
 	assert.Equal(t, tok.Address, unfreezeEvent.TokenAddress, "unfreeze wallet event token address mismatch")
-	assert.Equal(t, false, unfreezeEvent.FrozenAccounts[owner.PublicKey], "unfreeze wallet event wallet address mismatch")
+	assert.Equal(t, owner.PublicKey, unfreezeEvent.FrozenAccount, "unfreeze wallet event wallet address mismatch")
 
 	getTokenOut16, err := c.GetToken(tok.Address, "", "")
 	if err != nil {
@@ -782,12 +837,15 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
+
 	_, exists3 := tokenState16.FrozenAccounts[owner.PublicKey]
 	assert.False(t, exists3, "token frozen accounts mismatch after unfreeze")
 
 	// ------------------
 	//     UPDATE GLB
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	newGLB := "https://example.com/assets/token.glb"
 	updateGlbFile, err := c.UpdateGlbFile(tok.Address, newGLB)
 	if err != nil {
@@ -822,6 +880,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	// REVOKE AUTHORITIES
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	revokeFreezeAuthority, err := c.RevokeFreezeAuthority(tok.Address, true)
 	if err != nil {
 		t.Fatalf("RevokeFreezeAuthority: %v", err)
@@ -916,6 +976,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// GETTERS | LISTINGS
 	// ------------------
 	uuid := mint.TokenUUIDList[1]
+
 	balanceNFT, err := c.GetTokenBalanceNFT(tok.Address, owner.PublicKey, uuid)
 	if err != nil {
 		t.Fatalf("GetTokenBalance(owner): %v", err)
@@ -926,6 +987,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetTokenBalanceNFT.States[0]): %v", err)
 	}
+
 	assert.Equal(t, tok.Address, balanceNFTState.TokenAddress, "balance token address mismatch")
 	assert.Equal(t, owner.PublicKey, balanceNFTState.OwnerAddress, "balance wallet address mismatch")
 	assert.Equal(t, tokenType, balanceNFTState.TokenType, "balance token type mismatch")

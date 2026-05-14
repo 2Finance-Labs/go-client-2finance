@@ -87,7 +87,7 @@ func (c *networkClient) AddToken(
 		return types.ContractOutput{}, fmt.Errorf("invalid blocked users: %w", err)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -152,7 +152,7 @@ func (c *networkClient) AddToken(
 // amount is the amount of tokens to mint, it should be in the smallest unit (e.g. wei for ETH)
 func (c *networkClient) MintToken(to, mintTo, amount string) (types.ContractOutput, error) {
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if to == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -206,7 +206,7 @@ func (c *networkClient) MintToken(to, mintTo, amount string) (types.ContractOutp
 }
 
 func (c *networkClient) BurnToken(to, amount string, tokenUUIDList []string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if to == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -250,7 +250,7 @@ func (c *networkClient) BurnToken(to, amount string, tokenUUIDList []string) (ty
 }
 
 func (c *networkClient) TransferToken(tokenAddress string, transferTo string, amount string, tokenUUIDList []string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if transferTo == "" {
 		return types.ContractOutput{}, fmt.Errorf("to address not set")
@@ -306,7 +306,7 @@ func (c *networkClient) TransferToken(tokenAddress string, transferTo string, am
 }
 
 func (c *networkClient) FreezeWallet(tokenAddress string, wallet string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -352,7 +352,7 @@ func (c *networkClient) FreezeWallet(tokenAddress string, wallet string) (types.
 }
 
 func (c *networkClient) UnfreezeWallet(tokenAddress string, wallet string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -398,7 +398,7 @@ func (c *networkClient) UnfreezeWallet(tokenAddress string, wallet string) (type
 }
 
 func (c *networkClient) AddAllowedUsers(tokenAddress string, allowedUsers map[string]bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -448,7 +448,7 @@ func (c *networkClient) AddAllowedUsers(tokenAddress string, allowedUsers map[st
 }
 
 func (c *networkClient) RemoveAllowedUsers(tokenAddress string, allowedUsers map[string]bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -496,7 +496,7 @@ func (c *networkClient) RemoveAllowedUsers(tokenAddress string, allowedUsers map
 }
 
 func (c *networkClient) AddBlockedUsers(tokenAddress string, blockedUsers map[string]bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -544,7 +544,7 @@ func (c *networkClient) AddBlockedUsers(tokenAddress string, blockedUsers map[st
 }
 
 func (c *networkClient) RemoveBlockedUsers(tokenAddress string, blockedUsers map[string]bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -592,7 +592,7 @@ func (c *networkClient) RemoveBlockedUsers(tokenAddress string, blockedUsers map
 }
 
 func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -631,7 +631,7 @@ func (c *networkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 }
 
 func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -670,7 +670,7 @@ func (c *networkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 }
 
 func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -711,7 +711,7 @@ func (c *networkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decimals int, description, image, website string,
 	tagsSocialMedia, tagsCategory, tags map[string]string,
 	creator, creatorWebsite string, expired_at time.Time) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -780,7 +780,7 @@ func (c *networkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 }
 
 func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -822,7 +822,7 @@ func (c *networkClient) PauseToken(tokenAddress string, paused bool) (types.Cont
 	return contractOutput, nil
 }
 func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -865,7 +865,7 @@ func (c *networkClient) UnpauseToken(tokenAddress string, paused bool) (types.Co
 }
 
 func (c *networkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[string]interface{}) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -907,7 +907,7 @@ func (c *networkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[s
 }
 
 func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -949,7 +949,7 @@ func (c *networkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 }
 
 func (c *networkClient) UpdateGlbFile(tokenAddress string, newAssetGLBUri string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -993,7 +993,7 @@ func (c *networkClient) UpdateGlbFile(tokenAddress string, newAssetGLBUri string
 }
 
 func (c *networkClient) TransferableToken(tokenAddress string, transferable bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -1034,7 +1034,7 @@ func (c *networkClient) TransferableToken(tokenAddress string, transferable bool
 }
 
 func (c *networkClient) UntransferableToken(tokenAddress string, transferable bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address not set")
 	}
@@ -1076,7 +1076,7 @@ func (c *networkClient) UntransferableToken(tokenAddress string, transferable bo
 }
 
 func (c *networkClient) GetToken(tokenAddress string, symbol string, name string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" && symbol == "" && name == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address, symbol or name must be set")
@@ -1105,7 +1105,7 @@ func (c *networkClient) GetToken(tokenAddress string, symbol string, name string
 }
 
 func (c *networkClient) ListTokens(ownerAddress, symbol, name, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if ownerAddress != "" {
 		if err := keys.ValidateEDDSAPublicKeyHex(ownerAddress); err != nil {
@@ -1141,7 +1141,7 @@ func (c *networkClient) ListTokens(ownerAddress, symbol, name, tokenType string,
 }
 
 func (c *networkClient) GetTokenBalance(tokenAddress, ownerAddress string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -1176,7 +1176,7 @@ func (c *networkClient) GetTokenBalance(tokenAddress, ownerAddress string) (type
 }
 
 func (c *networkClient) GetTokenBalanceNFT(tokenAddress string, ownerAddress string, tokenUUID string) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if tokenAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("token address not set")
@@ -1215,7 +1215,7 @@ func (c *networkClient) GetTokenBalanceNFT(tokenAddress string, ownerAddress str
 }
 
 func (c *networkClient) ListTokenBalances(tokenAddress, ownerAddress, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error) {
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)

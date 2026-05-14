@@ -1,1 +1,5 @@
+# Ignore .env file
 .env
+
+# Ignore E2E generated wallet files
+/tests/e2e/wallets/*

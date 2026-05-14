@@ -18,19 +18,31 @@ import (
 )
 
 func TestRaffleFlowFungible(t *testing.T) {
-	c := setupClient(t)
+	// ------------------
+	//   LOCAL WALLETS
+	// ------------------
+	ownerSigner := setupSignerWallet(t)
+	player1Signer := setupSignerWallet(t)
+	player2Signer := setupSignerWallet(t)
+
+	c := setupClient(t, ownerSigner.Wallet)
 
 	// ------------------
-	//      WALLETS
+	//   ON-CHAIN WALLETS
 	// ------------------
-	owner, ownerPriv := createWallet(t, c)
-	player1, player1Priv := createWallet(t, c)
-	player2, player2Priv := createWallet(t, c)
+	useWallet(t, c, ownerSigner.Wallet)
+	owner := createWallet(t, c, ownerSigner.PublicKey)
+
+	useWallet(t, c, player1Signer.Wallet)
+	player1 := createWallet(t, c, player1Signer.PublicKey)
+
+	useWallet(t, c, player2Signer.Wallet)
+	player2 := createWallet(t, c, player2Signer.PublicKey)
 
 	// ------------------
 	//      TOKENS
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	payToken := createBasicToken(
 		t,
@@ -41,6 +53,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		tokenV1Domain.FUNGIBLE,
 		false,
 	)
+
+	useWallet(t, c, ownerSigner.Wallet)
 
 	prizeToken := createBasicToken(
 		t,
@@ -58,6 +72,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//    DEPLOY RAFFLE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	deployedContract, err := c.DeployContract1(raffleV1.RAFFLE_CONTRACT_V1)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
@@ -75,7 +91,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//   ALLOW USERS
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	_, err = c.AddAllowedUsers(payToken.Address, map[string]bool{
 		owner.PublicKey:   true,
@@ -111,6 +127,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance player1 before: %v", err)
 	}
+
 	var player1PayBefore tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](player1PayBeforeOut.States[0].Object, &player1PayBefore)
 	if err != nil {
@@ -121,6 +138,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance player2 before: %v", err)
 	}
+
 	var player2PayBefore tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](player2PayBeforeOut.States[0].Object, &player2PayBefore)
 	if err != nil {
@@ -131,6 +149,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance owner pay before withdraw: %v", err)
 	}
+
 	var ownerPayBeforeWithdraw tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPayBeforeWithdrawOut.States[0].Object, &ownerPayBeforeWithdraw)
 	if err != nil {
@@ -141,6 +160,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance owner prize before: %v", err)
 	}
+
 	var ownerPrizeBefore tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPrizeBeforeOut.States[0].Object, &ownerPrizeBefore)
 	if err != nil {
@@ -150,6 +170,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//     ADD RAFFLE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	revealSeed := "raffle-secret-seed-fungible-e2e"
 	seedCommitHex := seed.CommitSeed(revealSeed)
 
@@ -166,7 +188,6 @@ func TestRaffleFlowFungible(t *testing.T) {
 		"image":       "https://example.com/raffle.png",
 	}
 
-	c.SetPrivateKey(ownerPriv)
 	addRaffleOut, err := c.AddRaffle(
 		raffleAddress,
 		owner.PublicKey,
@@ -239,8 +260,11 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//   ADD PRIZE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	prizeAmount := "50"
 	uuidNFTs := []string{}
+
 	addPrizeOut, err := c.AddRafflePrize(
 		raffleAddress,
 		prizeToken.Address,
@@ -273,6 +297,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance raffle prize after add: %v", err)
 	}
+
 	var rafflePrizeBalanceAfterAdd tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](rafflePrizeBalanceAfterAddOut.States[0].Object, &rafflePrizeBalanceAfterAdd)
 	if err != nil {
@@ -284,6 +309,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance owner prize after add: %v", err)
 	}
+
 	var ownerPrizeAfterAdd tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPrizeAfterAddOut.States[0].Object, &ownerPrizeAfterAdd)
 	if err != nil {
@@ -299,6 +325,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//    REMOVE PRIZE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	removePrizeOut, err := c.RemoveRafflePrize(raffleAddress, addPrizeEvent.UUID)
 	if err != nil {
 		t.Fatalf("RemoveRafflePrize: %v", err)
@@ -338,6 +366,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance owner prize after remove: %v", err)
 	}
+
 	var ownerPrizeAfterRemove tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPrizeAfterRemoveOut.States[0].Object, &ownerPrizeAfterRemove)
 	if err != nil {
@@ -349,6 +378,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//  ADD PRIZE AGAIN
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	addPrizeOut, err = c.AddRafflePrize(
 		raffleAddress,
 		prizeToken.Address,
@@ -380,6 +411,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//    UPDATE RAFFLE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	newTicketPrice := "5"
 	newMaxEntries := 20
 	newMaxEntriesPerUser := 5
@@ -457,6 +490,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//       PAUSE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	pauseOut, err := c.PauseRaffle(raffleAddress, true)
 	if err != nil {
 		t.Fatalf("PauseRaffle: %v", err)
@@ -489,6 +524,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//      UNPAUSE
 	// ------------------
+	useWallet(t, c, ownerSigner.Wallet)
+
 	unpauseOut, err := c.UnpauseRaffle(raffleAddress, false)
 	if err != nil {
 		t.Fatalf("UnpauseRaffle: %v", err)
@@ -521,7 +558,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//    ENTER RAFFLE
 	// ------------------
-	c.SetPrivateKey(player1Priv)
+	useWallet(t, c, player1Signer.Wallet)
+
 	enter1Out, err := c.EnterRaffle(
 		raffleAddress,
 		2,
@@ -552,7 +590,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	assert.Equal(t, "10", enter1Event.Paid)
 	assert.NotEmpty(t, enter1Event.UUID)
 
-	c.SetPrivateKey(player2Priv)
+	useWallet(t, c, player2Signer.Wallet)
+
 	enter2Out, err := c.EnterRaffle(
 		raffleAddress,
 		1,
@@ -587,6 +626,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance player1 after enter: %v", err)
 	}
+
 	var player1PayAfterEnter tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](player1PayAfterEnterOut.States[0].Object, &player1PayAfterEnter)
 	if err != nil {
@@ -597,6 +637,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance player2 after enter: %v", err)
 	}
+
 	var player2PayAfterEnter tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](player2PayAfterEnterOut.States[0].Object, &player2PayAfterEnter)
 	if err != nil {
@@ -607,6 +648,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance raffle pay after enter: %v", err)
 	}
+
 	var rafflePayAfterEnter tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](rafflePayAfterEnterOut.States[0].Object, &rafflePayAfterEnter)
 	if err != nil {
@@ -617,6 +659,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SubBigIntStrings player1PayBefore - 10: %v", err)
 	}
+
 	expectedPlayer2PayAfterEnter, err := utils.SubBigIntStrings(player2PayBefore.Amount, "5")
 	if err != nil {
 		t.Fatalf("SubBigIntStrings player2PayBefore - 5: %v", err)
@@ -629,7 +672,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	// ------------------
 	//       DRAW
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
+
 	drawOut, err := c.DrawRaffle(raffleAddress, revealSeed)
 	if err != nil {
 		t.Fatalf("DrawRaffle: %v", err)
@@ -680,6 +724,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance raffle prize before claim: %v", err)
 	}
+
 	var rafflePrizeBeforeClaim tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](rafflePrizeBeforeClaimOut.States[0].Object, &rafflePrizeBeforeClaim)
 	if err != nil {
@@ -688,9 +733,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 
 	switch winnerPrize.Winner {
 	case player1.PublicKey:
-		c.SetPrivateKey(player1Priv)
+		useWallet(t, c, player1Signer.Wallet)
 	case player2.PublicKey:
-		c.SetPrivateKey(player2Priv)
+		useWallet(t, c, player2Signer.Wallet)
 	default:
 		t.Fatalf("unexpected winner: %s", winnerPrize.Winner)
 	}
@@ -722,6 +767,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance winner prize after claim: %v", err)
 	}
+
 	var winnerPrizeAfter tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](winnerPrizeAfterOut.States[0].Object, &winnerPrizeAfter)
 	if err != nil {
@@ -735,10 +781,12 @@ func TestRaffleFlowFungible(t *testing.T) {
 	}
 	assert.Equal(t, expectedWinnerPrizeAfter, winnerPrizeAfter.Amount)
 
+	_ = rafflePrizeBeforeClaim
+
 	// ------------------
 	//      WITHDRAW
 	// ------------------
-	c.SetPrivateKey(ownerPriv)
+	useWallet(t, c, ownerSigner.Wallet)
 
 	withdrawAmount := "10"
 	withdrawUUID := "withdraw-ft-001"
@@ -774,6 +822,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance owner pay after withdraw: %v", err)
 	}
+
 	var ownerPayAfterWithdraw tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPayAfterWithdrawOut.States[0].Object, &ownerPayAfterWithdraw)
 	if err != nil {
@@ -784,6 +833,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance raffle pay after withdraw: %v", err)
 	}
+
 	var rafflePayAfterWithdraw tokenV1Models.BalanceStateModel
 	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](rafflePayAfterWithdrawOut.States[0].Object, &rafflePayAfterWithdraw)
 	if err != nil {
@@ -794,6 +844,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AddBigIntStrings ownerPayBeforeWithdraw + withdrawAmount: %v", err)
 	}
+
 	expectedRafflePayAfterWithdraw, err := utils.SubBigIntStrings("15", withdrawAmount)
 	if err != nil {
 		t.Fatalf("SubBigIntStrings 15 - withdrawAmount: %v", err)

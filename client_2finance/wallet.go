@@ -1,16 +1,16 @@
 package client_2finance
 
 import (
-
 	"fmt"
+
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 
-	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
+	"gitlab.com/2finance/2finance-network/blockchain/types"
 
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
-
 )
+
 // AddWallet creates a new wallet
 // and sends a transaction to the network
 // Amount is a string representation of the amount to be added
@@ -32,7 +32,7 @@ func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput,
 		return types.ContractOutput{}, fmt.Errorf("invalid contract address: %w", err)
 	}
 
-	from := c.publicKey
+	from := c.walletManager.GetPublicKey()
 
 	to := address
 	method := walletV1.METHOD_ADD_WALLET
@@ -61,7 +61,7 @@ func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput,
 }
 
 func (c *networkClient) GetWalletByPublicKey(pubKey string) (types.ContractOutput, error) {
-	
+
 	if pubKey == "" {
 		return types.ContractOutput{}, fmt.Errorf("public key not set")
 	}
@@ -72,7 +72,7 @@ func (c *networkClient) GetWalletByPublicKey(pubKey string) (types.ContractOutpu
 
 	method := walletV1.METHOD_GET_WALLET_BY_PUBLIC_KEY
 	data := map[string]interface{}{
-		"public_key": pubKey,
+		"public_key":       pubKey,
 		"contract_version": walletV1.WALLET_CONTRACT_V1,
 	}
 
