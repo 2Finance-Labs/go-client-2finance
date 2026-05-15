@@ -66,15 +66,6 @@ type IWalletManager interface {
 		uuid7, password string,
 	) (*transaction.Transaction, error)
 
-	SignTransactionByPasswordPolicy(
-		chainId uint8,
-		from, to, method string,
-		data utils.JSONB,
-		version uint8,
-		uuid7 string,
-		password ...string,
-	) (*transaction.Transaction, error)
-
 	GetPublicKey() string
 	GenerateEd25519KeyPairHex() (string, string, error)
 }
@@ -508,53 +499,6 @@ func (w *WalletManager) SignTransactionWithPassword(
 
 	return w.signTransactionWithPrivateKey(
 		privateKey,
-		chainId,
-		from,
-		to,
-		method,
-		data,
-		version,
-		uuid7,
-	)
-}
-
-func (w *WalletManager) SignTransactionByPasswordPolicy(
-	chainId uint8,
-	from string,
-	to string,
-	method string,
-	data utils.JSONB,
-	version uint8,
-	uuid7 string,
-	password ...string,
-) (*transaction.Transaction, error) {
-	if method == "" {
-		return nil, fmt.Errorf("method is required")
-	}
-
-	if len(password) > 1 {
-		return nil, fmt.Errorf("only one password is allowed")
-	}
-
-	passwordValue := ""
-	if len(password) == 1 {
-		passwordValue = password[0]
-	}
-
-	if w.PasswordIsRequired(method) {
-		return w.SignTransactionWithPassword(
-			chainId,
-			from,
-			to,
-			method,
-			data,
-			version,
-			uuid7,
-			passwordValue,
-		)
-	}
-
-	return w.SignTransaction(
 		chainId,
 		from,
 		to,

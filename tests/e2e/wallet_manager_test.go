@@ -78,7 +78,7 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	require.Equal(t, originalPublicKey, manager.GetPublicKey(), "wallet public key should remain loaded after unlock")
 
 	// -------------------------
-	// ASSERT: NON-SENSITIVE METHOD USES UNLOCKED SESSION
+	// ASSERT: SIGN WITHOUT PASSWORD WHILE UNLOCKED
 	// -------------------------
 	nonSensitiveMethod := walletV1.METHOD_GET_WALLET_BY_ADDRESS
 
@@ -90,7 +90,7 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	uuid7, err := utils.NewUUID7()
 	require.NoError(t, err)
 
-	signedTx, err := manager.SignTransactionByPasswordPolicy(
+	signedTx, err := manager.SignTransaction(
 		1,
 		originalPublicKey,
 		originalPublicKey,
@@ -105,19 +105,24 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	require.NotEmpty(t, signedTx.Hash)
 
 	// -------------------------
-	// ASSERT: SENSITIVE METHOD REQUIRES PASSWORD
+	// ASSERT: SENSITIVE METHOD CONFIGURATION
 	// -------------------------
 	sensitiveMethod := cashbackV1.METHOD_WITHDRAW_CASHBACK
+
+	require.False(t, manager.PasswordIsRequired(sensitiveMethod))
 
 	err = manager.AddRequiredPasswordMethods(sensitiveMethod)
 	require.NoError(t, err)
 
 	require.True(t, manager.PasswordIsRequired(sensitiveMethod))
 
+	// -------------------------
+	// ASSERT: SIGN WITH PASSWORD REQUIRES PASSWORD
+	// -------------------------
 	uuid7, err = utils.NewUUID7()
 	require.NoError(t, err)
 
-	_, err = manager.SignTransactionByPasswordPolicy(
+	_, err = manager.SignTransactionWithPassword(
 		1,
 		originalPublicKey,
 		originalPublicKey,
@@ -125,13 +130,14 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 		data,
 		1,
 		uuid7,
+		"",
 	)
 	require.EqualError(t, err, "password is required")
 
 	uuid7, err = utils.NewUUID7()
 	require.NoError(t, err)
 
-	signedTx, err = manager.SignTransactionByPasswordPolicy(
+	signedTx, err = manager.SignTransactionWithPassword(
 		1,
 		originalPublicKey,
 		originalPublicKey,
@@ -160,7 +166,7 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	uuid7, err = utils.NewUUID7()
 	require.NoError(t, err)
 
-	_, err = manager.SignTransactionByPasswordPolicy(
+	_, err = manager.SignTransaction(
 		1,
 		originalPublicKey,
 		originalPublicKey,
@@ -181,7 +187,7 @@ func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
 	uuid7, err = utils.NewUUID7()
 	require.NoError(t, err)
 
-	signedTx, err = manager.SignTransactionByPasswordPolicy(
+	signedTx, err = manager.SignTransaction(
 		1,
 		originalPublicKey,
 		originalPublicKey,
@@ -249,7 +255,7 @@ func TestWalletManagerE2E_UnlockAfterNewManagerInstance(t *testing.T) {
 	uuid7, err := utils.NewUUID7()
 	require.NoError(t, err)
 
-	signedTx, err := secondManager.SignTransactionByPasswordPolicy(
+	signedTx, err := secondManager.SignTransaction(
 		1,
 		originalPublicKey,
 		originalPublicKey,
@@ -320,24 +326,30 @@ func TestWalletManagerE2E_InvalidInputs(t *testing.T) {
 	err = manager.Unlock("")
 	require.EqualError(t, err, "password is required")
 
+	publicKey, _, err := manager.GenerateEd25519KeyPairHex()
+	require.NoError(t, err)
+
 	data, err := utils.MapToJSONB(map[string]interface{}{
-		"address": "test",
+		"address": publicKey,
 	})
 	require.NoError(t, err)
 
 	uuid7, err := utils.NewUUID7()
 	require.NoError(t, err)
 
-	_, err = manager.SignTransactionByPasswordPolicy(
+	_, err = manager.SignTransaction(
 		1,
-		"",
-		"",
+		publicKey,
+		publicKey,
 		walletV1.METHOD_GET_WALLET_BY_ADDRESS,
 		data,
 		1,
 		uuid7,
 	)
 	require.Error(t, err)
+
+	err = manager.AddRequiredPasswordMethods("")
+	require.EqualError(t, err, "method name is required")
 }
 
 func TestWalletManagerE2E_RotatePassword(t *testing.T) {
@@ -382,7 +394,7 @@ func TestWalletManagerE2E_RotatePassword(t *testing.T) {
 	uuid7, err := utils.NewUUID7()
 	require.NoError(t, err)
 
-	signedTx, err := manager.SignTransactionByPasswordPolicy(
+	signedTx, err := manager.SignTransaction(
 		1,
 		originalPublicKey,
 		originalPublicKey,
@@ -424,7 +436,7 @@ func TestWalletManagerE2E_RotatePassword(t *testing.T) {
 	uuid7, err = utils.NewUUID7()
 	require.NoError(t, err)
 
-	signedTx, err = manager.SignTransactionByPasswordPolicy(
+	signedTx, err = manager.SignTransaction(
 		1,
 		originalPublicKey,
 		originalPublicKey,
@@ -470,7 +482,26 @@ func TestWalletManagerE2E_RotatePasswordInvalidInputs(t *testing.T) {
 	require.ErrorContains(t, err, "failed to decrypt wallet file with current password")
 }
 
-func TestWalletManagerE2E_SensitiveMethodForcesPasswordEvenWhenUnlocked(t *testing.T) {
+func TestWalletManagerE2E_AddRequiredPasswordMethods(t *testing.T) {
+	walletDir := t.TempDir()
+	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
+
+	manager := wallet_manager.NewWalletManager(walletPath)
+
+	sensitiveMethod := cashbackV1.METHOD_WITHDRAW_CASHBACK
+
+	require.False(t, manager.PasswordIsRequired(sensitiveMethod))
+
+	err := manager.AddRequiredPasswordMethods(sensitiveMethod)
+	require.NoError(t, err)
+
+	require.True(t, manager.PasswordIsRequired(sensitiveMethod))
+
+	err = manager.AddRequiredPasswordMethods("")
+	require.EqualError(t, err, "method name is required")
+}
+
+func TestWalletManagerE2E_SignTransactionWithPasswordRequiresPassword(t *testing.T) {
 	password := "StrongPassword123!"
 
 	walletDir := t.TempDir()
@@ -488,13 +519,6 @@ func TestWalletManagerE2E_SensitiveMethodForcesPasswordEvenWhenUnlocked(t *testi
 	require.NoError(t, err)
 	require.True(t, manager.IsUnlocked())
 
-	sensitiveMethod := cashbackV1.METHOD_WITHDRAW_CASHBACK
-
-	err = manager.AddRequiredPasswordMethods(sensitiveMethod)
-	require.NoError(t, err)
-
-	require.True(t, manager.PasswordIsRequired(sensitiveMethod))
-
 	data, err := utils.MapToJSONB(map[string]interface{}{
 		"address":       publicKey,
 		"amount":        "100",
@@ -507,23 +531,26 @@ func TestWalletManagerE2E_SensitiveMethodForcesPasswordEvenWhenUnlocked(t *testi
 	uuid7, err := utils.NewUUID7()
 	require.NoError(t, err)
 
-	_, err = manager.SignTransactionByPasswordPolicy(
+	_, err = manager.SignTransactionWithPassword(
 		1,
 		publicKey,
 		publicKey,
-		sensitiveMethod,
+		cashbackV1.METHOD_WITHDRAW_CASHBACK,
 		data,
 		1,
 		uuid7,
+		"",
 	)
-
 	require.EqualError(t, err, "password is required")
 
-	signedTx, err := manager.SignTransactionByPasswordPolicy(
+	uuid7, err = utils.NewUUID7()
+	require.NoError(t, err)
+
+	signedTx, err := manager.SignTransactionWithPassword(
 		1,
 		publicKey,
 		publicKey,
-		sensitiveMethod,
+		cashbackV1.METHOD_WITHDRAW_CASHBACK,
 		data,
 		1,
 		uuid7,
@@ -566,7 +593,7 @@ func TestWalletManagerE2E_NonSensitiveMethodUsesUnlockedSession(t *testing.T) {
 	uuid7, err := utils.NewUUID7()
 	require.NoError(t, err)
 
-	signedTx, err := manager.SignTransactionByPasswordPolicy(
+	signedTx, err := manager.SignTransaction(
 		1,
 		publicKey,
 		publicKey,
