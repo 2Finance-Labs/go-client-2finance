@@ -30,6 +30,7 @@ type Client2FinanceNetwork interface {
 	// Client
 	SetChainID(chainId uint8)
 	SetWalletManager(wallet wallet_manager.IWalletManager)
+	SetPasswordProvider(provider PasswordProvider)
 
 	SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error)
 
@@ -398,11 +399,15 @@ type Client2FinanceNetwork interface {
 	ListPrizes(raffleAddress string, page, limit int, asc bool) (types.ContractOutput, error)
 }
 
+type PasswordProvider func(method string) (string, error)
+
 type networkClient struct {
 	mqttClient mqtt.IMQTT
 	replyTo    string
 	chainId    uint8
 	walletManager wallet_manager.IWalletManager
+
+	passwordProvider PasswordProvider
 }
 
 // New creates a new client
@@ -430,6 +435,10 @@ func (c *networkClient) SetWalletManager(wallet wallet_manager.IWalletManager) {
 		log.Fatalf("wallet manager cannot be nil")
 	}
 	c.walletManager = wallet
+}
+
+func (c *networkClient) SetPasswordProvider(provider PasswordProvider) {
+	c.passwordProvider = provider
 }
 
 func (c *networkClient) GetChainID() uint8 {
@@ -610,15 +619,45 @@ func (c *networkClient) SignAndSendTransaction(
 		return types.ContractOutput{}, fmt.Errorf("wallet manager is required")
 	}
 
-	txSigned, err := c.walletManager.SignTransaction(
-		chainId,
-		from,
-		to,
-		method,
-		data,
-		version,
-		uuid7,
-	)
+	var txSigned *transaction.Transaction
+	var err error
+
+	if c.walletManager.PasswordIsRequired(method) {
+		if c.passwordProvider == nil {
+			return types.ContractOutput{}, fmt.Errorf("password provider is required for method: %s", method)
+		}
+
+		password, err := c.passwordProvider(method)
+		if err != nil {
+			return types.ContractOutput{}, fmt.Errorf("failed to get password for method %s: %w", method, err)
+		}
+
+		if password == "" {
+			return types.ContractOutput{}, fmt.Errorf("password is required")
+		}
+
+		txSigned, err = c.walletManager.SignTransactionWithPassword(
+			chainId,
+			from,
+			to,
+			method,
+			data,
+			version,
+			uuid7,
+			password,
+		)
+	} else {
+		txSigned, err = c.walletManager.SignTransaction(
+			chainId,
+			from,
+			to,
+			method,
+			data,
+			version,
+			uuid7,
+		)
+	}
+
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}

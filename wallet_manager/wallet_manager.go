@@ -46,24 +46,33 @@ type IWalletManager interface {
 	Unlock(password string) error
 	ForceLock() error
 	IsUnlocked() bool
-	RequiresPassword(methodName string) bool
+	AddRequiredPasswordMethods(methods ...string) error
+	PasswordIsRequired(method string) bool
 	RotatePassword(currentPassword string, newPassword string) error
-	GetPrivateKey(methodName string, password string) ([]byte, error)
+
+	SignTransaction(
+		chainId uint8,
+		from, to, method string,
+		data utils.JSONB,
+		version uint8,
+		uuid7 string,
+	) (*transaction.Transaction, error)
+
+	SignTransactionWithPassword(
+		chainId uint8,
+		from, to, method string,
+		data utils.JSONB,
+		version uint8,
+		uuid7, password string,
+	) (*transaction.Transaction, error)
 
 	GetPublicKey() string
 	GenerateEd25519KeyPairHex() (string, string, error)
-	SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8, uuid7 string) (*transaction.Transaction, error)
 }
 
 func NewWalletManager(filePath string) IWalletManager {
 	return &WalletManager{
 		filePath: filePath,
-		passwordRequiredMethods: map[string]bool{
-			"ExportPrivateKey": true,
-			"ChangePassword":   true,
-			"DeleteWallet":     true,
-			"Withdraw":         true,
-		},
 	}
 }
 
@@ -254,38 +263,19 @@ func (w *WalletManager) isUnlockedLocked() bool {
 	return len(w.privateKey) > 0 && time.Now().Before(w.unlockedUntil)
 }
 
-func (w *WalletManager) RequiresPassword(methodName string) bool {
+func (w *WalletManager) PasswordIsRequired(method string) bool {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
-	return w.passwordRequiredMethods[methodName]
-}
-
-func (w *WalletManager) GetPrivateKey(methodName string, password string) ([]byte, error) {
-	if w.RequiresPassword(methodName) {
-		if password == "" {
-			return nil, errors.New("password is required")
-		}
-
-		if err := w.Unlock(password); err != nil {
-			return nil, err
-		}
+	if method == "" {
+		return false
 	}
 
-	if !w.IsUnlocked() {
-		if password == "" {
-			return nil, errors.New("wallet is locked")
-		}
-
-		if err := w.Unlock(password); err != nil {
-			return nil, err
-		}
+	if w.passwordRequiredMethods == nil {
+		return false
 	}
 
-	w.mu.RLock()
-	defer w.mu.RUnlock()
-
-	return cloneBytes(w.privateKey), nil
+	return w.passwordRequiredMethods[method]
 }
 
 func (w *WalletManager) lockMemoryLocked() {
@@ -300,6 +290,25 @@ func (w *WalletManager) lockMemoryLocked() {
 
 	w.privateKey = nil
 	w.unlockedUntil = time.Time{}
+}
+
+func (w *WalletManager) AddRequiredPasswordMethods(methods ...string) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.passwordRequiredMethods == nil {
+		w.passwordRequiredMethods = make(map[string]bool)
+	}
+
+	for _, method := range methods {
+		if method == "" {
+			return fmt.Errorf("method name is required")
+		}
+
+		w.passwordRequiredMethods[method] = true
+	}
+
+	return nil
 }
 
 func (w *WalletManager) RotatePassword(currentPassword string, newPassword string) error {
@@ -401,6 +410,41 @@ func (w *WalletManager) GetPublicKey() string {
 	return w.owner
 }
 
+func (w *WalletManager) signTransactionWithPrivateKey(
+	privateKey []byte,
+	chainId uint8,
+	from string,
+	to string,
+	method string,
+	data utils.JSONB,
+	version uint8,
+	uuid7 string,
+) (*transaction.Transaction, error) {
+	dataRawMessage, err := utils.MapToRawMessage(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert data to RawMessage: %w", err)
+	}
+
+	newTx := transaction.NewTransaction(
+		chainId,
+		from,
+		to,
+		method,
+		dataRawMessage,
+		version,
+		uuid7,
+	)
+
+	tx := newTx.Get()
+
+	signedTx, err := transaction.SignTransactionHexKey(string(privateKey), tx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign transaction: %w", err)
+	}
+
+	return signedTx, nil
+}
+
 func (w *WalletManager) SignTransaction(chainId uint8, from, to, method string, data utils.JSONB, version uint8, uuid7 string) (*transaction.Transaction, error) {
 
 	dataRawMessage, err := utils.MapToRawMessage(data)
@@ -420,4 +464,47 @@ func (w *WalletManager) SignTransaction(chainId uint8, from, to, method string, 
 		return nil, fmt.Errorf("failed to sign transaction: %w", err)
 	}
 	return signedTx, nil
+}
+
+func (w *WalletManager) SignTransactionWithPassword(
+	chainId uint8,
+	from string,
+	to string,
+	method string,
+	data utils.JSONB,
+	version uint8,
+	uuid7 string,
+	password string,
+) (*transaction.Transaction, error) {
+	if password == "" {
+		return nil, errors.New("password is required")
+	}
+
+	w.mu.Lock()
+	w.lockMemoryLocked()
+	w.mu.Unlock()
+
+	if err := w.Unlock(password); err != nil {
+		return nil, err
+	}
+
+	w.mu.RLock()
+	privateKey := cloneBytes(w.privateKey)
+	w.mu.RUnlock()
+
+	if len(privateKey) == 0 {
+		return nil, errors.New("private key is not loaded")
+	}
+	defer clearBytes(privateKey)
+
+	return w.signTransactionWithPrivateKey(
+		privateKey,
+		chainId,
+		from,
+		to,
+		method,
+		data,
+		version,
+		uuid7,
+	)
 }
