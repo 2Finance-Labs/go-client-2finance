@@ -2,7 +2,7 @@ module github.com/2Finance-Labs/2finance-sdk-client
 
 go 1.25.0
 
-// replace gitlab.com/2finance/2finance-network => /home/luiz/myrepo/2finance-network
+replace gitlab.com/2finance/2finance-network => ../../2finance-network
 
 // replace gitlab.com/2finance/2finance-network => /home/ghausmann/Trabalho/2finance-network
 

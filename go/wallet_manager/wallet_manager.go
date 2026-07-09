@@ -50,13 +50,14 @@ type WalletManager struct {
 }
 
 type SignTransactionInput struct {
-	ChainID uint8
-	From    string
-	To      string
-	Method  string
-	Data    map[string]interface{}
-	Version uint8
-	UUID7   string
+	ChainID       uint8
+	From          string
+	To            string
+	Method        string
+	Data          map[string]interface{}
+	Version       uint8
+	UUID7         string
+	Authorization *transaction.AuthorizationEnvelope
 }
 
 type IWalletManager interface {
@@ -375,18 +376,20 @@ func (w *WalletManager) SignTransaction(input SignTransactionInput) (*transactio
 		input.Data,
 		input.Version,
 		input.UUID7,
+		input.Authorization,
 	)
 }
 
 func (w *WalletManager) SignPreparedTransaction(input protocol.PreparedTransaction) (protocol.SignedTransaction, error) {
 	signed, err := w.SignTransaction(SignTransactionInput{
-		ChainID: input.ChainID,
-		From:    input.From,
-		To:      input.To,
-		Method:  input.Method,
-		Data:    input.Data,
-		Version: input.Version,
-		UUID7:   input.UUID7,
+		ChainID:       input.ChainID,
+		From:          input.From,
+		To:            input.To,
+		Method:        input.Method,
+		Data:          input.Data,
+		Version:       input.Version,
+		UUID7:         input.UUID7,
+		Authorization: input.Authorization,
 	})
 	if err != nil {
 		return protocol.SignedTransaction{}, err
@@ -477,6 +480,7 @@ func (w *WalletManager) signTransactionWithPrivateKey(
 	data utils.JSONB,
 	version uint8,
 	uuid7 string,
+	authorization *transaction.AuthorizationEnvelope,
 ) (*transaction.Transaction, error) {
 	if len(privateKey) == 0 {
 		return nil, errors.New("private key is required")
@@ -498,6 +502,7 @@ func (w *WalletManager) signTransactionWithPrivateKey(
 	)
 
 	tx := newTx.Get()
+	tx.Authorization = authorization
 
 	signedTx, err := transaction.SignTransactionHexKey(string(privateKey), tx)
 	if err != nil {

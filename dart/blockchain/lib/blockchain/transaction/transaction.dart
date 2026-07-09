@@ -15,6 +15,204 @@ abstract class ITransaction {
   Transaction get();
 }
 
+class AuthorizationEnvelope {
+  String type;
+  int policyVersion;
+  String nonceKey;
+  int sequence;
+  String? validUntil;
+  AuthorizationPolicy? policy;
+  List<AuthorizationSignature> userSignatures;
+  DeviceAuthorization? device;
+  List<AuthorizationSignature> keystoreSignatures;
+
+  AuthorizationEnvelope({
+    required this.type,
+    required this.policyVersion,
+    required this.nonceKey,
+    required this.sequence,
+    this.validUntil,
+    this.policy,
+    List<AuthorizationSignature>? userSignatures,
+    this.device,
+    List<AuthorizationSignature>? keystoreSignatures,
+  }) : userSignatures = userSignatures ?? <AuthorizationSignature>[],
+       keystoreSignatures = keystoreSignatures ?? <AuthorizationSignature>[];
+
+  AuthorizationEnvelope withoutProofs() => AuthorizationEnvelope(
+    type: type,
+    policyVersion: policyVersion,
+    nonceKey: nonceKey,
+    sequence: sequence,
+    validUntil: validUntil,
+    policy: policy,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    'policy_version': policyVersion,
+    'nonce_key': nonceKey,
+    'sequence': sequence,
+    if (validUntil != null) 'valid_until': validUntil,
+    if (policy != null) 'policy': policy!.toJson(),
+    if (userSignatures.isNotEmpty)
+      'user_signatures': userSignatures.map((s) => s.toJson()).toList(),
+    if (device != null) 'device': device!.toJson(),
+    if (keystoreSignatures.isNotEmpty)
+      'keystore_signatures': keystoreSignatures.map((s) => s.toJson()).toList(),
+  };
+
+  factory AuthorizationEnvelope.fromJson(
+    Map<String, dynamic> json,
+  ) => AuthorizationEnvelope(
+    type: json['type'] as String,
+    policyVersion: json['policy_version'] as int,
+    nonceKey: json['nonce_key'] as String,
+    sequence: json['sequence'] as int,
+    validUntil: json['valid_until'] as String?,
+    policy: json['policy'] == null
+        ? null
+        : AuthorizationPolicy.fromJson(
+            Map<String, dynamic>.from(json['policy'] as Map),
+          ),
+    userSignatures: ((json['user_signatures'] as List?) ?? const [])
+        .map(
+          (s) => AuthorizationSignature.fromJson(
+            Map<String, dynamic>.from(s as Map),
+          ),
+        )
+        .toList(),
+    device: json['device'] == null
+        ? null
+        : DeviceAuthorization.fromJson(
+            Map<String, dynamic>.from(json['device'] as Map),
+          ),
+    keystoreSignatures: ((json['keystore_signatures'] as List?) ?? const [])
+        .map(
+          (s) => AuthorizationSignature.fromJson(
+            Map<String, dynamic>.from(s as Map),
+          ),
+        )
+        .toList(),
+  );
+}
+
+class AuthorizationPolicy {
+  String? accountID;
+  int quorum;
+  bool deviceRequired;
+  List<PolicySigner> signers;
+
+  AuthorizationPolicy({
+    this.accountID,
+    required this.quorum,
+    required this.deviceRequired,
+    required this.signers,
+  });
+
+  Map<String, dynamic> toJson() => {
+    if (accountID != null && accountID!.isNotEmpty) 'account_id': accountID,
+    'quorum': quorum,
+    'device_required': deviceRequired,
+    'signers': signers.map((s) => s.toJson()).toList(),
+  };
+
+  factory AuthorizationPolicy.fromJson(Map<String, dynamic> json) =>
+      AuthorizationPolicy(
+        accountID: json['account_id'] as String?,
+        quorum: json['quorum'] as int,
+        deviceRequired: json['device_required'] as bool? ?? false,
+        signers: ((json['signers'] as List?) ?? const [])
+            .map(
+              (s) => PolicySigner.fromJson(Map<String, dynamic>.from(s as Map)),
+            )
+            .toList(),
+      );
+}
+
+class PolicySigner {
+  String publicKey;
+  String kind;
+  int weight;
+
+  PolicySigner({
+    required this.publicKey,
+    required this.kind,
+    required this.weight,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'public_key': publicKey,
+    'kind': kind,
+    'weight': weight,
+  };
+
+  factory PolicySigner.fromJson(Map<String, dynamic> json) => PolicySigner(
+    publicKey: json['public_key'] as String,
+    kind: json['kind'] as String,
+    weight: json['weight'] as int,
+  );
+}
+
+class AuthorizationSignature {
+  String publicKey;
+  String signature;
+
+  AuthorizationSignature({required this.publicKey, required this.signature});
+
+  Map<String, dynamic> toJson() => {
+    'public_key': publicKey,
+    'signature': signature,
+  };
+
+  factory AuthorizationSignature.fromJson(Map<String, dynamic> json) =>
+      AuthorizationSignature(
+        publicKey: json['public_key'] as String,
+        signature: json['signature'] as String,
+      );
+}
+
+class DeviceAuthorization {
+  String deviceID;
+  String publicKey;
+  String signature;
+
+  DeviceAuthorization({
+    required this.deviceID,
+    required this.publicKey,
+    required this.signature,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'device_id': deviceID,
+    'public_key': publicKey,
+    'signature': signature,
+  };
+
+  factory DeviceAuthorization.fromJson(Map<String, dynamic> json) =>
+      DeviceAuthorization(
+        deviceID: json['device_id'] as String,
+        publicKey: json['public_key'] as String,
+        signature: json['signature'] as String,
+      );
+}
+
+String derivePolicyAccountID(AuthorizationPolicy policy) {
+  final normalized = AuthorizationPolicy(
+    quorum: policy.quorum,
+    deviceRequired: policy.deviceRequired,
+    signers: [...policy.signers]
+      ..sort((a, b) => a.publicKey.compareTo(b.publicKey)),
+  );
+  final canonical = canonicalJsonEncode({
+    'domain': '2finance.network.account.policy.v1',
+    'policy': normalized.toJson(),
+  });
+  return KeyManager.bytesToHex(
+    keccak256(Uint8List.fromList(utf8.encode(canonical))),
+  );
+}
+
 class Transaction implements ITransaction {
   int chainID;
   String from;
@@ -25,6 +223,7 @@ class Transaction implements ITransaction {
   String uuid7;
   String hash;
   String signature;
+  AuthorizationEnvelope? authorization;
 
   Transaction({
     required this.chainID,
@@ -36,6 +235,7 @@ class Transaction implements ITransaction {
     required this.uuid7,
     this.hash = '',
     this.signature = '',
+    this.authorization,
   });
 
   @override
@@ -51,6 +251,7 @@ class Transaction implements ITransaction {
     uuid7: $uuid7,
     hash: $hash,
     signature: $signature,
+    authorization: $authorization,
   )
   ''';
   }
@@ -63,6 +264,7 @@ class Transaction implements ITransaction {
     required JsonMessage data,
     required int version,
     required String uuid7,
+    AuthorizationEnvelope? authorization,
   }) {
     return Transaction(
       chainID: chainID,
@@ -72,6 +274,7 @@ class Transaction implements ITransaction {
       data: data,
       version: version,
       uuid7: uuid7,
+      authorization: authorization,
     );
   }
 
@@ -109,11 +312,20 @@ class Transaction implements ITransaction {
       throw Exception("version must be greater than zero");
     }
 
-    // Sender pubkey validation
-    try {
-      KeyManager.validateEDDSAPublicKeyHex(from);
-    } catch (e) {
-      throw Exception("invalid sender public key: $e");
+    if (authorization == null) {
+      try {
+        KeyManager.validateEDDSAPublicKeyHex(from);
+      } catch (e) {
+        throw Exception("invalid sender public key: $e");
+      }
+      if (signature.isEmpty) {
+        throw Exception("signature cannot be empty");
+      }
+      if (signature.length != 128) {
+        throw Exception("signature must be 128 characters long");
+      }
+    } else if (from.length != 64) {
+      throw Exception("account id must be 64 hex characters long");
     }
 
     // Recipient pubkey validation (skip deploy address)
@@ -135,13 +347,6 @@ class Transaction implements ITransaction {
     if (hash.length != 64) {
       throw Exception("hash must be 64 characters long");
     }
-    if (signature.isEmpty) {
-      throw Exception("signature cannot be empty");
-    }
-    if (signature.length != 128) {
-      throw Exception("signature must be 128 characters long");
-    }
-
     // Hash validation
     try {
       await validateHash();
@@ -163,6 +368,9 @@ class Transaction implements ITransaction {
     final temp = toJson();
     temp['hash'] = '';
     temp['signature'] = '';
+    if (authorization != null) {
+      temp['authorization'] = authorization!.withoutProofs().toJson();
+    }
 
     // ✅ canonicalize `data` semantically (Map order/whitespace becomes irrelevant)
     final d = temp['data'];
@@ -190,6 +398,7 @@ class Transaction implements ITransaction {
     'uuid7': uuid7,
     'hash': hash,
     'signature': signature,
+    if (authorization != null) 'authorization': authorization!.toJson(),
   };
 
   static Transaction fromJson(Map<String, dynamic> json) {
@@ -208,6 +417,11 @@ class Transaction implements ITransaction {
       uuid7: json['uuid7'],
       hash: json['hash'],
       signature: json['signature'],
+      authorization: json['authorization'] == null
+          ? null
+          : AuthorizationEnvelope.fromJson(
+              Map<String, dynamic>.from(json['authorization'] as Map),
+            ),
     );
   }
 }
@@ -233,6 +447,17 @@ Future<Transaction> signTransaction(
   final signature = await algorithm.sign(hashBytes, keyPair: keyPair);
 
   tx.hash = txHash;
-  tx.signature = KeyManager.bytesToHex(signature.bytes);
+  final signatureHex = KeyManager.bytesToHex(signature.bytes);
+  if (tx.authorization == null) {
+    tx.signature = signatureHex;
+  } else {
+    final publicKey = await keyPair.extractPublicKey();
+    tx.authorization!.userSignatures.add(
+      AuthorizationSignature(
+        publicKey: KeyManager.bytesToHex(publicKey.bytes),
+        signature: signatureHex,
+      ),
+    );
+  }
   return tx;
 }

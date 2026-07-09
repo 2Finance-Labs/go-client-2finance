@@ -132,6 +132,7 @@ class SignTransactionInput {
   final JsonMessage data;
   final int version;
   final String uuid7;
+  final AuthorizationEnvelope? authorization;
 
   SignTransactionInput({
     required this.chainID,
@@ -141,6 +142,7 @@ class SignTransactionInput {
     required this.data,
     required this.version,
     required this.uuid7,
+    this.authorization,
   });
 }
 
@@ -154,6 +156,7 @@ class PreparedTransaction {
   final String uuid7;
   final String hash;
   final String signature;
+  final AuthorizationEnvelope? authorization;
 
   PreparedTransaction({
     required this.chainID,
@@ -165,6 +168,7 @@ class PreparedTransaction {
     required this.uuid7,
     this.hash = '',
     this.signature = '',
+    this.authorization,
   });
 
   factory PreparedTransaction.fromJson(Map<String, dynamic> json) {
@@ -178,6 +182,11 @@ class PreparedTransaction {
       uuid7: json['uuid7'] as String,
       hash: json['hash'] as String? ?? '',
       signature: json['signature'] as String? ?? '',
+      authorization: json['authorization'] == null
+          ? null
+          : AuthorizationEnvelope.fromJson(
+              Map<String, dynamic>.from(json['authorization'] as Map),
+            ),
     );
   }
 
@@ -191,6 +200,7 @@ class PreparedTransaction {
     'uuid7': uuid7,
     'hash': hash,
     'signature': signature,
+    if (authorization != null) 'authorization': authorization!.toJson(),
   };
 }
 
@@ -205,6 +215,7 @@ class SignedTransaction extends PreparedTransaction {
     required super.uuid7,
     required super.hash,
     required super.signature,
+    super.authorization,
   });
 
   factory SignedTransaction.fromTransaction(Transaction tx) {
@@ -218,6 +229,7 @@ class SignedTransaction extends PreparedTransaction {
       uuid7: tx.uuid7,
       hash: tx.hash,
       signature: tx.signature,
+      authorization: tx.authorization,
     );
   }
 
@@ -232,6 +244,11 @@ class SignedTransaction extends PreparedTransaction {
       uuid7: json['uuid7'] as String,
       hash: json['hash'] as String,
       signature: json['signature'] as String,
+      authorization: json['authorization'] == null
+          ? null
+          : AuthorizationEnvelope.fromJson(
+              Map<String, dynamic>.from(json['authorization'] as Map),
+            ),
     );
   }
 
@@ -246,6 +263,7 @@ class SignedTransaction extends PreparedTransaction {
       uuid7: uuid7,
       hash: hash,
       signature: signature,
+      authorization: authorization,
     );
   }
 }
@@ -443,6 +461,7 @@ class WalletManager implements IWalletManager {
         data: input.data,
         version: input.version,
         uuid7: input.uuid7,
+        authorization: input.authorization,
       );
       return signTransactionWithPrivateKey(privateKey, tx);
     } finally {
@@ -463,6 +482,7 @@ class WalletManager implements IWalletManager {
         data: input.data,
         version: input.version,
         uuid7: input.uuid7,
+        authorization: input.authorization,
       ),
     );
     return SignedTransaction.fromTransaction(signed);
