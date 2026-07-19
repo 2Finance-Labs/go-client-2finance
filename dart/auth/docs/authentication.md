@@ -83,9 +83,9 @@ Erros de logout passam por `AuthSdkException` e redigem `refresh_token`,
 `access_token`, `id_token`, `password` e bearer tokens antes de aparecerem em
 logs/excecoes.
 
-## Exemplo de integracao com `2finance-app`
+## Exemplo de integracao com `2finance-wallet-mobile`
 
-O `2finance-app` deve iniciar o login pelo SDK, abrir a URL de autorizacao no navegador/sistema, receber o deep link de callback e entao chamar `callbackPKCE`.
+O `2finance-wallet-mobile` deve iniciar o login pelo SDK, abrir a URL de autorizacao no navegador/sistema, receber o deep link de callback e entao chamar `callbackPKCE`.
 
 ```dart
 class AuthCoordinator {
@@ -154,10 +154,10 @@ Fechados neste SDK:
 
 1. Login com senha marcado como compatibilidade, nao como caminho recomendado.
 2. Guia de refresh token rotation e logout adicionado.
-3. Exemplo de integracao com `2finance-app` usando PKCE adicionado.
+3. Exemplo de integracao com `2finance-wallet-mobile` usando PKCE adicionado.
 4. Excecoes do SDK mascaram credenciais e tokens conhecidos antes de expor o corpo do erro.
 5. Logout server-side adicionado via `TwoFinanceAuthClient.logout(refreshToken)`.
 
 Restante fora deste SDK:
 
-1. Garantir que `2finance-app` use storage seguro real e nao persista access token em disco.
+1. Garantir que `2finance-wallet-mobile` use storage seguro real e nao persista access token em disco.

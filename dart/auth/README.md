@@ -33,7 +33,7 @@ import 'package:two_finance_auth_sdk/two_finance_auth_sdk.dart';
 final auth = TwoFinanceAuthClient(
   baseUrl: Uri.parse('http://localhost:8080'),
   realm: '2Finance',
-  clientId: '2finance-app',
+  clientId: '2finance-wallet-mobile',
   phoneClientId: '2finance-authenticator-phone',
 );
 ```
