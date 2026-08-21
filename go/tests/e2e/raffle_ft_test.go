@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1"
-	raffleV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1/domain"
-	raffleV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1/models"
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
-	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/raffleV2"
+	raffleV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV2/domain"
+	raffleV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/raffleV2/models"
+	tokenV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
+	tokenV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/models"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/seed"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
@@ -50,7 +50,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 		owner.PublicKey,
 		0,
 		false,
-		tokenV1Domain.FUNGIBLE,
+		tokenV2Domain.FUNGIBLE,
 		false,
 	)
 
@@ -62,19 +62,19 @@ func TestRaffleFlowFungible(t *testing.T) {
 		owner.PublicKey,
 		0,
 		false,
-		tokenV1Domain.FUNGIBLE,
+		tokenV2Domain.FUNGIBLE,
 		false,
 	)
 
-	require.Equal(t, tokenV1Domain.FUNGIBLE, payToken.TokenType, "payToken must be fungible")
-	require.Equal(t, tokenV1Domain.FUNGIBLE, prizeToken.TokenType, "prizeToken must be fungible")
+	require.Equal(t, tokenV2Domain.FUNGIBLE, payToken.TokenType, "payToken must be fungible")
+	require.Equal(t, tokenV2Domain.FUNGIBLE, prizeToken.TokenType, "prizeToken must be fungible")
 
 	// ------------------
 	//    DEPLOY RAFFLE
 	// ------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedContract, err := c.DeployContract1(raffleV1.RAFFLE_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(raffleV2.RAFFLE_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -128,8 +128,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance player1 before: %v", err)
 	}
 
-	var player1PayBefore tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](player1PayBeforeOut.States[0].Object, &player1PayBefore)
+	var player1PayBefore tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](player1PayBeforeOut.States[0].Object, &player1PayBefore)
 	if err != nil {
 		t.Fatalf("UnmarshalState player1PayBefore: %v", err)
 	}
@@ -139,8 +139,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance player2 before: %v", err)
 	}
 
-	var player2PayBefore tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](player2PayBeforeOut.States[0].Object, &player2PayBefore)
+	var player2PayBefore tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](player2PayBeforeOut.States[0].Object, &player2PayBefore)
 	if err != nil {
 		t.Fatalf("UnmarshalState player2PayBefore: %v", err)
 	}
@@ -150,8 +150,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance owner pay before withdraw: %v", err)
 	}
 
-	var ownerPayBeforeWithdraw tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPayBeforeWithdrawOut.States[0].Object, &ownerPayBeforeWithdraw)
+	var ownerPayBeforeWithdraw tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](ownerPayBeforeWithdrawOut.States[0].Object, &ownerPayBeforeWithdraw)
 	if err != nil {
 		t.Fatalf("UnmarshalState ownerPayBeforeWithdraw: %v", err)
 	}
@@ -161,8 +161,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance owner prize before: %v", err)
 	}
 
-	var ownerPrizeBefore tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPrizeBeforeOut.States[0].Object, &ownerPrizeBefore)
+	var ownerPrizeBefore tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](ownerPrizeBeforeOut.States[0].Object, &ownerPrizeBefore)
 	if err != nil {
 		t.Fatalf("UnmarshalState ownerPrizeBefore: %v", err)
 	}
@@ -210,9 +210,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddRaffle.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_ADDED_LOG, addRaffleLog.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_ADDED_LOG, addRaffleLog.LogType)
 
-	addRaffleEvent, err := utils.UnmarshalEvent[raffleV1Domain.Raffle](addRaffleLog.Event)
+	addRaffleEvent, err := utils.UnmarshalEvent[raffleV2Domain.Raffle](addRaffleLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddRaffle.Logs[0]): %v", err)
 	}
@@ -235,8 +235,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	}
 	require.NotEmpty(t, getRaffleOut.States)
 
-	var raffleState raffleV1Models.RaffleStateModel
-	err = utils.UnmarshalState[raffleV1Models.RaffleStateModel](getRaffleOut.States[0].Object, &raffleState)
+	var raffleState raffleV2Models.RaffleStateModel
+	err = utils.UnmarshalState[raffleV2Models.RaffleStateModel](getRaffleOut.States[0].Object, &raffleState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetRaffle.States[0]): %v", err)
 	}
@@ -280,9 +280,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddRafflePrize.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_ADDED_PRIZES_LOG, addPrizeLog.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_ADDED_PRIZES_LOG, addPrizeLog.LogType)
 
-	addPrizeEvent, err := utils.UnmarshalEvent[raffleV1Domain.RafflePrize](addPrizeLog.Event)
+	addPrizeEvent, err := utils.UnmarshalEvent[raffleV2Domain.RafflePrize](addPrizeLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddRafflePrize.Logs[0]): %v", err)
 	}
@@ -298,8 +298,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance raffle prize after add: %v", err)
 	}
 
-	var rafflePrizeBalanceAfterAdd tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](rafflePrizeBalanceAfterAddOut.States[0].Object, &rafflePrizeBalanceAfterAdd)
+	var rafflePrizeBalanceAfterAdd tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](rafflePrizeBalanceAfterAddOut.States[0].Object, &rafflePrizeBalanceAfterAdd)
 	if err != nil {
 		t.Fatalf("UnmarshalState rafflePrizeBalanceAfterAdd: %v", err)
 	}
@@ -310,8 +310,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance owner prize after add: %v", err)
 	}
 
-	var ownerPrizeAfterAdd tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPrizeAfterAddOut.States[0].Object, &ownerPrizeAfterAdd)
+	var ownerPrizeAfterAdd tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](ownerPrizeAfterAddOut.States[0].Object, &ownerPrizeAfterAdd)
 	if err != nil {
 		t.Fatalf("UnmarshalState ownerPrizeAfterAdd: %v", err)
 	}
@@ -337,9 +337,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (RemoveRafflePrize.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_REMOVED_PRIZES_LOG, removePrizeLog.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_REMOVED_PRIZES_LOG, removePrizeLog.LogType)
 
-	removePrizeEvent, err := utils.UnmarshalEvent[raffleV1Domain.RafflePrize](removePrizeLog.Event)
+	removePrizeEvent, err := utils.UnmarshalEvent[raffleV2Domain.RafflePrize](removePrizeLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (RemoveRafflePrize.Logs[0]): %v", err)
 	}
@@ -354,8 +354,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		require.Contains(t, err.Error(), "record not found")
 	} else {
-		var rafflePrizeAfterRemove tokenV1Models.BalanceStateModel
-		err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](rafflePrizeAfterRemoveOut.States[0].Object, &rafflePrizeAfterRemove)
+		var rafflePrizeAfterRemove tokenV2Models.BalanceStateModel
+		err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](rafflePrizeAfterRemoveOut.States[0].Object, &rafflePrizeAfterRemove)
 		if err != nil {
 			t.Fatalf("UnmarshalState rafflePrizeAfterRemove: %v", err)
 		}
@@ -367,8 +367,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance owner prize after remove: %v", err)
 	}
 
-	var ownerPrizeAfterRemove tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPrizeAfterRemoveOut.States[0].Object, &ownerPrizeAfterRemove)
+	var ownerPrizeAfterRemove tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](ownerPrizeAfterRemoveOut.States[0].Object, &ownerPrizeAfterRemove)
 	if err != nil {
 		t.Fatalf("UnmarshalState ownerPrizeAfterRemove: %v", err)
 	}
@@ -395,9 +395,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddRafflePrize again.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_ADDED_PRIZES_LOG, addPrizeLog.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_ADDED_PRIZES_LOG, addPrizeLog.LogType)
 
-	addPrizeEvent, err = utils.UnmarshalEvent[raffleV1Domain.RafflePrize](addPrizeLog.Event)
+	addPrizeEvent, err = utils.UnmarshalEvent[raffleV2Domain.RafflePrize](addPrizeLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddRafflePrize again.Logs[0]): %v", err)
 	}
@@ -444,9 +444,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (UpdateRaffle.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_UPDATED_LOG, updateRaffleLog.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_UPDATED_LOG, updateRaffleLog.LogType)
 
-	updateRaffleEvent, err := utils.UnmarshalEvent[raffleV1Domain.Raffle](updateRaffleLog.Event)
+	updateRaffleEvent, err := utils.UnmarshalEvent[raffleV2Domain.Raffle](updateRaffleLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UpdateRaffle.Logs[0]): %v", err)
 	}
@@ -467,7 +467,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	}
 	require.NotEmpty(t, getRaffleOut.States)
 
-	err = utils.UnmarshalState[raffleV1Models.RaffleStateModel](getRaffleOut.States[0].Object, &raffleState)
+	err = utils.UnmarshalState[raffleV2Models.RaffleStateModel](getRaffleOut.States[0].Object, &raffleState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetRaffle after update): %v", err)
 	}
@@ -502,9 +502,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (PauseRaffle.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_PAUSED_LOG, pauseLog.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_PAUSED_LOG, pauseLog.LogType)
 
-	pauseEvent, err := utils.UnmarshalEvent[raffleV1Domain.Raffle](pauseLog.Event)
+	pauseEvent, err := utils.UnmarshalEvent[raffleV2Domain.Raffle](pauseLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (PauseRaffle.Logs[0]): %v", err)
 	}
@@ -515,7 +515,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetRaffle after pause: %v", err)
 	}
-	err = utils.UnmarshalState[raffleV1Models.RaffleStateModel](getRaffleOut.States[0].Object, &raffleState)
+	err = utils.UnmarshalState[raffleV2Models.RaffleStateModel](getRaffleOut.States[0].Object, &raffleState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetRaffle after pause): %v", err)
 	}
@@ -536,9 +536,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (UnpauseRaffle.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_UNPAUSED_LOG, unpauseLog.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_UNPAUSED_LOG, unpauseLog.LogType)
 
-	unpauseEvent, err := utils.UnmarshalEvent[raffleV1Domain.Raffle](unpauseLog.Event)
+	unpauseEvent, err := utils.UnmarshalEvent[raffleV2Domain.Raffle](unpauseLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UnpauseRaffle.Logs[0]): %v", err)
 	}
@@ -549,7 +549,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetRaffle after unpause: %v", err)
 	}
-	err = utils.UnmarshalState[raffleV1Models.RaffleStateModel](getRaffleOut.States[0].Object, &raffleState)
+	err = utils.UnmarshalState[raffleV2Models.RaffleStateModel](getRaffleOut.States[0].Object, &raffleState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetRaffle after unpause): %v", err)
 	}
@@ -576,9 +576,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (EnterRaffle player1.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_ENTERED_LOG, enter1Log.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_ENTERED_LOG, enter1Log.LogType)
 
-	enter1Event, err := utils.UnmarshalEvent[raffleV1Domain.Entry](enter1Log.Event)
+	enter1Event, err := utils.UnmarshalEvent[raffleV2Domain.Entry](enter1Log.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (EnterRaffle player1.Logs[0]): %v", err)
 	}
@@ -608,9 +608,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (EnterRaffle player2.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_ENTERED_LOG, enter2Log.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_ENTERED_LOG, enter2Log.LogType)
 
-	enter2Event, err := utils.UnmarshalEvent[raffleV1Domain.Entry](enter2Log.Event)
+	enter2Event, err := utils.UnmarshalEvent[raffleV2Domain.Entry](enter2Log.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (EnterRaffle player2.Logs[0]): %v", err)
 	}
@@ -627,8 +627,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance player1 after enter: %v", err)
 	}
 
-	var player1PayAfterEnter tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](player1PayAfterEnterOut.States[0].Object, &player1PayAfterEnter)
+	var player1PayAfterEnter tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](player1PayAfterEnterOut.States[0].Object, &player1PayAfterEnter)
 	if err != nil {
 		t.Fatalf("UnmarshalState player1PayAfterEnter: %v", err)
 	}
@@ -638,8 +638,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance player2 after enter: %v", err)
 	}
 
-	var player2PayAfterEnter tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](player2PayAfterEnterOut.States[0].Object, &player2PayAfterEnter)
+	var player2PayAfterEnter tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](player2PayAfterEnterOut.States[0].Object, &player2PayAfterEnter)
 	if err != nil {
 		t.Fatalf("UnmarshalState player2PayAfterEnter: %v", err)
 	}
@@ -649,8 +649,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance raffle pay after enter: %v", err)
 	}
 
-	var rafflePayAfterEnter tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](rafflePayAfterEnterOut.States[0].Object, &rafflePayAfterEnter)
+	var rafflePayAfterEnter tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](rafflePayAfterEnterOut.States[0].Object, &rafflePayAfterEnter)
 	if err != nil {
 		t.Fatalf("UnmarshalState rafflePayAfterEnter: %v", err)
 	}
@@ -684,9 +684,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (DrawRaffle.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_DRAWN_LOG, drawLog.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_DRAWN_LOG, drawLog.LogType)
 
-	drawEvent, err := utils.UnmarshalEvent[raffleV1Domain.Draw](drawLog.Event)
+	drawEvent, err := utils.UnmarshalEvent[raffleV2Domain.Draw](drawLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (DrawRaffle.Logs[0]): %v", err)
 	}
@@ -705,7 +705,7 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetRaffle after draw: %v", err)
 	}
-	err = utils.UnmarshalState[raffleV1Models.RaffleStateModel](getRaffleOut.States[0].Object, &raffleState)
+	err = utils.UnmarshalState[raffleV2Models.RaffleStateModel](getRaffleOut.States[0].Object, &raffleState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetRaffle after draw): %v", err)
 	}
@@ -725,8 +725,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance raffle prize before claim: %v", err)
 	}
 
-	var rafflePrizeBeforeClaim tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](rafflePrizeBeforeClaimOut.States[0].Object, &rafflePrizeBeforeClaim)
+	var rafflePrizeBeforeClaim tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](rafflePrizeBeforeClaimOut.States[0].Object, &rafflePrizeBeforeClaim)
 	if err != nil {
 		t.Fatalf("UnmarshalState rafflePrizeBeforeClaim: %v", err)
 	}
@@ -753,9 +753,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (ClaimRaffle.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_CLAIMED_LOG, claimLog.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_CLAIMED_LOG, claimLog.LogType)
 
-	claimEvent, err := utils.UnmarshalEvent[raffleV1Domain.Claim](claimLog.Event)
+	claimEvent, err := utils.UnmarshalEvent[raffleV2Domain.Claim](claimLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (ClaimRaffle.Logs[0]): %v", err)
 	}
@@ -768,8 +768,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance winner prize after claim: %v", err)
 	}
 
-	var winnerPrizeAfter tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](winnerPrizeAfterOut.States[0].Object, &winnerPrizeAfter)
+	var winnerPrizeAfter tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](winnerPrizeAfterOut.States[0].Object, &winnerPrizeAfter)
 	if err != nil {
 		t.Fatalf("UnmarshalState winnerPrizeAfter: %v", err)
 	}
@@ -807,9 +807,9 @@ func TestRaffleFlowFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (WithdrawRaffle.Logs[0]): %v", err)
 	}
-	assert.Equal(t, raffleV1Domain.RAFFLE_WITHDRAWN_LOG, withdrawLog.LogType)
+	assert.Equal(t, raffleV2Domain.RAFFLE_WITHDRAWN_LOG, withdrawLog.LogType)
 
-	withdrawEvent, err := utils.UnmarshalEvent[raffleV1Domain.Withdrawal](withdrawLog.Event)
+	withdrawEvent, err := utils.UnmarshalEvent[raffleV2Domain.Withdrawal](withdrawLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (WithdrawRaffle.Logs[0]): %v", err)
 	}
@@ -823,8 +823,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance owner pay after withdraw: %v", err)
 	}
 
-	var ownerPayAfterWithdraw tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerPayAfterWithdrawOut.States[0].Object, &ownerPayAfterWithdraw)
+	var ownerPayAfterWithdraw tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](ownerPayAfterWithdrawOut.States[0].Object, &ownerPayAfterWithdraw)
 	if err != nil {
 		t.Fatalf("UnmarshalState ownerPayAfterWithdraw: %v", err)
 	}
@@ -834,8 +834,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance raffle pay after withdraw: %v", err)
 	}
 
-	var rafflePayAfterWithdraw tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](rafflePayAfterWithdrawOut.States[0].Object, &rafflePayAfterWithdraw)
+	var rafflePayAfterWithdraw tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](rafflePayAfterWithdrawOut.States[0].Object, &rafflePayAfterWithdraw)
 	if err != nil {
 		t.Fatalf("UnmarshalState rafflePayAfterWithdraw: %v", err)
 	}
@@ -862,8 +862,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	}
 	require.NotEmpty(t, listPrizesOut.States)
 
-	var prizes []raffleV1Models.RafflePrizeModel
-	err = utils.UnmarshalState[[]raffleV1Models.RafflePrizeModel](listPrizesOut.States[0].Object, &prizes)
+	var prizes []raffleV2Models.RafflePrizeModel
+	err = utils.UnmarshalState[[]raffleV2Models.RafflePrizeModel](listPrizesOut.States[0].Object, &prizes)
 	if err != nil {
 		t.Fatalf("UnmarshalState (ListPrizes.States[0]): %v", err)
 	}
@@ -892,8 +892,8 @@ func TestRaffleFlowFungible(t *testing.T) {
 	}
 	require.NotEmpty(t, getPrizeOut.States)
 
-	var prize raffleV1Models.RafflePrizeModel
-	err = utils.UnmarshalState[raffleV1Models.RafflePrizeModel](getPrizeOut.States[0].Object, &prize)
+	var prize raffleV2Models.RafflePrizeModel
+	err = utils.UnmarshalState[raffleV2Models.RafflePrizeModel](getPrizeOut.States[0].Object, &prize)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetPrize.States[0]): %v", err)
 	}

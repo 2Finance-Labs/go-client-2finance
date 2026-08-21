@@ -90,7 +90,7 @@ test("configFromEnv loads standard 2Finance URLs", () => {
 
 test("shared contract fixtures describe public SDK operations", () => {
   const parsedDomains = parseDomainOperationsCatalog(domainOperationsFixture);
-  assert.equal(domainOperationsFixture.schema, "sdk.domain_operations.v1");
+  assert.equal(domainOperationsFixture.schema, "sdk.domain_operations.v2");
   assert.equal(parsedDomains.domains[0].operations[0].request_schema, "auth.login.request.v1");
   assert.equal(findDomainOperation(parsedDomains, "analytics", "balances").path, "/portfolio-manager/balances/{account_id}");
   assert.deepEqual(resolveDomainOperation(findDomainOperation(parsedDomains, "analytics", "balances"), { account_id: "acct/1 ok" }), {
@@ -149,13 +149,13 @@ test("MatchEngine client prepares order commands", () => {
   });
 
   assert.equal(client.matchEngine.webSocketURL, "wss://matchengine.example/ws");
-  assert.equal(command.schema, "matchengine.order_command.v1");
+  assert.equal(command.schema, "matchengine.order_command.v2");
   assert.equal(command.symbol, "BTC-USDT");
   const subscription = client.matchEngine.marketDataSubscribe({
     symbols: ["BTC-USDT"],
     channels: ["book"]
   });
-  assert.equal(subscription.schema, "matchengine.market_data_subscribe.v1");
+  assert.equal(subscription.schema, "matchengine.market_data_subscribe.v2");
   assert.deepEqual(subscription.symbols, ["BTC-USDT"]);
   const messages = [];
   const transport = {
@@ -166,8 +166,8 @@ test("MatchEngine client prepares order commands", () => {
   };
   assert.deepEqual(client.matchEngine.sendOrder(transport, command), { ok: true });
   assert.deepEqual(client.matchEngine.subscribeMarketData(transport, subscription), { ok: true });
-  assert.equal(messages[0].schema, "matchengine.order_command.v1");
-  assert.equal(messages[1].schema, "matchengine.market_data_subscribe.v1");
+  assert.equal(messages[0].schema, "matchengine.order_command.v2");
+  assert.equal(messages[1].schema, "matchengine.market_data_subscribe.v2");
 });
 
 test("bearerAuthorization normalizes tokens", () => {
@@ -392,19 +392,19 @@ test("Analytics and TradingControl clients expose full core endpoints", async ()
       "GET https://analytics.example/portfolio-manager/balances/acct%2F1%20ok",
       "GET https://analytics.example/risk-manager/blackscholes?symbol=BTC",
       "GET https://analytics.example/staking",
-      "GET https://network.example/v1/2finance-network/markets/BTC%2FUSDT/candles?limit=10",
-      "GET https://network.example/v1/2finance-network/products/bonds",
-      "POST https://network.example/v1/2finance-network/products/bonds",
-      "GET https://network.example/v1/2finance-network/products/loans",
-      "POST https://network.example/v1/2finance-network/products/loans",
-      "GET https://network.example/v1/2finance-network/products/swaps",
-      "POST https://network.example/v1/2finance-network/products/swaps",
-      "GET https://network.example/v1/2finance-network/products/staking",
-      "POST https://network.example/v1/2finance-network/products/staking",
-      "GET https://network.example/v1/2finance-network/products/synthetic-assets",
-      "POST https://network.example/v1/2finance-network/products/synthetic-assets",
-      "GET https://network.example/v1/2finance-network/products/liquidity-pools",
-      "POST https://network.example/v1/2finance-network/products/liquidity-pools",
+      "GET https://network.example/v2/2finance-network/markets/BTC%2FUSDT/candles?limit=10",
+      "GET https://network.example/v2/2finance-network/products/bonds",
+      "POST https://network.example/v2/2finance-network/products/bonds",
+      "GET https://network.example/v2/2finance-network/products/loans",
+      "POST https://network.example/v2/2finance-network/products/loans",
+      "GET https://network.example/v2/2finance-network/products/swaps",
+      "POST https://network.example/v2/2finance-network/products/swaps",
+      "GET https://network.example/v2/2finance-network/products/staking",
+      "POST https://network.example/v2/2finance-network/products/staking",
+      "GET https://network.example/v2/2finance-network/products/synthetic-assets",
+      "POST https://network.example/v2/2finance-network/products/synthetic-assets",
+      "GET https://network.example/v2/2finance-network/products/liquidity-pools",
+      "POST https://network.example/v2/2finance-network/products/liquidity-pools",
       "POST https://trading.example/robots/robot%2F1:pause",
       "POST https://trading.example/robots/robot%2F1:resume",
       "POST https://trading.example/robots/robot%2F1:stop",

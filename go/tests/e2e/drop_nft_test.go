@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
-	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2"
+	tokenV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
+	tokenV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/models"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
@@ -31,7 +31,7 @@ func TestDropFlowNFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(tokenV2.TOKEN_CONTRACT_V2)
 	require.NoError(t, err)
 
 	contractLog, err := utils.UnmarshalLog[log.Log](deployedContract.Logs[0])
@@ -66,15 +66,15 @@ func TestDropFlowNFT(t *testing.T) {
 		false,
 		time.Time{},
 		"https://example.com/asset.glb",
-		tokenV1Domain.NON_FUNGIBLE,
+		tokenV2Domain.NON_FUNGIBLE,
 		true,
-		tokenV1Domain.TOKEN_ASSET_TYPE,
+		tokenV2Domain.TOKEN_ASSET_TYPE,
 	)
 	require.NoError(t, err)
 
 	addTokenLog, err := utils.UnmarshalLog[log.Log](addTokenOut.Logs[0])
 	require.NoError(t, err)
-	assert.Equal(t, tokenV1Domain.TOKEN_CREATED_LOG, addTokenLog.LogType)
+	assert.Equal(t, tokenV2Domain.TOKEN_CREATED_LOG, addTokenLog.LogType)
 
 	// --------------------------------------------------------------------
 	// Mint NFTs
@@ -87,7 +87,7 @@ func TestDropFlowNFT(t *testing.T) {
 	mintLog, err := utils.UnmarshalLog[log.Log](mintOut.Logs[0])
 	require.NoError(t, err)
 
-	mintEvent, err := utils.UnmarshalEvent[tokenV1Domain.MintNFT](mintLog.Event)
+	mintEvent, err := utils.UnmarshalEvent[tokenV2Domain.MintNFT](mintLog.Event)
 	require.NoError(t, err)
 
 	require.Len(t, mintEvent.TokenUUIDList, 3)
@@ -100,7 +100,7 @@ func TestDropFlowNFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedDrop, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
+	deployedDrop, err := c.DeployContract1(dropV2.DROP_CONTRACT_V2)
 	require.NoError(t, err)
 
 	dropLog, err := utils.UnmarshalLog[log.Log](deployedDrop.Logs[0])
@@ -218,20 +218,20 @@ func TestDropFlowNFT(t *testing.T) {
 	getBalance, err := c.ListTokenBalances(
 		nftTokenAddress,
 		drop.Address,
-		tokenV1Domain.NON_FUNGIBLE,
+		tokenV2Domain.NON_FUNGIBLE,
 		1,
 		10,
 		true,
 	)
 	require.NoError(t, err)
 
-	var balanceList []tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[[]tokenV1Models.BalanceStateModel](getBalance.States[0].Object, &balanceList)
+	var balanceList []tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[[]tokenV2Models.BalanceStateModel](getBalance.States[0].Object, &balanceList)
 	require.NoError(t, err)
 
 	assert.Len(t, getBalance.States, 1)
 	assert.Len(t, balanceList, 1)
-	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, balanceList[0].TokenType)
+	assert.Equal(t, tokenV2Domain.NON_FUNGIBLE, balanceList[0].TokenType)
 
 	// --------------------------------------------------------------------
 	// Claim
@@ -257,8 +257,8 @@ func TestDropFlowNFT(t *testing.T) {
 	userBalanceOut, err := c.GetTokenBalanceNFT(nftTokenAddress, userSigner.PublicKey, uuid1)
 	require.NoError(t, err)
 
-	var userBalance tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](userBalanceOut.States[0].Object, &userBalance)
+	var userBalance tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](userBalanceOut.States[0].Object, &userBalance)
 	require.NoError(t, err)
 
 	assert.Equal(t, userSigner.PublicKey, userBalance.OwnerAddress)

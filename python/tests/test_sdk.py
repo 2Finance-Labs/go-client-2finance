@@ -72,7 +72,7 @@ class SDKTest(unittest.TestCase):
         pagination = load_contract_fixture("pagination.json")
         idempotency = load_contract_fixture("idempotency.json")
 
-        self.assertEqual(domains["schema"], "sdk.domain_operations.v1")
+        self.assertEqual(domains["schema"], "sdk.domain_operations.v2")
         self.assertEqual(
             contract_operation(domains, "analytics", "balances")["path"],
             "/portfolio-manager/balances/{account_id}",
@@ -103,7 +103,7 @@ class SDKTest(unittest.TestCase):
         self.assertEqual(pagination.next_cursor, "cursor-next")
         self.assertEqual(idempotency.idempotency_key, "idem-001")
         self.assertEqual(catalog.services[0].name, "auth")
-        self.assertEqual(operations.schema, "sdk.domain_operations.v1")
+        self.assertEqual(operations.schema, "sdk.domain_operations.v2")
         self.assertEqual(operations.domains[0].operations[0].request_schema, "auth.login.request.v1")
         self.assertEqual(
             operations.operation("analytics", "balances").path,
@@ -335,10 +335,10 @@ class SDKTest(unittest.TestCase):
         )
 
         self.assertEqual(client.matchengine.websocket_url, "wss://matchengine.example/ws")
-        self.assertEqual(command["schema"], "matchengine.order_command.v1")
+        self.assertEqual(command["schema"], "matchengine.order_command.v2")
         self.assertEqual(command["symbol"], "BTC-USDT")
         subscription = client.matchengine.market_data_subscribe(symbols=["BTC-USDT"], channels=["book"])
-        self.assertEqual(subscription["schema"], "matchengine.market_data_subscribe.v1")
+        self.assertEqual(subscription["schema"], "matchengine.market_data_subscribe.v2")
         self.assertEqual(subscription["symbols"], ["BTC-USDT"])
         messages = []
 
@@ -348,8 +348,8 @@ class SDKTest(unittest.TestCase):
 
         self.assertEqual(client.matchengine.send_order(sender, **command), {"ok": True})
         self.assertEqual(client.matchengine.subscribe_market_data(sender, **subscription), {"ok": True})
-        self.assertEqual(messages[0]["schema"], "matchengine.order_command.v1")
-        self.assertEqual(messages[1]["schema"], "matchengine.market_data_subscribe.v1")
+        self.assertEqual(messages[0]["schema"], "matchengine.order_command.v2")
+        self.assertEqual(messages[1]["schema"], "matchengine.market_data_subscribe.v2")
 
     def test_domain_clients_expose_core_service_endpoints(self):
         seen = []
@@ -422,19 +422,19 @@ class SDKTest(unittest.TestCase):
         self.assertIn("GET https://analytics.example/portfolio-manager/balances/acct%2F1", seen)
         self.assertIn("GET https://analytics.example/risk-manager/blackscholes?symbol=BTC", seen)
         self.assertIn("GET https://analytics.example/staking", seen)
-        self.assertIn("GET https://network.example/v1/2finance-network/markets/BTC%2FUSDT/candles?limit=10", seen)
-        self.assertIn("GET https://network.example/v1/2finance-network/products/bonds", seen)
-        self.assertIn("POST https://network.example/v1/2finance-network/products/bonds", seen)
-        self.assertIn("GET https://network.example/v1/2finance-network/products/loans", seen)
-        self.assertIn("POST https://network.example/v1/2finance-network/products/loans", seen)
-        self.assertIn("GET https://network.example/v1/2finance-network/products/swaps", seen)
-        self.assertIn("POST https://network.example/v1/2finance-network/products/swaps", seen)
-        self.assertIn("GET https://network.example/v1/2finance-network/products/staking", seen)
-        self.assertIn("POST https://network.example/v1/2finance-network/products/staking", seen)
-        self.assertIn("GET https://network.example/v1/2finance-network/products/synthetic-assets", seen)
-        self.assertIn("POST https://network.example/v1/2finance-network/products/synthetic-assets", seen)
-        self.assertIn("GET https://network.example/v1/2finance-network/products/liquidity-pools", seen)
-        self.assertIn("POST https://network.example/v1/2finance-network/products/liquidity-pools", seen)
+        self.assertIn("GET https://network.example/v2/2finance-network/markets/BTC%2FUSDT/candles?limit=10", seen)
+        self.assertIn("GET https://network.example/v2/2finance-network/products/bonds", seen)
+        self.assertIn("POST https://network.example/v2/2finance-network/products/bonds", seen)
+        self.assertIn("GET https://network.example/v2/2finance-network/products/loans", seen)
+        self.assertIn("POST https://network.example/v2/2finance-network/products/loans", seen)
+        self.assertIn("GET https://network.example/v2/2finance-network/products/swaps", seen)
+        self.assertIn("POST https://network.example/v2/2finance-network/products/swaps", seen)
+        self.assertIn("GET https://network.example/v2/2finance-network/products/staking", seen)
+        self.assertIn("POST https://network.example/v2/2finance-network/products/staking", seen)
+        self.assertIn("GET https://network.example/v2/2finance-network/products/synthetic-assets", seen)
+        self.assertIn("POST https://network.example/v2/2finance-network/products/synthetic-assets", seen)
+        self.assertIn("GET https://network.example/v2/2finance-network/products/liquidity-pools", seen)
+        self.assertIn("POST https://network.example/v2/2finance-network/products/liquidity-pools", seen)
         self.assertIn("POST https://trading.example/robots/robot%2F1:start", seen)
         self.assertIn("POST https://trading.example/robots/robot%2F1:pause", seen)
         self.assertIn("GET https://trading.example/robots/robot%2F1/risk-policy", seen)

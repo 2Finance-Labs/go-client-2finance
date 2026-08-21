@@ -16,28 +16,43 @@ type Client struct {
 }
 
 type OrderCommand struct {
-	Schema          string          `json:"schema,omitempty"`
-	ClientOrderID   string          `json:"client_order_id"`
-	IdempotencyKey  string          `json:"idempotency_key"`
-	Symbol          string          `json:"symbol"`
-	Side            string          `json:"side"`
-	Type            string          `json:"type"`
-	Quantity        string          `json:"quantity"`
-	Price           string          `json:"price,omitempty"`
-	TimeInForce     string          `json:"time_in_force,omitempty"`
-	AccountID       string          `json:"account_id,omitempty"`
-	ClientTimestamp time.Time       `json:"client_timestamp,omitempty"`
-	Metadata        json.RawMessage `json:"metadata,omitempty"`
+	Schema           string          `json:"schema,omitempty"`
+	MessageType      string          `json:"message_type,omitempty"`
+	Operation        string          `json:"operation,omitempty"`
+	OrderType        string          `json:"order_type,omitempty"`
+	ClientOrderID    string          `json:"client_order_id"`
+	IdempotencyKey   string          `json:"idempotency_key"`
+	WalletID         uint64          `json:"wallet_id"`
+	SymbolID         uint64          `json:"symbol_id"`
+	OrderID          uint64          `json:"order_id,omitempty"`
+	Side             string          `json:"side"`
+	Quantity         string          `json:"quantity,omitempty"`
+	Price            string          `json:"price,omitempty"`
+	StopPrice        string          `json:"stop_price,omitempty"`
+	Slippage         string          `json:"slippage,omitempty"`
+	MaxVisibleQty    string          `json:"max_visible_quantity,omitempty"`
+	TrailingDistance string          `json:"trailing_distance,omitempty"`
+	TrailingStep     string          `json:"trailing_step,omitempty"`
+	TimeInForce      string          `json:"time_in_force,omitempty"`
+	AgentID          string          `json:"agent_id,omitempty"`
+	ControllerID     string          `json:"controller_id,omitempty"`
+	ExecutorID       string          `json:"executor_id,omitempty"`
+	StrategyID       string          `json:"strategy_id,omitempty"`
+	ClientTimestamp  time.Time       `json:"client_timestamp,omitempty"`
+	Metadata         json.RawMessage `json:"metadata,omitempty"`
 }
 
 type ExecutionReport struct {
-	Schema        string          `json:"schema,omitempty"`
-	ClientOrderID string          `json:"client_order_id,omitempty"`
-	OrderID       string          `json:"order_id,omitempty"`
-	Status        string          `json:"status,omitempty"`
-	Symbol        string          `json:"symbol,omitempty"`
-	FilledQty     string          `json:"filled_qty,omitempty"`
-	Raw           json.RawMessage `json:"raw,omitempty"`
+	Schema         string `json:"schema,omitempty"`
+	Version        int    `json:"version,omitempty"`
+	MessageType    string `json:"message_type,omitempty"`
+	Status         string `json:"status,omitempty"`
+	ReasonCode     string `json:"reason_code,omitempty"`
+	ErrorCode      int    `json:"error_code,omitempty"`
+	ClientOrderID  string `json:"client_order_id,omitempty"`
+	IdempotencyKey string `json:"idempotency_key,omitempty"`
+	OrderID        uint64 `json:"order_id,omitempty"`
+	Timestamp      uint64 `json:"timestamp,omitempty"`
 }
 
 type MarketDataSubscribeRequest struct {
@@ -59,9 +74,22 @@ func New(webSocketURL string, httpClient *http.Client) *Client {
 
 func NewMarketDataSubscribeRequest(request MarketDataSubscribeRequest) MarketDataSubscribeRequest {
 	if request.Schema == "" {
-		request.Schema = "matchengine.market_data_subscribe.v1"
+		request.Schema = "matchengine.market_data_subscribe.v2"
 	}
 	return request
+}
+
+func NewOrderCommand(command OrderCommand) OrderCommand {
+	if command.Schema == "" {
+		command.Schema = "matchengine.order_command.v2"
+	}
+	if command.MessageType == "" {
+		command.MessageType = "ORDER"
+	}
+	if command.Operation == "" {
+		command.Operation = "ADD"
+	}
+	return command
 }
 
 func (c *Client) DialOrderEntry(ctx context.Context, headers http.Header) (*websocket.Conn, *http.Response, error) {
@@ -82,9 +110,7 @@ func (c *Client) SubmitOrder(ctx context.Context, command OrderCommand, headers 
 		return nil, err
 	}
 	defer conn.Close()
-	if command.Schema == "" {
-		command.Schema = "matchengine.order_command.v1"
-	}
+	command = NewOrderCommand(command)
 	if err := conn.WriteJSON(command); err != nil {
 		return nil, err
 	}

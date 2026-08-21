@@ -100,7 +100,7 @@ export interface DomainOperationsDomain {
 }
 
 export interface DomainOperationsCatalog {
-  schema: "sdk.domain_operations.v1";
+  schema: "sdk.domain_operations.v2";
   domains: DomainOperationsDomain[];
 }
 
@@ -764,19 +764,22 @@ export class KeyStoreClient extends ServiceClient {
 
 export class NetworkClient extends ServiceClient {
   virtualMachine(): Promise<unknown> {
-    return this.get("/v1/2finance-network/virtual-machine");
+    return this.post("/v2/2finance-network/query", {
+      method: "get_blocks",
+      params: { page: 1, limit: 1 },
+    });
   }
 
   marketCandles(market: string, query = ""): Promise<unknown> {
-    return this.get(`/v1/2finance-network/markets/${encodeURIComponent(market)}/candles${query ? `?${query}` : ""}`);
+    return this.get(`/v2/2finance-network/markets/${encodeURIComponent(market)}/candles${query ? `?${query}` : ""}`);
   }
 
   products(productType: string): Promise<unknown> {
-    return this.get(`/v1/2finance-network/products/${encodeURIComponent(productType)}`);
+    return this.get(`/v2/2finance-network/products/${encodeURIComponent(productType)}`);
   }
 
   createProduct(productType: string, request: unknown): Promise<unknown> {
-    return this.post(`/v1/2finance-network/products/${encodeURIComponent(productType)}`, request);
+    return this.post(`/v2/2finance-network/products/${encodeURIComponent(productType)}`, request);
   }
 
   bonds(): Promise<unknown> {
@@ -895,15 +898,27 @@ export interface ProvidersClient {
 
 export interface MatchEngineOrderCommand {
   schema?: string;
+  message_type?: "ORDER";
+  operation?: "ADD" | "MODIFY" | "REPLACE" | "DELETE" | "MITIGATE";
+  order_type?: "LIMIT" | "MARKET" | "STOP" | "STOP_LIMIT" | "TRAILING_STOP" | "TRAILING_STOP_LIMIT";
   client_order_id: string;
   idempotency_key: string;
-  symbol: string;
-  side: string;
-  type: string;
-  quantity: string;
+  wallet_id: number;
+  symbol_id: number;
+  order_id?: number;
+  side: "BUY" | "SELL";
+  quantity?: string;
   price?: string;
+  stop_price?: string;
+  slippage?: string;
+  max_visible_quantity?: string;
+  trailing_distance?: string;
+  trailing_step?: string;
   time_in_force?: string;
-  account_id?: string;
+  agent_id?: string;
+  controller_id?: string;
+  executor_id?: string;
+  strategy_id?: string;
   metadata?: unknown;
 }
 
@@ -929,14 +944,16 @@ export class MatchEngineClient {
 
   orderCommand(command: MatchEngineOrderCommand): Required<Pick<MatchEngineOrderCommand, "schema">> & MatchEngineOrderCommand {
     return {
-      schema: "matchengine.order_command.v1",
+      schema: "matchengine.order_command.v2",
+      message_type: "ORDER",
+      operation: "ADD",
       ...command
     };
   }
 
   marketDataSubscribe(request: MatchEngineMarketDataSubscribe): Required<Pick<MatchEngineMarketDataSubscribe, "schema">> & MatchEngineMarketDataSubscribe {
     return {
-      schema: "matchengine.market_data_subscribe.v1",
+      schema: "matchengine.market_data_subscribe.v2",
       ...request
     };
   }

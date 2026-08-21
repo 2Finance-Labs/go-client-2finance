@@ -270,19 +270,19 @@ func TestDomainClientsEscapePathParamsAndExposeOrchestratorEndpoints(t *testing.
 
 	for _, expected := range []string{
 		"GET /portfolio-manager/balances/acct%2F1",
-		"GET /v1/2finance-network/markets/BTC%2FUSDT/candles?limit=10",
-		"GET /v1/2finance-network/products/bonds",
-		"POST /v1/2finance-network/products/bonds",
-		"GET /v1/2finance-network/products/loans",
-		"POST /v1/2finance-network/products/loans",
-		"GET /v1/2finance-network/products/swaps",
-		"POST /v1/2finance-network/products/swaps",
-		"GET /v1/2finance-network/products/staking",
-		"POST /v1/2finance-network/products/staking",
-		"GET /v1/2finance-network/products/synthetic-assets",
-		"POST /v1/2finance-network/products/synthetic-assets",
-		"GET /v1/2finance-network/products/liquidity-pools",
-		"POST /v1/2finance-network/products/liquidity-pools",
+		"GET /v2/2finance-network/markets/BTC%2FUSDT/candles?limit=10",
+		"GET /v2/2finance-network/products/bonds",
+		"POST /v2/2finance-network/products/bonds",
+		"GET /v2/2finance-network/products/loans",
+		"POST /v2/2finance-network/products/loans",
+		"GET /v2/2finance-network/products/swaps",
+		"POST /v2/2finance-network/products/swaps",
+		"GET /v2/2finance-network/products/staking",
+		"POST /v2/2finance-network/products/staking",
+		"GET /v2/2finance-network/products/synthetic-assets",
+		"POST /v2/2finance-network/products/synthetic-assets",
+		"GET /v2/2finance-network/products/liquidity-pools",
+		"POST /v2/2finance-network/products/liquidity-pools",
 		"GET /realms/2finance/protocol/openid-connect/certs",
 		"POST /realms/2finance/protocol/openid-connect/token/introspect",
 		"POST /robots/robot%2F1:pause",
@@ -320,7 +320,7 @@ func TestDomainClientsEscapePathParamsAndExposeOrchestratorEndpoints(t *testing.
 
 func TestMatchEngineMarketDataSubscribeDefaultsSchema(t *testing.T) {
 	request := clientMatchEngineSubscribeFixture()
-	if request.Schema != "matchengine.market_data_subscribe.v1" {
+	if request.Schema != "matchengine.market_data_subscribe.v2" {
 		t.Fatalf("Schema = %q", request.Schema)
 	}
 	if len(request.Symbols) != 1 || request.Symbols[0] != "BTC-USDT" {
@@ -358,7 +358,7 @@ func TestSharedModelsParseContractFixtures(t *testing.T) {
 
 	var operations DomainOperationsCatalog
 	readFixture(t, "domain-operations.json", &operations)
-	if operations.Schema != "sdk.domain_operations.v1" || len(operations.Domains) == 0 {
+	if operations.Schema != "sdk.domain_operations.v2" || len(operations.Domains) == 0 {
 		t.Fatalf("unexpected DomainOperationsCatalog fixture: %#v", operations)
 	}
 	if operations.Domains[0].Operations[0].RequestSchema != "auth.login.request.v1" {

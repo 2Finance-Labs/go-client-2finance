@@ -20,7 +20,7 @@ fixtures:
     to: sending-lifecycle-contract
     method: start_Sending
     data:
-      contract_version: sendingLifecycleV1
+      contract_version: sendingLifecycleV2
       request_id: request-001
       provider: wise
       currency: USD
@@ -36,7 +36,7 @@ steps:
     expect:
       hash: ""
       signature: ""
-      data.contract_version: sendingLifecycleV1
+      data.contract_version: sendingLifecycleV2
   - id: sign
     via: wallet_manager
     action: sign_prepared_transaction

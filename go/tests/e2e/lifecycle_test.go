@@ -14,12 +14,12 @@ import (
 
 	clientauth "github.com/2Finance-Labs/2finance-sdk-client/auth"
 	"github.com/2Finance-Labs/2finance-sdk-client/protocol"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/fxLifecycleV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/lifecycleCommonV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/multiCurrencyLifecycleV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/onboardingLifecycleV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/receivingLifecycleV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/sendingLifecycleV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/fxLifecycleV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/lifecycleCommonV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/multiCurrencyLifecycleV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/onboardingLifecycleV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/receivingLifecycleV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/sendingLifecycleV2"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
@@ -39,8 +39,8 @@ func TestLifecyclePreparedTransactions_CanBeSignedByWallet(t *testing.T) {
 	}{
 		{
 			name:            "fx",
-			contractVersion: fxLifecycleV1.FX_LIFECYCLE_CONTRACT_V1,
-			method:          fxLifecycleV1.METHOD_START_FX,
+			contractVersion: fxLifecycleV2.FX_LIFECYCLE_CONTRACT_V2,
+			method:          fxLifecycleV2.METHOD_START_FX,
 			data: map[string]interface{}{
 				"address":         contractAddress,
 				"owner":           owner,
@@ -52,8 +52,8 @@ func TestLifecyclePreparedTransactions_CanBeSignedByWallet(t *testing.T) {
 		},
 		{
 			name:            "onboarding",
-			contractVersion: onboardingLifecycleV1.ONBOARDING_LIFECYCLE_CONTRACT_V1,
-			method:          onboardingLifecycleV1.METHOD_START_ONBOARDING,
+			contractVersion: onboardingLifecycleV2.ONBOARDING_LIFECYCLE_CONTRACT_V2,
+			method:          onboardingLifecycleV2.METHOD_START_ONBOARDING,
 			data: map[string]interface{}{
 				"address":             contractAddress,
 				"owner":               owner,
@@ -66,8 +66,8 @@ func TestLifecyclePreparedTransactions_CanBeSignedByWallet(t *testing.T) {
 		},
 		{
 			name:            "receiving",
-			contractVersion: receivingLifecycleV1.RECEIVING_LIFECYCLE_CONTRACT_V1,
-			method:          receivingLifecycleV1.METHOD_START_RECEIVING,
+			contractVersion: receivingLifecycleV2.RECEIVING_LIFECYCLE_CONTRACT_V2,
+			method:          receivingLifecycleV2.METHOD_START_RECEIVING,
 			data: map[string]interface{}{
 				"address":             contractAddress,
 				"owner":               owner,
@@ -82,8 +82,8 @@ func TestLifecyclePreparedTransactions_CanBeSignedByWallet(t *testing.T) {
 		},
 		{
 			name:            "receiving_codexa_brl_pix",
-			contractVersion: receivingLifecycleV1.RECEIVING_LIFECYCLE_CONTRACT_V1,
-			method:          receivingLifecycleV1.METHOD_START_RECEIVING,
+			contractVersion: receivingLifecycleV2.RECEIVING_LIFECYCLE_CONTRACT_V2,
+			method:          receivingLifecycleV2.METHOD_START_RECEIVING,
 			data: map[string]interface{}{
 				"address":             contractAddress,
 				"owner":               owner,
@@ -99,8 +99,8 @@ func TestLifecyclePreparedTransactions_CanBeSignedByWallet(t *testing.T) {
 		},
 		{
 			name:            "sending",
-			contractVersion: sendingLifecycleV1.SENDING_LIFECYCLE_CONTRACT_V1,
-			method:          sendingLifecycleV1.METHOD_START_SENDING,
+			contractVersion: sendingLifecycleV2.SENDING_LIFECYCLE_CONTRACT_V2,
+			method:          sendingLifecycleV2.METHOD_START_SENDING,
 			data: map[string]interface{}{
 				"address":                 contractAddress,
 				"owner":                   owner,
@@ -117,8 +117,8 @@ func TestLifecyclePreparedTransactions_CanBeSignedByWallet(t *testing.T) {
 		},
 		{
 			name:            "sending_codexa_quote_first",
-			contractVersion: sendingLifecycleV1.SENDING_LIFECYCLE_CONTRACT_V1,
-			method:          sendingLifecycleV1.METHOD_START_SENDING,
+			contractVersion: sendingLifecycleV2.SENDING_LIFECYCLE_CONTRACT_V2,
+			method:          sendingLifecycleV2.METHOD_START_SENDING,
 			data: map[string]interface{}{
 				"address":             contractAddress,
 				"owner":               owner,
@@ -138,8 +138,8 @@ func TestLifecyclePreparedTransactions_CanBeSignedByWallet(t *testing.T) {
 		},
 		{
 			name:            "multi_currency",
-			contractVersion: multiCurrencyLifecycleV1.MULTI_CURRENCY_LIFECYCLE_CONTRACT_V1,
-			method:          multiCurrencyLifecycleV1.METHOD_START_MULTI_CURRENCY,
+			contractVersion: multiCurrencyLifecycleV2.MULTI_CURRENCY_LIFECYCLE_CONTRACT_V2,
+			method:          multiCurrencyLifecycleV2.METHOD_START_MULTI_CURRENCY,
 			data: map[string]interface{}{
 				"address":             contractAddress,
 				"owner":               owner,
@@ -189,7 +189,7 @@ func TestLifecyclePreparedTransactions_CanBeSignedByWallet(t *testing.T) {
 	}
 }
 
-func TestSendingLifecycle_StartViaMQTT(t *testing.T) {
+func TestSendingLifecycle_StartViaProtocolV2(t *testing.T) {
 	signer := setupSignerWallet(t)
 	c := setupClient(t, signer.Wallet)
 
@@ -198,7 +198,7 @@ func TestSendingLifecycle_StartViaMQTT(t *testing.T) {
 	tmpWM := setupWalletManager(t)
 	contractAddress, _ := genKey(t, tmpWM)
 
-	if _, err := c.DeployContract2(sendingLifecycleV1.SENDING_LIFECYCLE_CONTRACT_V1, contractAddress); err != nil {
+	if _, err := c.DeployContract2(sendingLifecycleV2.SENDING_LIFECYCLE_CONTRACT_V2, contractAddress); err != nil {
 		t.Fatalf("DeployContract2 sending lifecycle: %v", err)
 	}
 
@@ -207,7 +207,7 @@ func TestSendingLifecycle_StartViaMQTT(t *testing.T) {
 		t.Fatalf("NewUUID7: %v", err)
 	}
 
-	out, err := c.StartSending(lifecycleCommonV1.StartInput{
+	out, err := c.StartSending(lifecycleCommonV2.StartInput{
 		Address:               contractAddress,
 		Owner:                 signer.PublicKey,
 		RequestID:             requestID,
@@ -274,7 +274,7 @@ func TestSendingLifecycle_MCPPrepareSignSubmitGet(t *testing.T) {
 	deployResult := mcpCallPreparedTransaction(t, ctx, mcpClient, "finance.contract.deploy.prepare", map[string]any{
 		"from":             signer.PublicKey,
 		"contract_address": contractAddress,
-		"contract_version": sendingLifecycleV1.SENDING_LIFECYCLE_CONTRACT_V1,
+		"contract_version": sendingLifecycleV2.SENDING_LIFECYCLE_CONTRACT_V2,
 		"uuid7":            deployUUID,
 	})
 	t.Logf("MCP finance.contract.deploy.prepare -> workflow=%s method=%s to=%s contract_version=%v",
@@ -322,8 +322,8 @@ func TestSendingLifecycle_MCPPrepareSignSubmitGet(t *testing.T) {
 	if startResult.Workflow != "send.start" {
 		t.Fatalf("workflow = %s, want send.start", startResult.Workflow)
 	}
-	if startResult.UnsignedTransaction.Method != sendingLifecycleV1.METHOD_START_SENDING {
-		t.Fatalf("start method = %s, want %s", startResult.UnsignedTransaction.Method, sendingLifecycleV1.METHOD_START_SENDING)
+	if startResult.UnsignedTransaction.Method != sendingLifecycleV2.METHOD_START_SENDING {
+		t.Fatalf("start method = %s, want %s", startResult.UnsignedTransaction.Method, sendingLifecycleV2.METHOD_START_SENDING)
 	}
 	startSubmit := mcpSignAndSubmit(t, ctx, mcpClient, signer.Wallet, startResult.UnsignedTransaction)
 	t.Logf("MCP finance.transaction.submit_signed start -> logs=%d states=%d", mcpLen(startSubmit["logs"]), mcpLen(startSubmit["states"]))

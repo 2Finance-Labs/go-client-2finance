@@ -1,10 +1,13 @@
 {
-  "schema": "matchengine.order_command.v1",
+  "schema": "matchengine.order_command.v2",
+  "message_type": "ORDER",
+  "operation": "ADD",
+  "order_type": "LIMIT",
   "client_order_id": "client-order-001",
   "idempotency_key": "idem-001",
-  "symbol": "BTC-USDT",
-  "side": "buy",
-  "type": "limit",
+  "wallet_id": 1,
+  "symbol_id": 1,
+  "side": "BUY",
   "quantity": "0.01",
   "price": "50000.00",
   "time_in_force": "GTC"

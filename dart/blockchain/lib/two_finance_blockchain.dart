@@ -8,8 +8,8 @@ import 'package:cryptography/cryptography.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:two_finance_blockchain/blockchain/contract/constants.dart';
-import 'package:two_finance_blockchain/blockchain/contract/tokenV1/domain/token.dart';
-import 'package:two_finance_blockchain/blockchain/contract/walletV1/constants.dart';
+import 'package:two_finance_blockchain/blockchain/contract/tokenV2/domain/token.dart';
+import 'package:two_finance_blockchain/blockchain/contract/walletV2/constants.dart';
 import 'package:two_finance_blockchain/blockchain/block/block.dart';
 import 'package:two_finance_blockchain/blockchain/keys/keys.dart';
 import 'package:two_finance_blockchain/blockchain/transaction/transaction.dart';
@@ -20,15 +20,16 @@ import 'package:two_finance_blockchain/blockchain/utils/decimals.dart';
 import 'package:two_finance_blockchain/blockchain/utils/json.dart';
 import 'package:two_finance_blockchain/blockchain/utils/uuid.dart';
 import 'package:two_finance_blockchain/infra/transport/transport.dart';
+import 'package:two_finance_blockchain/protocol_v2.dart';
 
-import 'package:two_finance_blockchain/blockchain/contract/tokenV1/constants.dart';
-import 'blockchain/contract/raffleV1/constants.dart';
-import 'blockchain/contract/reviewV1/constants.dart';
-import 'blockchain/contract/cashbackV1/constants.dart';
-import 'blockchain/contract/paymentV1/constants.dart';
-import 'blockchain/contract/couponsV1/constants.dart';
-import 'blockchain/contract/dropV1/constants.dart';
-import 'blockchain/contract/contractV1/constants.dart';
+import 'package:two_finance_blockchain/blockchain/contract/tokenV2/constants.dart';
+import 'blockchain/contract/raffleV2/constants.dart';
+import 'blockchain/contract/reviewV2/constants.dart';
+import 'blockchain/contract/cashbackV2/constants.dart';
+import 'blockchain/contract/paymentV2/constants.dart';
+import 'blockchain/contract/couponsV2/constants.dart';
+import 'blockchain/contract/dropV2/constants.dart';
+import 'blockchain/contract/contractV2/constants.dart';
 export 'blockchain/block/block.dart';
 export 'blockchain/keys/keys.dart';
 export 'blockchain/log/log.dart';
@@ -37,6 +38,7 @@ export 'blockchain/types/types.dart';
 export 'infra/http/http_transport.dart';
 export 'infra/mqtt/mqtt_stub.dart' if (dart.library.io) 'infra/mqtt/mqtt.dart';
 export 'infra/transport/transport.dart';
+export 'protocol_v2.dart';
 export 'wallet_manager.dart';
 import 'wallet_manager.dart';
 
@@ -163,12 +165,22 @@ class TwoFinanceBlockchain {
   }) async {
     KeyManager.validateEDDSAPublicKeyHex(from);
 
+    final transactionData =
+        _mqttClient is ProtocolV2FinanceNetworkTransport &&
+            data['runtime'] == null
+        ? <String, dynamic>{
+            'runtime': runtimeNativeGoV2,
+            'version': nativeGoRuntimeVersionV2,
+            'payload': Map<String, dynamic>.from(data),
+          }
+        : data;
+
     final newTx = Transaction.create(
       chainID: chainID,
       from: from,
       to: to,
       method: method,
-      data: data,
+      data: transactionData,
       version: version,
       uuid7: uuid7,
     );
@@ -182,7 +194,7 @@ class TwoFinanceBlockchain {
           from: from,
           to: to,
           method: method,
-          data: data,
+          data: transactionData,
           version: version,
           uuid7: uuid7,
         ),
@@ -195,25 +207,15 @@ class TwoFinanceBlockchain {
       final tx = newTx.get();
       txSigned = await signTransaction(privateKey, tx);
     }
-    // Send to network
-    final responseBytes = await sendTransaction(
-      REQUEST_METHOD_SEND_TRANSACTION,
-      txSigned,
-      _replyTo,
-    );
-    // Decode response
-    final decoded = json.decode(utf8.decode(responseBytes));
-    if (decoded is Map<String, dynamic>) {
-      return ContractOutput.fromJson(decoded);
+    if (_mqttClient is ProtocolV2FinanceNetworkTransport) {
+      final result = await submitSignedTransactionV2(
+        SignedTransaction.fromTransaction(txSigned),
+      );
+      return _contractOutput(result.executionOutput);
     }
-    if (decoded is int && decoded == 0) {
-      return ContractOutput(states: const <StateType>[], logs: const <Log>[]);
-    }
-    if (decoded == null) {
-      return ContractOutput();
-    }
-    throw Exception(
-      'unexpected transaction response type: ${decoded.runtimeType}',
+
+    throw StateError(
+      'protocol V2 is unavailable; configure a protocol V2 transport',
     );
   }
 
@@ -229,32 +231,114 @@ class TwoFinanceBlockchain {
   }
 
   Future<ContractOutput> submitSignedTransaction(SignedTransaction tx) async {
-    final responseBytes = await sendTransaction(
-      REQUEST_METHOD_SEND_TRANSACTION,
-      tx.toNetworkTransaction(),
-      _replyTo,
-    );
-
-    final decoded = json.decode(utf8.decode(responseBytes));
-    if (decoded is Map<String, dynamic>) {
-      return ContractOutput.fromJson(decoded);
+    if (_mqttClient is ProtocolV2FinanceNetworkTransport) {
+      final result = await submitSignedTransactionV2(tx);
+      return _contractOutput(result.executionOutput);
     }
-    if (decoded is int && decoded == 0) {
-      return ContractOutput(states: const <StateType>[], logs: const <Log>[]);
-    }
-    if (decoded == null) {
-      return ContractOutput();
-    }
-    throw Exception(
-      'unexpected transaction response type: ${decoded.runtimeType}',
+    throw StateError(
+      'protocol V2 is unavailable; configure a protocol V2 transport',
     );
   }
 
   Future<ContractOutput> signAndSendPreparedTransaction(
     PreparedTransaction tx,
   ) async {
-    final signed = await signPreparedTransaction(tx);
+    if (_mqttClient is! ProtocolV2FinanceNetworkTransport) {
+      throw StateError(
+        'protocol V2 is discontinued; configure a protocol V2 transport',
+      );
+    }
+    var prepared = tx;
+    if (_mqttClient is ProtocolV2FinanceNetworkTransport &&
+        prepared.data['runtime'] == null) {
+      prepared = PreparedTransaction(
+        chainID: tx.chainID,
+        from: tx.from,
+        to: tx.to,
+        method: tx.method,
+        data: <String, dynamic>{
+          'runtime': runtimeNativeGoV2,
+          'version': nativeGoRuntimeVersionV2,
+          'payload': Map<String, dynamic>.from(tx.data),
+        },
+        version: tx.version,
+        uuid7: tx.uuid7,
+        authorization: tx.authorization,
+      );
+    }
+    final signed = await signPreparedTransaction(prepared);
     return submitSignedTransaction(signed);
+  }
+
+  /// Submits an already signed transaction through the commit-first v2 API.
+  Future<ProtocolV2SubmitResult> submitSignedTransactionV2(
+    SignedTransaction tx,
+  ) async {
+    final transport = _protocolV2Transport();
+    final response = await transport.submitSignedTransactionV2(tx.toJson());
+    return ProtocolV2SubmitResult.fromJson(response);
+  }
+
+  Future<ProtocolV2SubmitResult> signAndSubmitPreparedTransactionV2(
+    PreparedTransaction tx,
+  ) async {
+    final signed = await signPreparedTransaction(tx);
+    return submitSignedTransactionV2(signed);
+  }
+
+  /// Returns the signed body, early commit, execution artifact and block proof.
+  Future<ProtocolV2TransactionStatus> transactionFinalityV2(
+    String transactionHash,
+  ) async {
+    final transport = _protocolV2Transport();
+    final response = await transport.transactionFinalityV2(transactionHash);
+    return ProtocolV2TransactionStatus.fromJson(response);
+  }
+
+  Future<ProtocolV2ExecutionLogsPage> executionLogsV2({
+    String transactionHash = '',
+    String runtime = '',
+    String contractAddress = '',
+    String eventSignature = '',
+    int page = 1,
+    int limit = 100,
+    bool ascending = false,
+  }) async {
+    if (page < 1 || limit < 1 || limit > 1000) {
+      throw ArgumentError('page must be positive and limit must be 1..1000');
+    }
+    final response = await _protocolV2Transport().executionLogsV2({
+      'transaction_hash': transactionHash,
+      'runtime': runtime,
+      'contract_address': contractAddress,
+      'event_signature': eventSignature,
+      'page': '$page',
+      'limit': '$limit',
+      'ascending': '$ascending',
+    });
+    return ProtocolV2ExecutionLogsPage.fromJson(response);
+  }
+
+  ProtocolV2FinanceNetworkTransport _protocolV2Transport() {
+    final transport = _mqttClient;
+    if (transport is! ProtocolV2FinanceNetworkTransport) {
+      throw StateError(
+        'the configured transport does not support the protocol v2 REST API',
+      );
+    }
+    return transport as ProtocolV2FinanceNetworkTransport;
+  }
+
+  ContractOutput _contractOutput(dynamic decoded) {
+    if (decoded is Map) {
+      return ContractOutput.fromJson(Map<String, dynamic>.from(decoded));
+    }
+    if (decoded is int && decoded == 0 || decoded == null) {
+      return ContractOutput(states: const <StateType>[], logs: const <Log>[]);
+    }
+    throw Exception(
+      'unexpected transaction response type: ${decoded.runtimeType}',
+    );
   }
 
   Future<ContractOutput> getState({
@@ -418,6 +502,7 @@ class TwoFinanceBlockchain {
   }
 
   Future<ContractOutput> deployContract1(String contractVersion) async {
+    contractVersion = _publicContractVersionV2(contractVersion);
     print("Deploying contract version: $contractVersion");
 
     final chainID = _chainID;
@@ -459,6 +544,7 @@ class TwoFinanceBlockchain {
     String contractAddress,
     String contractVersion,
   ) async {
+    contractVersion = _publicContractVersionV2(contractVersion);
     print(
       "Deploying contract version: $contractVersion to address: $contractAddress",
     );
@@ -499,5 +585,18 @@ class TwoFinanceBlockchain {
     } catch (e) {
       throw Exception('failed to deploy contract: $e');
     }
+  }
+
+  String _publicContractVersionV2(String version) {
+    final normalized = version.trim();
+    if (normalized.endsWith('V2')) return normalized;
+    if (normalized.endsWith('V2')) {
+      return '${normalized.substring(0, normalized.length - 2)}V2';
+    }
+    throw ArgumentError.value(
+      version,
+      'contractVersion',
+      'only V2 native contract versions are supported',
+    );
   }
 }

@@ -16,26 +16,32 @@ void main() {
       return Map<String, dynamic>.from(decoded as Map);
     }
 
-    test('canonicalJsonEncode encodes JsonMessage to valid JSON object string', () {
-      final JsonMessage msg = {'a': 1, 'b': 'x', 'c': true};
+    test(
+      'canonicalJsonEncode encodes JsonMessage to valid JSON object string',
+      () {
+        final JsonMessage msg = {'a': 1, 'b': 'x', 'c': true};
 
-      final s = canonicalJsonEncode(msg);
+        final s = canonicalJsonEncode(msg);
 
-      // Must be valid JSON and decode back to same structure
-      expect(() => jsonDecode(s), returnsNormally);
-      expect(decodeObject(s), msg);
-    });
+        // Must be valid JSON and decode back to same structure
+        expect(() => jsonDecode(s), returnsNormally);
+        expect(decodeObject(s), msg);
+      },
+    );
 
-    test('canonicalJsonEncode is deterministic regardless of insertion order (top-level keys)', () {
-      final JsonMessage m1 = {'b': 2, 'a': 1};
-      final JsonMessage m2 = {'a': 1, 'b': 2};
+    test(
+      'canonicalJsonEncode is deterministic regardless of insertion order (top-level keys)',
+      () {
+        final JsonMessage m1 = {'b': 2, 'a': 1};
+        final JsonMessage m2 = {'a': 1, 'b': 2};
 
-      final s1 = canonicalJsonEncode(m1);
-      final s2 = canonicalJsonEncode(m2);
+        final s1 = canonicalJsonEncode(m1);
+        final s2 = canonicalJsonEncode(m2);
 
-      expect(s1, s2);
-      expect(s1, r'{"a":1,"b":2}');
-    });
+        expect(s1, s2);
+        expect(s1, r'{"a":1,"b":2}');
+      },
+    );
 
     test('canonicalJsonEncode sorts nested object keys deterministically', () {
       final JsonMessage msg = {
@@ -50,28 +56,26 @@ void main() {
       expect(decodeObject(s), msg);
     });
 
-    test('canonicalJsonEncode preserves list order but canonicalizes list items', () {
-      final JsonMessage msg = {
-        'arr': [
-          {'b': 2, 'a': 1},
-          {'d': 4, 'c': 3},
-        ],
-      };
+    test(
+      'canonicalJsonEncode preserves list order but canonicalizes list items',
+      () {
+        final JsonMessage msg = {
+          'arr': [
+            {'b': 2, 'a': 1},
+            {'d': 4, 'c': 3},
+          ],
+        };
 
-      final s = canonicalJsonEncode(msg);
+        final s = canonicalJsonEncode(msg);
 
-      // arr is a list => order preserved; objects inside list are canonicalized
-      expect(s, r'{"arr":[{"a":1,"b":2},{"c":3,"d":4}]}');
-      expect(decodeObject(s), msg);
-    });
+        // arr is a list => order preserved; objects inside list are canonicalized
+        expect(s, r'{"arr":[{"a":1,"b":2},{"c":3,"d":4}]}');
+        expect(decodeObject(s), msg);
+      },
+    );
 
     test('canonicalJsonEncode handles primitives and null stably', () {
-      final JsonMessage msg = {
-        's': 'ok',
-        'n': 10,
-        'b': false,
-        'nullv': null,
-      };
+      final JsonMessage msg = {'s': 'ok', 'n': 10, 'b': false, 'nullv': null};
 
       final s = canonicalJsonEncode(msg);
 
@@ -80,47 +84,53 @@ void main() {
       expect(decodeObject(s), msg);
     });
 
-    test('canonicalJsonEncode output is stable across repeated calls (same input instance)', () {
-      final JsonMessage msg = {
-        'a': 1,
-        'b': {'c': 3},
-        'd': [1, 2, 3],
-      };
+    test(
+      'canonicalJsonEncode output is stable across repeated calls (same input instance)',
+      () {
+        final JsonMessage msg = {
+          'a': 1,
+          'b': {'c': 3},
+          'd': [1, 2, 3],
+        };
 
-      final s1 = canonicalJsonEncode(msg);
-      final s2 = canonicalJsonEncode(msg);
+        final s1 = canonicalJsonEncode(msg);
+        final s2 = canonicalJsonEncode(msg);
 
-      expect(s1, s2);
-      expect(decodeObject(s1), msg);
-    });
+        expect(s1, s2);
+        expect(decodeObject(s1), msg);
+      },
+    );
 
-    test('canonicalJsonEncode output is stable across equivalent inputs (deep)', () {
-      final JsonMessage m1 = {
-        'outer': {'b': 2, 'a': 1},
-        'list': [
-          {'y': 2, 'x': 1}
-        ],
-      };
+    test(
+      'canonicalJsonEncode output is stable across equivalent inputs (deep)',
+      () {
+        final JsonMessage m1 = {
+          'outer': {'b': 2, 'a': 1},
+          'list': [
+            {'y': 2, 'x': 1},
+          ],
+        };
 
-      final JsonMessage m2 = {
-        'list': [
-          {'x': 1, 'y': 2}
-        ],
-        'outer': {'a': 1, 'b': 2},
-      };
+        final JsonMessage m2 = {
+          'list': [
+            {'x': 1, 'y': 2},
+          ],
+          'outer': {'a': 1, 'b': 2},
+        };
 
-      final s1 = canonicalJsonEncode(m1);
-      final s2 = canonicalJsonEncode(m2);
+        final s1 = canonicalJsonEncode(m1);
+        final s2 = canonicalJsonEncode(m2);
 
-      expect(s1, s2);
-      expect(decodeObject(s1), m1);
-      expect(decodeObject(s2), m2);
-    });
+        expect(s1, s2);
+        expect(decodeObject(s1), m1);
+        expect(decodeObject(s2), m2);
+      },
+    );
 
     test('JsonMessage should be a JSON object (Map) — not String/bytes', () {
-      final JsonMessage msg = {'contract_version': 'walletV1'};
+      final JsonMessage msg = {'contract_version': 'walletV2'};
       expect(msg, isA<Map<String, dynamic>>());
-      expect(msg['contract_version'], 'walletV1');
+      expect(msg['contract_version'], 'walletV2');
     });
   });
 
@@ -159,8 +169,16 @@ void main() {
     });
 
     test('produces stable output regardless of insertion order', () {
-      final m1 = {'b': 2, 'a': 1, 'c': {'y': 2, 'x': 1}};
-      final m2 = {'c': {'x': 1, 'y': 2}, 'a': 1, 'b': 2};
+      final m1 = {
+        'b': 2,
+        'a': 1,
+        'c': {'y': 2, 'x': 1},
+      };
+      final m2 = {
+        'c': {'x': 1, 'y': 2},
+        'a': 1,
+        'b': 2,
+      };
 
       expect(canonicalJsonEncode(m1), canonicalJsonEncode(m2));
       expect(canonicalJsonEncode(m1), '{"a":1,"b":2,"c":{"x":1,"y":2}}');
@@ -175,6 +193,4 @@ void main() {
       expect(s.contains('\t'), isFalse);
     });
   });
-
-  
 }

@@ -11,23 +11,23 @@ import (
 	"github.com/2Finance-Labs/2finance-sdk-client/wallet_manager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
-	dropV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/domain"
-	dropV1Inputs "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/inputs"
-	dropV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/models"
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	couponV2 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV2"
+	dropV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/dropV2/domain"
+	dropV2Inputs "gitlab.com/2finance/2finance-network/blockchain/contract/dropV2/inputs"
+	dropV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/dropV2/models"
+	tokenV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
 type dropCreateFixture struct {
-	Input dropV1Inputs.InputNewDrop
+	Input dropV2Inputs.InputNewDrop
 }
 
 type dropUpdateFixture struct {
-	Input dropV1Inputs.InputUpdateDropMetadata
+	Input dropV2Inputs.InputUpdateDropMetadata
 }
 
 func buildNewDropInput(
@@ -37,8 +37,8 @@ func buildNewDropInput(
 	owner string,
 	startAt time.Time,
 	expireAt time.Time,
-) dropV1Inputs.InputNewDrop {
-	return dropV1Inputs.InputNewDrop{
+) dropV2Inputs.InputNewDrop {
+	return dropV2Inputs.InputNewDrop{
 		Address:              address,
 		ProgramAddress:       programAddress,
 		TokenAddress:         tokenAddress,
@@ -66,8 +66,8 @@ func buildUpdateDropInput(
 	tokenAddress string,
 	startAt time.Time,
 	expireAt time.Time,
-) dropV1Inputs.InputUpdateDropMetadata {
-	return dropV1Inputs.InputUpdateDropMetadata{
+) dropV2Inputs.InputUpdateDropMetadata {
+	return dropV2Inputs.InputUpdateDropMetadata{
 		Address:              address,
 		ProgramAddress:       programAddress,
 		TokenAddress:         tokenAddress,
@@ -91,8 +91,8 @@ func buildUpdateDropInput(
 func assertCreatedDropLog(
 	t *testing.T,
 	out types.ContractOutput,
-	input dropV1Inputs.InputNewDrop,
-) dropV1Domain.Drop {
+	input dropV2Inputs.InputNewDrop,
+) dropV2Domain.Drop {
 	t.Helper()
 
 	unmarshalLogToken, err := utils.UnmarshalLog[log.Log](out.Logs[0])
@@ -100,9 +100,9 @@ func assertCreatedDropLog(
 		t.Fatalf("UnmarshalLog (NewDrop.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, dropV1Domain.DROP_CREATED_LOG, unmarshalLogToken.LogType)
+	assert.Equal(t, dropV2Domain.DROP_CREATED_LOG, unmarshalLogToken.LogType)
 
-	drop, err := utils.UnmarshalEvent[dropV1Domain.Drop](unmarshalLogToken.Event)
+	drop, err := utils.UnmarshalEvent[dropV2Domain.Drop](unmarshalLogToken.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (NewDrop.Logs[0]): %v", err)
 	}
@@ -132,12 +132,12 @@ func assertCreatedDropLog(
 func assertDropState(
 	t *testing.T,
 	gotOut types.ContractOutput,
-	input dropV1Inputs.InputNewDrop,
+	input dropV2Inputs.InputNewDrop,
 ) {
 	t.Helper()
 
-	var state dropV1Models.DropStateModel
-	err := utils.UnmarshalState[dropV1Models.DropStateModel](gotOut.States[0].Object, &state)
+	var state dropV2Models.DropStateModel
+	err := utils.UnmarshalState[dropV2Models.DropStateModel](gotOut.States[0].Object, &state)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetDrop.States[0]): %v", err)
 	}
@@ -165,8 +165,8 @@ func assertDropState(
 func assertUpdatedDropLog(
 	t *testing.T,
 	out types.ContractOutput,
-	input dropV1Inputs.InputUpdateDropMetadata,
-) dropV1Domain.Drop {
+	input dropV2Inputs.InputUpdateDropMetadata,
+) dropV2Domain.Drop {
 	t.Helper()
 
 	unmarshalLogToken, err := utils.UnmarshalLog[log.Log](out.Logs[0])
@@ -174,9 +174,9 @@ func assertUpdatedDropLog(
 		t.Fatalf("UnmarshalLog (UpdateDropMetadata.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, dropV1Domain.DROP_METADATA_UPDATED_LOG, unmarshalLogToken.LogType)
+	assert.Equal(t, dropV2Domain.DROP_METADATA_UPDATED_LOG, unmarshalLogToken.LogType)
 
-	dropUpdated, err := utils.UnmarshalEvent[dropV1Domain.Drop](unmarshalLogToken.Event)
+	dropUpdated, err := utils.UnmarshalEvent[dropV2Domain.Drop](unmarshalLogToken.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UpdateDropMetadata.Logs[0]): %v", err)
 	}
@@ -205,14 +205,14 @@ func assertUpdatedDropLog(
 func assertUpdatedDropState(
 	t *testing.T,
 	gotOut types.ContractOutput,
-	input dropV1Inputs.InputUpdateDropMetadata,
+	input dropV2Inputs.InputUpdateDropMetadata,
 	expectedSocialRequirements map[string]bool,
 	expectedPostLinks map[string]bool,
 ) {
 	t.Helper()
 
-	var state dropV1Models.DropStateModel
-	err := utils.UnmarshalState[dropV1Models.DropStateModel](gotOut.States[0].Object, &state)
+	var state dropV2Models.DropStateModel
+	err := utils.UnmarshalState[dropV2Models.DropStateModel](gotOut.States[0].Object, &state)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetDrop.States[0]): %v", err)
 	}
@@ -282,7 +282,7 @@ func assertAllowOraclesLog(
 	out types.ContractOutput,
 	dropAddress string,
 	expected map[string]bool,
-) dropV1Domain.Drop {
+) dropV2Domain.Drop {
 	t.Helper()
 
 	unmarshalLogAllowOracles, err := utils.UnmarshalLog[log.Log](out.Logs[0])
@@ -292,12 +292,12 @@ func assertAllowOraclesLog(
 
 	assert.Equal(
 		t,
-		dropV1Domain.DROP_ORACLES_ALLOWED_LOG,
+		dropV2Domain.DROP_ORACLES_ALLOWED_LOG,
 		unmarshalLogAllowOracles.LogType,
 		"allow-oracles log type mismatch",
 	)
 
-	allowedOracles, err := utils.UnmarshalEvent[dropV1Domain.Drop](unmarshalLogAllowOracles.Event)
+	allowedOracles, err := utils.UnmarshalEvent[dropV2Domain.Drop](unmarshalLogAllowOracles.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AllowOracles.Event): %v", err)
 	}
@@ -329,7 +329,7 @@ func assertDisallowOraclesLog(
 	out types.ContractOutput,
 	dropAddress string,
 	expected map[string]bool,
-) dropV1Domain.Drop {
+) dropV2Domain.Drop {
 	t.Helper()
 
 	unmarshalLogDisallowOracles, err := utils.UnmarshalLog[log.Log](out.Logs[0])
@@ -339,12 +339,12 @@ func assertDisallowOraclesLog(
 
 	assert.Equal(
 		t,
-		dropV1Domain.DROP_ORACLES_DISALLOWED_LOG,
+		dropV2Domain.DROP_ORACLES_DISALLOWED_LOG,
 		unmarshalLogDisallowOracles.LogType,
 		"disallow-oracles log type mismatch",
 	)
 
-	disallowedOracles, err := utils.UnmarshalEvent[dropV1Domain.Drop](unmarshalLogDisallowOracles.Event)
+	disallowedOracles, err := utils.UnmarshalEvent[dropV2Domain.Drop](unmarshalLogDisallowOracles.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (DisallowOracles.Event): %v", err)
 	}
@@ -362,8 +362,8 @@ func assertDropAllowedOraclesState(
 ) {
 	t.Helper()
 
-	var dropStateModelOracles dropV1Models.DropStateModel
-	err := utils.UnmarshalState[dropV1Models.DropStateModel](gotOut.States[0].Object, &dropStateModelOracles)
+	var dropStateModelOracles dropV2Models.DropStateModel
+	err := utils.UnmarshalState[dropV2Models.DropStateModel](gotOut.States[0].Object, &dropStateModelOracles)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetDrop.States[0]): %v", err)
 	}
@@ -390,7 +390,7 @@ func assertPauseDropLog(
 	t *testing.T,
 	out types.ContractOutput,
 	dropAddress string,
-) dropV1Domain.Drop {
+) dropV2Domain.Drop {
 	t.Helper()
 
 	unmarshalLogPause, err := utils.UnmarshalLog[log.Log](out.Logs[0])
@@ -400,12 +400,12 @@ func assertPauseDropLog(
 
 	assert.Equal(
 		t,
-		dropV1Domain.DROP_PAUSED_LOG,
+		dropV2Domain.DROP_PAUSED_LOG,
 		unmarshalLogPause.LogType,
 		"pause-drop log type mismatch",
 	)
 
-	pausedDrop, err := utils.UnmarshalEvent[dropV1Domain.Drop](unmarshalLogPause.Event)
+	pausedDrop, err := utils.UnmarshalEvent[dropV2Domain.Drop](unmarshalLogPause.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (PauseDrop.Event): %v", err)
 	}
@@ -435,7 +435,7 @@ func assertUnpauseDropLog(
 	t *testing.T,
 	out types.ContractOutput,
 	dropAddress string,
-) dropV1Domain.Drop {
+) dropV2Domain.Drop {
 	t.Helper()
 
 	unmarshalLogUnpause, err := utils.UnmarshalLog[log.Log](out.Logs[0])
@@ -445,12 +445,12 @@ func assertUnpauseDropLog(
 
 	assert.Equal(
 		t,
-		dropV1Domain.DROP_UNPAUSED_LOG,
+		dropV2Domain.DROP_UNPAUSED_LOG,
 		unmarshalLogUnpause.LogType,
 		"unpause-drop log type mismatch",
 	)
 
-	unpausedDrop, err := utils.UnmarshalEvent[dropV1Domain.Drop](unmarshalLogUnpause.Event)
+	unpausedDrop, err := utils.UnmarshalEvent[dropV2Domain.Drop](unmarshalLogUnpause.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UnpauseDrop.Event): %v", err)
 	}
@@ -468,8 +468,8 @@ func assertDropPausedState(
 ) {
 	t.Helper()
 
-	var dropStateModelPause dropV1Models.DropStateModel
-	err := utils.UnmarshalState[dropV1Models.DropStateModel](gotOut.States[0].Object, &dropStateModelPause)
+	var dropStateModelPause dropV2Models.DropStateModel
+	err := utils.UnmarshalState[dropV2Models.DropStateModel](gotOut.States[0].Object, &dropStateModelPause)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetDrop.States[0]): %v", err)
 	}
@@ -501,7 +501,7 @@ func assertAttestParticipantEligibilityLog(
 	expectedWallet string,
 	expectedEligible bool,
 	expectedVerificationType string,
-) dropV1Domain.EligibilityAttested {
+) dropV2Domain.EligibilityAttested {
 	t.Helper()
 
 	unmarshalLogAttest, err := utils.UnmarshalLog[log.Log](out.Logs[0])
@@ -511,12 +511,12 @@ func assertAttestParticipantEligibilityLog(
 
 	assert.Equal(
 		t,
-		dropV1Domain.DROP_ATTESTED_PARTICIPANT_ELIGIBILITY_LOG,
+		dropV2Domain.DROP_ATTESTED_PARTICIPANT_ELIGIBILITY_LOG,
 		unmarshalLogAttest.LogType,
 		"attest-participant log type mismatch",
 	)
 
-	attestedParticipant, err := utils.UnmarshalEvent[dropV1Domain.EligibilityAttested](unmarshalLogAttest.Event)
+	attestedParticipant, err := utils.UnmarshalEvent[dropV2Domain.EligibilityAttested](unmarshalLogAttest.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AttestParticipantEligibility.Event): %v", err)
 	}
@@ -537,7 +537,7 @@ func attestParticipantEligibilityAndAssert(
 	wallet string,
 	eligible bool,
 	expectedVerificationType string,
-) dropV1Domain.EligibilityAttested {
+) dropV2Domain.EligibilityAttested {
 	t.Helper()
 
 	useWallet(t, c, signerWM)
@@ -587,7 +587,7 @@ func assertDepositDropLog(
 	expectedTokenAddress string,
 	expectedSenderAddress string,
 	expectedAmount string,
-) dropV1Domain.DepositFunds {
+) dropV2Domain.DepositFunds {
 	t.Helper()
 
 	unmarshalLogDeposit, err := utils.UnmarshalLog[log.Log](out.Logs[0])
@@ -597,12 +597,12 @@ func assertDepositDropLog(
 
 	assert.Equal(
 		t,
-		dropV1Domain.DROP_DEPOSITED_LOG,
+		dropV2Domain.DROP_DEPOSITED_LOG,
 		unmarshalLogDeposit.LogType,
 		"deposit-drop-funds log type mismatch",
 	)
 
-	depositedFunds, err := utils.UnmarshalEvent[dropV1Domain.DepositFunds](unmarshalLogDeposit.Event)
+	depositedFunds, err := utils.UnmarshalEvent[dropV2Domain.DepositFunds](unmarshalLogDeposit.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (DepositDrop.Event): %v", err)
 	}
@@ -649,7 +649,7 @@ func assertWithdrawDropLog(
 	expectedTokenAddress string,
 	expectedReceiverAddress string,
 	expectedAmount string,
-) dropV1Domain.WithdrawFunds {
+) dropV2Domain.WithdrawFunds {
 	t.Helper()
 
 	unmarshalLogWithdraw, err := utils.UnmarshalLog[log.Log](out.Logs[0])
@@ -659,12 +659,12 @@ func assertWithdrawDropLog(
 
 	assert.Equal(
 		t,
-		dropV1Domain.DROP_WITHDRAWN_LOG,
+		dropV2Domain.DROP_WITHDRAWN_LOG,
 		unmarshalLogWithdraw.LogType,
 		"withdraw-drop-funds log type mismatch",
 	)
 
-	withdrawFunds, err := utils.UnmarshalEvent[dropV1Domain.WithdrawFunds](unmarshalLogWithdraw.Event)
+	withdrawFunds, err := utils.UnmarshalEvent[dropV2Domain.WithdrawFunds](unmarshalLogWithdraw.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (WithdrawDropFunds.Event): %v", err)
 	}
@@ -712,7 +712,7 @@ func assertClaimDropLog(
 	expectedProgramAddress string,
 	expectedTokenAddress string,
 	expectedClaimAmount string,
-) dropV1Domain.Claim {
+) dropV2Domain.Claim {
 	t.Helper()
 
 	unmarshalLogClaimEligible, err := utils.UnmarshalLog[log.Log](out.Logs[0])
@@ -722,12 +722,12 @@ func assertClaimDropLog(
 
 	assert.Equal(
 		t,
-		dropV1Domain.DROP_CLAIMED_LOG,
+		dropV2Domain.DROP_CLAIMED_LOG,
 		unmarshalLogClaimEligible.LogType,
 		"claim-drop log type mismatch",
 	)
 
-	claimedDrop, err := utils.UnmarshalEvent[dropV1Domain.Claim](unmarshalLogClaimEligible.Event)
+	claimedDrop, err := utils.UnmarshalEvent[dropV2Domain.Claim](unmarshalLogClaimEligible.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (ClaimDrop.Event): %v", err)
 	}
@@ -755,7 +755,7 @@ func TestDropFlowFT(t *testing.T) {
 	useWallet(t, c, ownerSigner.Wallet)
 
 	dec := 6
-	tokenType := tokenV1Domain.FUNGIBLE
+	tokenType := tokenV2Domain.FUNGIBLE
 	stablecoin := false
 
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
@@ -770,7 +770,7 @@ func TestDropFlowFT(t *testing.T) {
 	// --------------------------------------------------------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(dropV2.DROP_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -920,7 +920,7 @@ func TestDropFlowFT(t *testing.T) {
 		drop.Address,
 		eligible1,
 		true,
-		dropV1Domain.VERIFICATION_TYPE_ORACLE,
+		dropV2Domain.VERIFICATION_TYPE_ORACLE,
 	)
 
 	eligible2, _ := genKey(t, tmpWM)
@@ -932,7 +932,7 @@ func TestDropFlowFT(t *testing.T) {
 		drop.Address,
 		eligible2,
 		true,
-		dropV1Domain.VERIFICATION_TYPE_ORACLE,
+		dropV2Domain.VERIFICATION_TYPE_ORACLE,
 	)
 
 	// --------------------------------------------------------------------
@@ -1035,7 +1035,7 @@ func TestDropFlowCoupon(t *testing.T) {
 	useWallet(t, c, ownerSigner.Wallet)
 
 	dec := 6
-	tokenType := tokenV1Domain.FUNGIBLE
+	tokenType := tokenV2Domain.FUNGIBLE
 	stablecoin := false
 
 	tok := createBasicToken(t, c, owner.PublicKey, dec, true, tokenType, stablecoin)
@@ -1050,7 +1050,7 @@ func TestDropFlowCoupon(t *testing.T) {
 	// --------------------------------------------------------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedCouponDropContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
+	deployedCouponDropContract, err := c.DeployContract1(dropV2.DROP_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract (coupon drop): %v", err)
 	}
@@ -1067,7 +1067,7 @@ func TestDropFlowCoupon(t *testing.T) {
 	// --------------------------------------------------------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedCouponContract, err := c.DeployContract1(couponV1.COUPON_CONTRACT_V1)
+	deployedCouponContract, err := c.DeployContract1(couponV2.COUPON_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployCouponContract: %v", err)
 	}
@@ -1272,13 +1272,13 @@ func assertGetDropState(
 	expectedProgramAddress string,
 	expectedTokenAddress string,
 	expectedTitle string,
-) dropV1Models.DropStateModel {
+) dropV2Models.DropStateModel {
 	t.Helper()
 
 	require.Len(t, out.States, 1)
 
-	var state dropV1Models.DropStateModel
-	err := utils.UnmarshalState[dropV1Models.DropStateModel](out.States[0].Object, &state)
+	var state dropV2Models.DropStateModel
+	err := utils.UnmarshalState[dropV2Models.DropStateModel](out.States[0].Object, &state)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetDrop.States[0]): %v", err)
 	}
@@ -1295,7 +1295,7 @@ func assertGetDropState(
 func assertListDropsState(
 	t *testing.T,
 	out types.ContractOutput,
-) []dropV1Models.DropStateModel {
+) []dropV2Models.DropStateModel {
 	t.Helper()
 
 	require.Len(t, out.States, 1)
@@ -1305,7 +1305,7 @@ func assertListDropsState(
 		t.Fatalf("Marshal list state: %v", err)
 	}
 
-	var states []dropV1Models.DropStateModel
+	var states []dropV2Models.DropStateModel
 	if err := json.Unmarshal(raw, &states); err != nil {
 		t.Fatalf("Unmarshal list state: %v", err)
 	}
@@ -1323,7 +1323,7 @@ func TestClient_GetDrop(t *testing.T) {
 
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(dropV2.DROP_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -1343,7 +1343,7 @@ func TestClient_GetDrop(t *testing.T) {
 	startAt := time.Now()
 	expireAt := time.Now().Add(24 * time.Hour)
 
-	input := dropV1Inputs.InputNewDrop{
+	input := dropV2Inputs.InputNewDrop{
 		Address:              dropAddress,
 		ProgramAddress:       programAddress,
 		TokenAddress:         tokenAddress,
@@ -1356,7 +1356,7 @@ func TestClient_GetDrop(t *testing.T) {
 		Categories:           map[string]bool{"airdrop": true},
 		SocialRequirements:   map[string]bool{"follow_x": true},
 		PostLinks:            map[string]bool{"https://x.com/post/1": true},
-		VerificationType:     dropV1Domain.VERIFICATION_TYPE_ORACLE,
+		VerificationType:     dropV2Domain.VERIFICATION_TYPE_ORACLE,
 		StartAt:              startAt,
 		ExpireAt:             expireAt,
 		RequestLimit:         100,
@@ -1406,7 +1406,7 @@ func TestClient_LastClaimedDrop(t *testing.T) {
 
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(dropV2.DROP_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -1426,7 +1426,7 @@ func TestClient_LastClaimedDrop(t *testing.T) {
 	startAt := time.Now()
 	expireAt := time.Now().Add(24 * time.Hour)
 
-	input := dropV1Inputs.InputNewDrop{
+	input := dropV2Inputs.InputNewDrop{
 		Address:              dropAddress,
 		ProgramAddress:       programAddress,
 		TokenAddress:         tokenAddress,
@@ -1439,7 +1439,7 @@ func TestClient_LastClaimedDrop(t *testing.T) {
 		Categories:           map[string]bool{"airdrop": true},
 		SocialRequirements:   map[string]bool{"follow_x": true},
 		PostLinks:            map[string]bool{"https://x.com/post/1": true},
-		VerificationType:     dropV1Domain.VERIFICATION_TYPE_ORACLE,
+		VerificationType:     dropV2Domain.VERIFICATION_TYPE_ORACLE,
 		StartAt:              startAt,
 		ExpireAt:             expireAt,
 		RequestLimit:         100,
@@ -1491,7 +1491,7 @@ func TestClient_ListDrops(t *testing.T) {
 	createDrop := func(title string) string {
 		useWallet(t, c, ownerSigner.Wallet)
 
-		deployedContract, err := c.DeployContract1(dropV1.DROP_CONTRACT_V1)
+		deployedContract, err := c.DeployContract1(dropV2.DROP_CONTRACT_V2)
 		if err != nil {
 			t.Fatalf("DeployContract: %v", err)
 		}
@@ -1506,7 +1506,7 @@ func TestClient_ListDrops(t *testing.T) {
 		programAddress, _ := genKey(t, tmpWM)
 		tokenAddress, _ := genKey(t, tmpWM)
 
-		input := dropV1Inputs.InputNewDrop{
+		input := dropV2Inputs.InputNewDrop{
 			Address:              dropAddress,
 			ProgramAddress:       programAddress,
 			TokenAddress:         tokenAddress,
@@ -1519,7 +1519,7 @@ func TestClient_ListDrops(t *testing.T) {
 			Categories:           map[string]bool{"airdrop": true},
 			SocialRequirements:   map[string]bool{"follow_x": true},
 			PostLinks:            map[string]bool{"https://x.com/post/1": true},
-			VerificationType:     dropV1Domain.VERIFICATION_TYPE_ORACLE,
+			VerificationType:     dropV2Domain.VERIFICATION_TYPE_ORACLE,
 			StartAt:              time.Now(),
 			ExpireAt:             time.Now().Add(24 * time.Hour),
 			RequestLimit:         100,

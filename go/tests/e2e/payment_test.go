@@ -6,12 +6,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1"
-	paymentV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/domain"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
-	paymentV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/models"
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
-	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV2"
+	paymentV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV2/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV2/inputs"
+	paymentV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV2/models"
+	tokenV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
+	tokenV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/models"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
@@ -49,18 +49,18 @@ func TestPaymentFlow(t *testing.T) {
 		owner.PublicKey,
 		6,
 		false,
-		tokenV1Domain.FUNGIBLE,
+		tokenV2Domain.FUNGIBLE,
 		false,
 	)
 
-	require.Equal(t, tokenV1Domain.FUNGIBLE, payToken.TokenType, "payToken must be fungible")
+	require.Equal(t, tokenV2Domain.FUNGIBLE, payToken.TokenType, "payToken must be fungible")
 
 	// ------------------
 	//   DEPLOY PAYMENT
 	// ------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedContract, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(paymentV2.PAYMENT_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -105,24 +105,24 @@ func TestPaymentFlow(t *testing.T) {
 		t.Fatalf("GetTokenBalance payer before: %v", err)
 	}
 
-	var payerBalanceBefore tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceBeforeOut.States[0].Object, &payerBalanceBefore)
+	var payerBalanceBefore tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payerBalanceBeforeOut.States[0].Object, &payerBalanceBefore)
 	if err != nil {
 		t.Fatalf("UnmarshalState payerBalanceBefore: %v", err)
 	}
 
-	var payeeBalanceBefore tokenV1Models.BalanceStateModel
+	var payeeBalanceBefore tokenV2Models.BalanceStateModel
 	payeeBalanceBeforeOut, err := c.GetTokenBalance(payToken.Address, payee.PublicKey)
 	if err != nil {
 		require.Contains(t, err.Error(), "record not found")
-		payeeBalanceBefore = tokenV1Models.BalanceStateModel{
+		payeeBalanceBefore = tokenV2Models.BalanceStateModel{
 			TokenAddress: payToken.Address,
 			OwnerAddress: payee.PublicKey,
 			Amount:       "0",
-			TokenType:    tokenV1Domain.FUNGIBLE,
+			TokenType:    tokenV2Domain.FUNGIBLE,
 		}
 	} else {
-		err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payeeBalanceBeforeOut.States[0].Object, &payeeBalanceBefore)
+		err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payeeBalanceBeforeOut.States[0].Object, &payeeBalanceBefore)
 		if err != nil {
 			t.Fatalf("UnmarshalState payeeBalanceBefore: %v", err)
 		}
@@ -156,9 +156,9 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (CreatePayment.Logs[0]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_CREATED_LOG, createPaymentLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_CREATED_LOG, createPaymentLog.LogType)
 
-	createPaymentEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](createPaymentLog.Event)
+	createPaymentEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](createPaymentLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (CreatePayment.Logs[0]): %v", err)
 	}
@@ -170,7 +170,7 @@ func TestPaymentFlow(t *testing.T) {
 	assert.Equal(t, payer.PublicKey, createPaymentEvent.Payer)
 	assert.Equal(t, payee.PublicKey, createPaymentEvent.Payee)
 	assert.Equal(t, amount, createPaymentEvent.Amount)
-	assert.Equal(t, paymentV1Domain.STATUS_CREATED, createPaymentEvent.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_CREATED, createPaymentEvent.Status)
 	assert.False(t, createPaymentEvent.Paused)
 	if !createPaymentEvent.ExpiredAt.IsZero() {
 		assert.WithinDuration(t, expiredAt, createPaymentEvent.ExpiredAt, time.Second)
@@ -182,8 +182,8 @@ func TestPaymentFlow(t *testing.T) {
 	}
 	require.NotEmpty(t, getPaymentOut.States)
 
-	var paymentState paymentV1Models.PaymentStateModel
-	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
+	var paymentState paymentV2Models.PaymentStateModel
+	err = utils.UnmarshalState[paymentV2Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetPayment.States[0]): %v", err)
 	}
@@ -195,7 +195,7 @@ func TestPaymentFlow(t *testing.T) {
 	assert.Equal(t, payer.PublicKey, paymentState.Payer)
 	assert.Equal(t, payee.PublicKey, paymentState.Payee)
 	assert.Equal(t, amount, paymentState.Amount)
-	assert.Equal(t, paymentV1Domain.STATUS_CREATED, paymentState.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_CREATED, paymentState.Status)
 	assert.False(t, paymentState.Paused)
 	if !paymentState.ExpiredAt.IsZero() {
 		assert.WithinDuration(t, expiredAt, paymentState.ExpiredAt, time.Second)
@@ -220,9 +220,9 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (PausePayment.Logs[0]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_PAUSED_LOG, pauseLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_PAUSED_LOG, pauseLog.LogType)
 
-	pauseEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](pauseLog.Event)
+	pauseEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](pauseLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (PausePayment.Logs[0]): %v", err)
 	}
@@ -233,7 +233,7 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetPayment after pause: %v", err)
 	}
-	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
+	err = utils.UnmarshalState[paymentV2Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetPayment after pause): %v", err)
 	}
@@ -257,9 +257,9 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (UnpausePayment.Logs[0]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_UNPAUSED_LOG, unpauseLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_UNPAUSED_LOG, unpauseLog.LogType)
 
-	unpauseEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](unpauseLog.Event)
+	unpauseEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](unpauseLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UnpausePayment.Logs[0]): %v", err)
 	}
@@ -270,7 +270,7 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetPayment after unpause: %v", err)
 	}
-	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
+	err = utils.UnmarshalState[paymentV2Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetPayment after unpause): %v", err)
 	}
@@ -293,26 +293,26 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AuthorizePayment.Logs[0]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_AUTHORIZED_LOG, authorizeLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_AUTHORIZED_LOG, authorizeLog.LogType)
 
-	authorizeEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](authorizeLog.Event)
+	authorizeEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](authorizeLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AuthorizePayment.Logs[0]): %v", err)
 	}
 
 	assert.Equal(t, paymentAddress, authorizeEvent.Address)
-	assert.Equal(t, paymentV1Domain.STATUS_AUTHORIZED, authorizeEvent.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_AUTHORIZED, authorizeEvent.Status)
 
 	getPaymentOut, err = c.GetPayment(paymentAddress)
 	if err != nil {
 		t.Fatalf("GetPayment after authorize: %v", err)
 	}
-	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
+	err = utils.UnmarshalState[paymentV2Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetPayment after authorize): %v", err)
 	}
 
-	assert.Equal(t, paymentV1Domain.STATUS_AUTHORIZED, paymentState.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_AUTHORIZED, paymentState.Status)
 
 	// ------------------
 	//      CAPTURE
@@ -331,34 +331,34 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (CapturePayment.Logs[0]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_CAPTURED_LOG, captureLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_CAPTURED_LOG, captureLog.LogType)
 
-	captureEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](captureLog.Event)
+	captureEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](captureLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (CapturePayment.Logs[0]): %v", err)
 	}
 
 	assert.Equal(t, paymentAddress, captureEvent.Address)
-	assert.Equal(t, paymentV1Domain.STATUS_CAPTURED, captureEvent.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_CAPTURED, captureEvent.Status)
 
 	getPaymentOut, err = c.GetPayment(paymentAddress)
 	if err != nil {
 		t.Fatalf("GetPayment after capture: %v", err)
 	}
-	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
+	err = utils.UnmarshalState[paymentV2Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetPayment after capture): %v", err)
 	}
 
-	assert.Equal(t, paymentV1Domain.STATUS_CAPTURED, paymentState.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_CAPTURED, paymentState.Status)
 	assert.Equal(t, amount, paymentState.CapturedAmount)
 
 	payerBalanceAfterCaptureOut, err := c.GetTokenBalance(payToken.Address, payer.PublicKey)
 	if err != nil {
 		t.Fatalf("GetTokenBalance payer after capture: %v", err)
 	}
-	var payerBalanceAfterCapture tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceAfterCaptureOut.States[0].Object, &payerBalanceAfterCapture)
+	var payerBalanceAfterCapture tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payerBalanceAfterCaptureOut.States[0].Object, &payerBalanceAfterCapture)
 	if err != nil {
 		t.Fatalf("UnmarshalState payerBalanceAfterCapture: %v", err)
 	}
@@ -367,8 +367,8 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance payee after capture: %v", err)
 	}
-	var payeeBalanceAfterCapture tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payeeBalanceAfterCaptureOut.States[0].Object, &payeeBalanceAfterCapture)
+	var payeeBalanceAfterCapture tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payeeBalanceAfterCaptureOut.States[0].Object, &payeeBalanceAfterCapture)
 	if err != nil {
 		t.Fatalf("UnmarshalState payeeBalanceAfterCapture: %v", err)
 	}
@@ -405,35 +405,35 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (RefundPayment.Logs[0]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_REFUNDED_LOG, refundLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_REFUNDED_LOG, refundLog.LogType)
 
-	refundEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](refundLog.Event)
+	refundEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](refundLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (RefundPayment.Logs[0]): %v", err)
 	}
 
 	assert.Equal(t, paymentAddress, refundEvent.Address)
-	assert.Equal(t, paymentV1Domain.STATUS_REFUNDED, refundEvent.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_REFUNDED, refundEvent.Status)
 	assert.Equal(t, refundAmount, refundEvent.RefundedAmount)
 
 	getPaymentOut, err = c.GetPayment(paymentAddress)
 	if err != nil {
 		t.Fatalf("GetPayment after refund: %v", err)
 	}
-	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
+	err = utils.UnmarshalState[paymentV2Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetPayment after refund): %v", err)
 	}
 
-	assert.Equal(t, paymentV1Domain.STATUS_REFUNDED, paymentState.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_REFUNDED, paymentState.Status)
 	assert.Equal(t, refundAmount, paymentState.RefundedAmount)
 
 	payerBalanceAfterRefundOut, err := c.GetTokenBalance(payToken.Address, payer.PublicKey)
 	if err != nil {
 		t.Fatalf("GetTokenBalance payer after refund: %v", err)
 	}
-	var payerBalanceAfterRefund tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceAfterRefundOut.States[0].Object, &payerBalanceAfterRefund)
+	var payerBalanceAfterRefund tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payerBalanceAfterRefundOut.States[0].Object, &payerBalanceAfterRefund)
 	if err != nil {
 		t.Fatalf("UnmarshalState payerBalanceAfterRefund: %v", err)
 	}
@@ -442,8 +442,8 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance payee after refund: %v", err)
 	}
-	var payeeBalanceAfterRefund tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payeeBalanceAfterRefundOut.States[0].Object, &payeeBalanceAfterRefund)
+	var payeeBalanceAfterRefund tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payeeBalanceAfterRefundOut.States[0].Object, &payeeBalanceAfterRefund)
 	if err != nil {
 		t.Fatalf("UnmarshalState payeeBalanceAfterRefund: %v", err)
 	}
@@ -465,7 +465,7 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedContract2, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
+	deployedContract2, err := c.DeployContract1(paymentV2.PAYMENT_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract second payment: %v", err)
 	}
@@ -527,7 +527,7 @@ func TestPaymentFlow(t *testing.T) {
 	// ------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedContract3, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
+	deployedContract3, err := c.DeployContract1(paymentV2.PAYMENT_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract direct pay: %v", err)
 	}
@@ -555,8 +555,8 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance payer before direct pay: %v", err)
 	}
-	var payerBalanceBeforeDirect tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceBeforeDirectOut.States[0].Object, &payerBalanceBeforeDirect)
+	var payerBalanceBeforeDirect tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payerBalanceBeforeDirectOut.States[0].Object, &payerBalanceBeforeDirect)
 	if err != nil {
 		t.Fatalf("UnmarshalState payerBalanceBeforeDirect: %v", err)
 	}
@@ -565,8 +565,8 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance payee before direct pay: %v", err)
 	}
-	var payeeBalanceBeforeDirect tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payeeBalanceBeforeDirectOut.States[0].Object, &payeeBalanceBeforeDirect)
+	var payeeBalanceBeforeDirect tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payeeBalanceBeforeDirectOut.States[0].Object, &payeeBalanceBeforeDirect)
 	if err != nil {
 		t.Fatalf("UnmarshalState payeeBalanceBeforeDirect: %v", err)
 	}
@@ -593,9 +593,9 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (DirectPay.Logs[0]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_CREATED_LOG, directCreatedLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_CREATED_LOG, directCreatedLog.LogType)
 
-	directCreatedEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](directCreatedLog.Event)
+	directCreatedEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](directCreatedLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (DirectPay.Logs[0]): %v", err)
 	}
@@ -606,35 +606,35 @@ func TestPaymentFlow(t *testing.T) {
 	assert.Equal(t, payer.PublicKey, directCreatedEvent.Payer)
 	assert.Equal(t, payee.PublicKey, directCreatedEvent.Payee)
 	assert.Equal(t, directPayAmount, directCreatedEvent.Amount)
-	assert.Equal(t, paymentV1Domain.STATUS_CREATED, directCreatedEvent.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_CREATED, directCreatedEvent.Status)
 	assert.False(t, directCreatedEvent.Paused)
 
 	directAuthorizedLog, err := utils.UnmarshalLog[log.Log](directPayOut.Logs[1])
 	if err != nil {
 		t.Fatalf("UnmarshalLog (DirectPay.Logs[1]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_AUTHORIZED_LOG, directAuthorizedLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_AUTHORIZED_LOG, directAuthorizedLog.LogType)
 
-	directAuthorizedEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](directAuthorizedLog.Event)
+	directAuthorizedEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](directAuthorizedLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (DirectPay.Logs[1]): %v", err)
 	}
 	assert.Equal(t, directPaymentAddress, directAuthorizedEvent.Address)
-	assert.Equal(t, paymentV1Domain.STATUS_AUTHORIZED, directAuthorizedEvent.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_AUTHORIZED, directAuthorizedEvent.Status)
 
 	directCapturedLog, err := utils.UnmarshalLog[log.Log](directPayOut.Logs[2])
 	if err != nil {
 		t.Fatalf("UnmarshalLog (DirectPay.Logs[2]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_CAPTURED_LOG, directCapturedLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_CAPTURED_LOG, directCapturedLog.LogType)
 
-	directCapturedEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](directCapturedLog.Event)
+	directCapturedEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](directCapturedLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (DirectPay.Logs[2]): %v", err)
 	}
 	assert.Equal(t, directPaymentAddress, directCapturedEvent.Address)
 	assert.Equal(t, directPayAmount, directCapturedEvent.CapturedAmount)
-	assert.Equal(t, paymentV1Domain.STATUS_CAPTURED, directCapturedEvent.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_CAPTURED, directCapturedEvent.Status)
 
 	getDirectPaymentOut, err := c.GetPayment(directPaymentAddress)
 	if err != nil {
@@ -642,8 +642,8 @@ func TestPaymentFlow(t *testing.T) {
 	}
 	require.NotEmpty(t, getDirectPaymentOut.States)
 
-	var directPaymentState paymentV1Models.PaymentStateModel
-	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getDirectPaymentOut.States[0].Object, &directPaymentState)
+	var directPaymentState paymentV2Models.PaymentStateModel
+	err = utils.UnmarshalState[paymentV2Models.PaymentStateModel](getDirectPaymentOut.States[0].Object, &directPaymentState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetPayment direct pay): %v", err)
 	}
@@ -657,7 +657,7 @@ func TestPaymentFlow(t *testing.T) {
 	assert.Equal(t, directPayAmount, directPaymentState.Amount)
 	assert.Equal(t, directPayAmount, directPaymentState.CapturedAmount)
 	assert.Equal(t, "0", directPaymentState.RefundedAmount)
-	assert.Equal(t, paymentV1Domain.STATUS_CAPTURED, directPaymentState.Status)
+	assert.Equal(t, paymentV2Domain.STATUS_CAPTURED, directPaymentState.Status)
 	assert.False(t, directPaymentState.Paused)
 	assert.NotEmpty(t, directPaymentState.Hash)
 
@@ -665,8 +665,8 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance payer after direct pay: %v", err)
 	}
-	var payerBalanceAfterDirect tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceAfterDirectOut.States[0].Object, &payerBalanceAfterDirect)
+	var payerBalanceAfterDirect tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payerBalanceAfterDirectOut.States[0].Object, &payerBalanceAfterDirect)
 	if err != nil {
 		t.Fatalf("UnmarshalState payerBalanceAfterDirect: %v", err)
 	}
@@ -675,8 +675,8 @@ func TestPaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance payee after direct pay: %v", err)
 	}
-	var payeeBalanceAfterDirect tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payeeBalanceAfterDirectOut.States[0].Object, &payeeBalanceAfterDirect)
+	var payeeBalanceAfterDirect tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payeeBalanceAfterDirectOut.States[0].Object, &payeeBalanceAfterDirect)
 	if err != nil {
 		t.Fatalf("UnmarshalState payeeBalanceAfterDirect: %v", err)
 	}
@@ -711,8 +711,8 @@ func TestPaymentFlow(t *testing.T) {
 	}
 	require.NotEmpty(t, listPaymentsOut.States)
 
-	var payments []paymentV1Models.PaymentStateModel
-	err = utils.UnmarshalState[[]paymentV1Models.PaymentStateModel](listPaymentsOut.States[0].Object, &payments)
+	var payments []paymentV2Models.PaymentStateModel
+	err = utils.UnmarshalState[[]paymentV2Models.PaymentStateModel](listPaymentsOut.States[0].Object, &payments)
 	if err != nil {
 		t.Fatalf("UnmarshalState (ListPayments.States[0]): %v", err)
 	}
@@ -730,7 +730,7 @@ func TestPaymentFlow(t *testing.T) {
 			assert.Equal(t, payer.PublicKey, p.Payer)
 			assert.Equal(t, payee.PublicKey, p.Payee)
 			assert.Equal(t, amount, p.Amount)
-			assert.Equal(t, paymentV1Domain.STATUS_REFUNDED, p.Status)
+			assert.Equal(t, paymentV2Domain.STATUS_REFUNDED, p.Status)
 			assert.Equal(t, amount, p.CapturedAmount)
 			assert.Equal(t, refundAmount, p.RefundedAmount)
 			assert.NotZero(t, p.CreatedAt)
@@ -743,7 +743,7 @@ func TestPaymentFlow(t *testing.T) {
 			assert.Equal(t, payer.PublicKey, p.Payer)
 			assert.Equal(t, payee.PublicKey, p.Payee)
 			assert.Equal(t, voidAmount, p.Amount)
-			assert.Equal(t, paymentV1Domain.STATUS_VOIDED, p.Status)
+			assert.Equal(t, paymentV2Domain.STATUS_VOIDED, p.Status)
 			assert.NotZero(t, p.CreatedAt)
 			assert.NotZero(t, p.UpdatedAt)
 		}
@@ -756,7 +756,7 @@ func TestPaymentFlow(t *testing.T) {
 			assert.Equal(t, directPayAmount, p.Amount)
 			assert.Equal(t, directPayAmount, p.CapturedAmount)
 			assert.Equal(t, "0", p.RefundedAmount)
-			assert.Equal(t, paymentV1Domain.STATUS_CAPTURED, p.Status)
+			assert.Equal(t, paymentV2Domain.STATUS_CAPTURED, p.Status)
 			assert.NotZero(t, p.CreatedAt)
 			assert.NotZero(t, p.UpdatedAt)
 		}
@@ -800,18 +800,18 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 		owner.PublicKey,
 		6,
 		false,
-		tokenV1Domain.FUNGIBLE,
+		tokenV2Domain.FUNGIBLE,
 		false,
 	)
 
-	require.Equal(t, tokenV1Domain.FUNGIBLE, payToken.TokenType, "payToken must be fungible")
+	require.Equal(t, tokenV2Domain.FUNGIBLE, payToken.TokenType, "payToken must be fungible")
 
 	// ------------------
 	//   DEPLOY PAYMENT
 	// ------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedContract, err := c.DeployContract1(paymentV1.PAYMENT_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(paymentV2.PAYMENT_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -855,24 +855,24 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance payer before: %v", err)
 	}
-	var payerBalanceBefore tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceBeforeOut.States[0].Object, &payerBalanceBefore)
+	var payerBalanceBefore tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payerBalanceBeforeOut.States[0].Object, &payerBalanceBefore)
 	if err != nil {
 		t.Fatalf("UnmarshalState payerBalanceBefore: %v", err)
 	}
 
-	var payeeBalanceBefore tokenV1Models.BalanceStateModel
+	var payeeBalanceBefore tokenV2Models.BalanceStateModel
 	payeeBalanceBeforeOut, err := c.GetTokenBalance(payToken.Address, payee.PublicKey)
 	if err != nil {
 		require.Contains(t, err.Error(), "record not found")
-		payeeBalanceBefore = tokenV1Models.BalanceStateModel{
+		payeeBalanceBefore = tokenV2Models.BalanceStateModel{
 			TokenAddress: payToken.Address,
 			OwnerAddress: payee.PublicKey,
 			Amount:       "0",
-			TokenType:    tokenV1Domain.FUNGIBLE,
+			TokenType:    tokenV2Domain.FUNGIBLE,
 		}
 	} else {
-		err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payeeBalanceBeforeOut.States[0].Object, &payeeBalanceBefore)
+		err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payeeBalanceBeforeOut.States[0].Object, &payeeBalanceBefore)
 		if err != nil {
 			t.Fatalf("UnmarshalState payeeBalanceBefore: %v", err)
 		}
@@ -906,9 +906,9 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (CreatePayment.Logs[0]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_CREATED_LOG, createPaymentLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_CREATED_LOG, createPaymentLog.LogType)
 
-	createPaymentEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](createPaymentLog.Event)
+	createPaymentEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](createPaymentLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (CreatePayment.Logs[0]): %v", err)
 	}
@@ -920,7 +920,7 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	assert.Equal(t, payer.PublicKey, createPaymentEvent.Payer, "payment payer mismatch")
 	assert.Equal(t, payee.PublicKey, createPaymentEvent.Payee, "payment payee mismatch")
 	assert.Equal(t, amount, createPaymentEvent.Amount, "payment amount mismatch")
-	assert.Equal(t, paymentV1Domain.STATUS_CREATED, createPaymentEvent.Status, "payment status mismatch after create")
+	assert.Equal(t, paymentV2Domain.STATUS_CREATED, createPaymentEvent.Status, "payment status mismatch after create")
 	assert.False(t, createPaymentEvent.Paused, "payment paused mismatch after create")
 
 	getPaymentOut, err := c.GetPayment(paymentAddress)
@@ -929,8 +929,8 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	}
 	require.NotEmpty(t, getPaymentOut.States)
 
-	var paymentState paymentV1Models.PaymentStateModel
-	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
+	var paymentState paymentV2Models.PaymentStateModel
+	err = utils.UnmarshalState[paymentV2Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetPayment after create): %v", err)
 	}
@@ -942,7 +942,7 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	assert.Equal(t, payer.PublicKey, paymentState.Payer, "payment state payer mismatch after create")
 	assert.Equal(t, payee.PublicKey, paymentState.Payee, "payment state payee mismatch after create")
 	assert.Equal(t, amount, paymentState.Amount, "payment state amount mismatch after create")
-	assert.Equal(t, paymentV1Domain.STATUS_CREATED, paymentState.Status, "payment state status mismatch after create")
+	assert.Equal(t, paymentV2Domain.STATUS_CREATED, paymentState.Status, "payment state status mismatch after create")
 	assert.False(t, paymentState.Paused, "payment state paused mismatch after create")
 	assert.NotEmpty(t, paymentState.Hash, "payment hash should not be empty after create")
 
@@ -963,15 +963,15 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AuthorizePayment.Logs[0]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_AUTHORIZED_LOG, authorizeLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_AUTHORIZED_LOG, authorizeLog.LogType)
 
-	authorizeEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](authorizeLog.Event)
+	authorizeEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](authorizeLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AuthorizePayment.Logs[0]): %v", err)
 	}
 
 	assert.Equal(t, paymentAddress, authorizeEvent.Address, "payment address mismatch after authorize")
-	assert.Equal(t, paymentV1Domain.STATUS_AUTHORIZED, authorizeEvent.Status, "payment status mismatch after authorize")
+	assert.Equal(t, paymentV2Domain.STATUS_AUTHORIZED, authorizeEvent.Status, "payment status mismatch after authorize")
 
 	getPaymentOut, err = c.GetPayment(paymentAddress)
 	if err != nil {
@@ -979,13 +979,13 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	}
 	require.NotEmpty(t, getPaymentOut.States)
 
-	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
+	err = utils.UnmarshalState[paymentV2Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetPayment after authorize): %v", err)
 	}
 
 	assert.Equal(t, paymentAddress, paymentState.Address, "payment state address mismatch after authorize")
-	assert.Equal(t, paymentV1Domain.STATUS_AUTHORIZED, paymentState.Status, "payment state status mismatch after authorize")
+	assert.Equal(t, paymentV2Domain.STATUS_AUTHORIZED, paymentState.Status, "payment state status mismatch after authorize")
 	assert.Equal(t, amount, paymentState.Amount, "payment state amount mismatch after authorize")
 	assert.False(t, paymentState.Paused, "payment state paused mismatch after authorize")
 
@@ -1006,15 +1006,15 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (VoidPayment.Logs[0]): %v", err)
 	}
-	assert.Equal(t, paymentV1Domain.PAYMENT_VOIDED_LOG, voidLog.LogType)
+	assert.Equal(t, paymentV2Domain.PAYMENT_VOIDED_LOG, voidLog.LogType)
 
-	voidEvent, err := utils.UnmarshalEvent[paymentV1Domain.Payment](voidLog.Event)
+	voidEvent, err := utils.UnmarshalEvent[paymentV2Domain.Payment](voidLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (VoidPayment.Logs[0]): %v", err)
 	}
 
 	assert.Equal(t, paymentAddress, voidEvent.Address, "payment address mismatch after void")
-	assert.Equal(t, paymentV1Domain.STATUS_VOIDED, voidEvent.Status, "payment status mismatch after void")
+	assert.Equal(t, paymentV2Domain.STATUS_VOIDED, voidEvent.Status, "payment status mismatch after void")
 
 	getPaymentOut, err = c.GetPayment(paymentAddress)
 	if err != nil {
@@ -1022,7 +1022,7 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	}
 	require.NotEmpty(t, getPaymentOut.States)
 
-	err = utils.UnmarshalState[paymentV1Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
+	err = utils.UnmarshalState[paymentV2Models.PaymentStateModel](getPaymentOut.States[0].Object, &paymentState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetPayment after void): %v", err)
 	}
@@ -1034,7 +1034,7 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	assert.Equal(t, payer.PublicKey, paymentState.Payer, "payment state payer mismatch after void")
 	assert.Equal(t, payee.PublicKey, paymentState.Payee, "payment state payee mismatch after void")
 	assert.Equal(t, amount, paymentState.Amount, "payment state amount mismatch after void")
-	assert.Equal(t, paymentV1Domain.STATUS_VOIDED, paymentState.Status, "payment state status mismatch after void")
+	assert.Equal(t, paymentV2Domain.STATUS_VOIDED, paymentState.Status, "payment state status mismatch after void")
 	assert.False(t, paymentState.Paused, "payment state paused mismatch after void")
 	assert.NotEmpty(t, paymentState.Hash, "payment hash should not be empty after void")
 
@@ -1045,24 +1045,24 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTokenBalance payer after void: %v", err)
 	}
-	var payerBalanceAfterVoid tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payerBalanceAfterVoidOut.States[0].Object, &payerBalanceAfterVoid)
+	var payerBalanceAfterVoid tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payerBalanceAfterVoidOut.States[0].Object, &payerBalanceAfterVoid)
 	if err != nil {
 		t.Fatalf("UnmarshalState payerBalanceAfterVoid: %v", err)
 	}
 
-	var payeeBalanceAfterVoid tokenV1Models.BalanceStateModel
+	var payeeBalanceAfterVoid tokenV2Models.BalanceStateModel
 	payeeBalanceAfterVoidOut, err := c.GetTokenBalance(payToken.Address, payee.PublicKey)
 	if err != nil {
 		require.Contains(t, err.Error(), "record not found")
-		payeeBalanceAfterVoid = tokenV1Models.BalanceStateModel{
+		payeeBalanceAfterVoid = tokenV2Models.BalanceStateModel{
 			TokenAddress: payToken.Address,
 			OwnerAddress: payee.PublicKey,
 			Amount:       "0",
-			TokenType:    tokenV1Domain.FUNGIBLE,
+			TokenType:    tokenV2Domain.FUNGIBLE,
 		}
 	} else {
-		err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](payeeBalanceAfterVoidOut.States[0].Object, &payeeBalanceAfterVoid)
+		err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](payeeBalanceAfterVoidOut.States[0].Object, &payeeBalanceAfterVoid)
 		if err != nil {
 			t.Fatalf("UnmarshalState payeeBalanceAfterVoid: %v", err)
 		}
@@ -1077,7 +1077,7 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	listPaymentsOut, err := c.ListPayments(inputs.InputList{
 		OrderId:      orderId,
 		TokenAddress: payToken.Address,
-		Status:       []string{paymentV1Domain.STATUS_VOIDED},
+		Status:       []string{paymentV2Domain.STATUS_VOIDED},
 		Payer:        payer.PublicKey,
 		Payee:        payee.PublicKey,
 		Page:         1,
@@ -1089,8 +1089,8 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 	}
 	require.NotEmpty(t, listPaymentsOut.States)
 
-	var payments []paymentV1Models.PaymentStateModel
-	err = utils.UnmarshalState[[]paymentV1Models.PaymentStateModel](listPaymentsOut.States[0].Object, &payments)
+	var payments []paymentV2Models.PaymentStateModel
+	err = utils.UnmarshalState[[]paymentV2Models.PaymentStateModel](listPaymentsOut.States[0].Object, &payments)
 	if err != nil {
 		t.Fatalf("UnmarshalState (ListPayments.States[0]): %v", err)
 	}
@@ -1107,7 +1107,7 @@ func TestPaymentAuthVoidFlow(t *testing.T) {
 			assert.Equal(t, payer.PublicKey, p.Payer, "listed payment payer mismatch")
 			assert.Equal(t, payee.PublicKey, p.Payee, "listed payment payee mismatch")
 			assert.Equal(t, amount, p.Amount, "listed payment amount mismatch")
-			assert.Equal(t, paymentV1Domain.STATUS_VOIDED, p.Status, "listed payment status mismatch")
+			assert.Equal(t, paymentV2Domain.STATUS_VOIDED, p.Status, "listed payment status mismatch")
 			assert.NotZero(t, p.CreatedAt, "listed payment createdAt should not be zero")
 			assert.NotZero(t, p.UpdatedAt, "listed payment updatedAt should not be zero")
 			break

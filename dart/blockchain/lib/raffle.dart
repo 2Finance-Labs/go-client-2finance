@@ -563,7 +563,7 @@ extension RaffleClient on TwoFinanceBlockchain {
       'page': page,
       'limit': limit,
       'ascending': ascending,
-      'contract_version': RAFFLE_CONTRACT_V1,
+      'contract_version': RAFFLE_CONTRACT_V2,
     };
 
     return getState(to: '', method: METHOD_LIST_PRIZES, data: data);
@@ -582,7 +582,7 @@ extension RaffleClient on TwoFinanceBlockchain {
     final JsonMessage data = {
       'raffle_address': address,
       'prize_uuid': prizeUUID,
-      'contract_version': RAFFLE_CONTRACT_V1,
+      'contract_version': RAFFLE_CONTRACT_V2,
     };
 
     return getState(to: address, method: METHOD_GET_PRIZE, data: data);

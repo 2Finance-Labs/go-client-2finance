@@ -20,7 +20,7 @@ fixtures:
     to: contract-address
     method: start_Sending
     data:
-      contract_version: sendingLifecycleV1
+      contract_version: sendingLifecycleV2
       request_id: request-001
     version: 1
     uuid7: 019ec268-ce77-7b4f-89f0-4c7aab895984
@@ -33,7 +33,7 @@ steps:
     expect:
       chain_id: 1
       method: start_Sending
-      data.contract_version: sendingLifecycleV1
+      data.contract_version: sendingLifecycleV2
       hash: signed-hash
       signature: signed-signature
   - id: from-network

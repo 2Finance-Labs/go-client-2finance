@@ -715,20 +715,22 @@ class NetworkClient : public ServiceClient {
   using ServiceClient::ServiceClient;
 
   HttpResponse virtual_machine() const {
-    return get("/v1/2finance-network/virtual-machine");
+    return post(
+        "/v2/2finance-network/query",
+        "{\"method\":\"get_blocks\",\"params\":{\"page\":1,\"limit\":1}}");
   }
 
   HttpResponse market_candles(const std::string& market, const std::string& query = "") const {
-    return get("/v1/2finance-network/markets/" + percent_encode(market) + "/candles" +
+    return get("/v2/2finance-network/markets/" + percent_encode(market) + "/candles" +
                (query.empty() ? "" : "?" + query));
   }
 
   HttpResponse products(const std::string& product_type) const {
-    return get("/v1/2finance-network/products/" + percent_encode(product_type));
+    return get("/v2/2finance-network/products/" + percent_encode(product_type));
   }
 
   HttpResponse create_product(const std::string& product_type, const std::string& body) const {
-    return post("/v1/2finance-network/products/" + percent_encode(product_type), body);
+    return post("/v2/2finance-network/products/" + percent_encode(product_type), body);
   }
 
   HttpResponse bonds() const {
@@ -982,22 +984,22 @@ class MatchEngineClient {
 
   std::string order_command(const std::string& command_json) const {
     if (command_json.empty() || command_json == "{}") {
-      return "{\"schema\":\"matchengine.order_command.v1\"}";
+      return "{\"schema\":\"matchengine.order_command.v2\",\"message_type\":\"ORDER\",\"operation\":\"ADD\"}";
     }
     if (command_json.front() == '{') {
-      return "{\"schema\":\"matchengine.order_command.v1\"," + command_json.substr(1);
+      return "{\"schema\":\"matchengine.order_command.v2\",\"message_type\":\"ORDER\",\"operation\":\"ADD\"," + command_json.substr(1);
     }
-    return "{\"schema\":\"matchengine.order_command.v1\",\"payload\":" + command_json + "}";
+    return "{\"schema\":\"matchengine.order_command.v2\",\"message_type\":\"ORDER\",\"operation\":\"ADD\",\"payload\":" + command_json + "}";
   }
 
   std::string market_data_subscribe(const std::string& request_json) const {
     if (request_json.empty() || request_json == "{}") {
-      return "{\"schema\":\"matchengine.market_data_subscribe.v1\"}";
+      return "{\"schema\":\"matchengine.market_data_subscribe.v2\"}";
     }
     if (request_json.front() == '{') {
-      return "{\"schema\":\"matchengine.market_data_subscribe.v1\"," + request_json.substr(1);
+      return "{\"schema\":\"matchengine.market_data_subscribe.v2\"," + request_json.substr(1);
     }
-    return "{\"schema\":\"matchengine.market_data_subscribe.v1\",\"payload\":" + request_json + "}";
+    return "{\"schema\":\"matchengine.market_data_subscribe.v2\",\"payload\":" + request_json + "}";
   }
 
   HttpResponse send_order(MessageSender sender, const std::string& command_json) const {

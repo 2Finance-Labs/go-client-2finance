@@ -49,7 +49,7 @@ type domainOperationsFixture struct {
 
 func TestSharedContractFixturesDescribePublicSDKOperations(t *testing.T) {
 	fixture := loadDomainOperationsFixture(t)
-	if fixture.Schema != "sdk.domain_operations.v1" {
+	if fixture.Schema != "sdk.domain_operations.v2" {
 		t.Fatalf("schema = %q", fixture.Schema)
 	}
 	balances := findContractOperation(t, fixture, "analytics", "balances")

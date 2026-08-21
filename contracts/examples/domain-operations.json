@@ -1,5 +1,5 @@
 {
-  "schema": "sdk.domain_operations.v1",
+  "schema": "sdk.domain_operations.v2",
   "domains": [
     {
       "name": "auth",
@@ -47,80 +47,80 @@
       "operations": [
         {
           "name": "virtual_machine",
-          "method": "GET",
-          "path": "/v1/2finance-network/virtual-machine"
+          "method": "POST",
+          "path": "/v2/2finance-network/query"
         },
         {
           "name": "market_candles",
           "method": "GET",
-          "path": "/v1/2finance-network/markets/{market}/candles",
+          "path": "/v2/2finance-network/markets/{market}/candles",
           "path_params": ["market"],
           "query": ["symbol", "interval", "from", "to", "limit"]
         },
         {
           "name": "bonds",
           "method": "GET",
-          "path": "/v1/2finance-network/products/bonds"
+          "path": "/v2/2finance-network/products/bonds"
         },
         {
           "name": "create_bond",
           "method": "POST",
-          "path": "/v1/2finance-network/products/bonds",
+          "path": "/v2/2finance-network/products/bonds",
           "request_schema": "network.bond.create.request.v1"
         },
         {
           "name": "loans",
           "method": "GET",
-          "path": "/v1/2finance-network/products/loans"
+          "path": "/v2/2finance-network/products/loans"
         },
         {
           "name": "create_loan",
           "method": "POST",
-          "path": "/v1/2finance-network/products/loans",
+          "path": "/v2/2finance-network/products/loans",
           "request_schema": "network.loan.create.request.v1"
         },
         {
           "name": "swaps",
           "method": "GET",
-          "path": "/v1/2finance-network/products/swaps"
+          "path": "/v2/2finance-network/products/swaps"
         },
         {
           "name": "create_swap",
           "method": "POST",
-          "path": "/v1/2finance-network/products/swaps",
+          "path": "/v2/2finance-network/products/swaps",
           "request_schema": "network.swap.create.request.v1"
         },
         {
           "name": "staking_products",
           "method": "GET",
-          "path": "/v1/2finance-network/products/staking"
+          "path": "/v2/2finance-network/products/staking"
         },
         {
           "name": "create_staking_product",
           "method": "POST",
-          "path": "/v1/2finance-network/products/staking",
+          "path": "/v2/2finance-network/products/staking",
           "request_schema": "network.staking.create.request.v1"
         },
         {
           "name": "synthetic_assets",
           "method": "GET",
-          "path": "/v1/2finance-network/products/synthetic-assets"
+          "path": "/v2/2finance-network/products/synthetic-assets"
         },
         {
           "name": "create_synthetic_asset",
           "method": "POST",
-          "path": "/v1/2finance-network/products/synthetic-assets",
+          "path": "/v2/2finance-network/products/synthetic-assets",
           "request_schema": "network.synthetic_asset.create.request.v1"
         },
         {
           "name": "liquidity_pools",
           "method": "GET",
-          "path": "/v1/2finance-network/products/liquidity-pools"
+          "path": "/v2/2finance-network/products/liquidity-pools"
         },
         {
           "name": "create_liquidity_pool",
           "method": "POST",
-          "path": "/v1/2finance-network/products/liquidity-pools",
+          "path": "/v2/2finance-network/products/liquidity-pools",
           "request_schema": "network.liquidity_pool.create.request.v1"
         }
       ]
@@ -379,28 +379,28 @@
           "name": "order_command",
           "method": "WS",
           "path": "/ws/order-entry",
-          "request_schema": "matchengine.order_command.v1",
-          "response_schema": "matchengine.execution_report.v1"
+          "request_schema": "matchengine.order_command.v2",
+          "response_schema": "matchengine.execution_report.v2"
         },
         {
           "name": "market_data_subscribe",
           "method": "WS",
           "path": "/ws/market-data",
-          "request_schema": "matchengine.market_data_subscribe.request.v1"
+          "request_schema": "matchengine.market_data_subscribe.request.v2"
         },
         {
           "name": "submit_order",
           "method": "WS",
           "path": "/ws/order-entry",
-          "request_schema": "matchengine.order_command.v1",
-          "response_schema": "matchengine.execution_report.v1",
+          "request_schema": "matchengine.order_command.v2",
+          "response_schema": "matchengine.execution_report.v2",
           "notes": "SDK helper sends an order_command payload through an injected or native WebSocket transport."
         },
         {
           "name": "subscribe_market_data",
           "method": "WS",
           "path": "/ws/market-data",
-          "request_schema": "matchengine.market_data_subscribe.request.v1",
+          "request_schema": "matchengine.market_data_subscribe.request.v2",
           "notes": "SDK helper sends a market_data_subscribe payload through an injected or native WebSocket transport."
         }
       ]

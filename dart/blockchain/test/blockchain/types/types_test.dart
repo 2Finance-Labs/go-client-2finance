@@ -16,17 +16,20 @@ void main() {
 
     test('toJson includes non-null fields', () {
       final s = StateType(
-        type: 'balance_v1',
+        type: 'balance_v2',
         object: {'address': 'abc', 'amount': '10'},
       );
 
       final json = s.toJson();
-      expect(json['type'], 'balance_v1');
+      expect(json['type'], 'balance_v2');
       expect(json['object'], {'address': 'abc', 'amount': '10'});
     });
 
     test('fromJson parses fields (including nulls)', () {
-      final s1 = StateType.fromJson({'type': 'x', 'object': {'a': 1}});
+      final s1 = StateType.fromJson({
+        'type': 'x',
+        'object': {'a': 1},
+      });
       expect(s1.type, 'x');
       expect(s1.object, {'a': 1});
 
@@ -37,8 +40,8 @@ void main() {
 
     test('roundtrip fromJson -> toJson', () {
       final input = {
-        'type': 'token_v1',
-        'object': {'symbol': 'ADI', 'decimals': 18}
+        'type': 'token_v2',
+        'object': {'symbol': 'ADI', 'decimals': 18},
       };
 
       final s = StateType.fromJson(input);
@@ -76,16 +79,22 @@ void main() {
     test('parses states list', () {
       final out = ContractOutput.fromJson({
         'states': [
-          {'type': 'balance_v1', 'object': {'address': 'a', 'amount': '1'}},
-          {'type': 'mint_v1', 'object': {'token': 'ADI', 'supply': '100'}},
+          {
+            'type': 'balance_v2',
+            'object': {'address': 'a', 'amount': '1'},
+          },
+          {
+            'type': 'mint_v2',
+            'object': {'token': 'ADI', 'supply': '100'},
+          },
         ],
       });
 
       expect(out.states, isNotNull);
       expect(out.states!.length, 2);
-      expect(out.states![0].type, 'balance_v1');
+      expect(out.states![0].type, 'balance_v2');
       expect(out.states![0].object, {'address': 'a', 'amount': '1'});
-      expect(out.states![1].type, 'mint_v1');
+      expect(out.states![1].type, 'mint_v2');
       expect(out.states![1].object, {'token': 'ADI', 'supply': '100'});
     });
 
@@ -94,19 +103,25 @@ void main() {
         'delegated_call': [
           {
             'states': [
-              {'type': 'x', 'object': {'k': 'v'}}
+              {
+                'type': 'x',
+                'object': {'k': 'v'},
+              },
             ],
           },
           {
             'delegated_call': [
               {
                 'states': [
-                  {'type': 'y', 'object': {'n': 1}}
-                ]
-              }
-            ]
-          }
-        ]
+                  {
+                    'type': 'y',
+                    'object': {'n': 1},
+                  },
+                ],
+              },
+            ],
+          },
+        ],
       });
 
       expect(out.delegatedCall, isNotNull);
@@ -135,7 +150,9 @@ void main() {
         ],
         delegatedCall: [
           ContractOutput(
-            states: [StateType(type: 'b', object: {'y': 2})],
+            states: [
+              StateType(type: 'b', object: {'y': 2}),
+            ],
           ),
         ],
       );
@@ -143,30 +160,42 @@ void main() {
       final json = out.toJson();
       expect(json, {
         'states': [
-          {'type': 'a', 'object': {'x': 1}}
+          {
+            'type': 'a',
+            'object': {'x': 1},
+          },
         ],
         'delegated_call': [
           {
             'states': [
-              {'type': 'b', 'object': {'y': 2}}
-            ]
-          }
-        ]
+              {
+                'type': 'b',
+                'object': {'y': 2},
+              },
+            ],
+          },
+        ],
       });
     });
 
     test('roundtrip toJson -> fromJson -> toJson (without logs)', () {
       final input = {
         'states': [
-          {'type': 'token', 'object': {'symbol': 'ADI'}},
+          {
+            'type': 'token',
+            'object': {'symbol': 'ADI'},
+          },
         ],
         'delegated_call': [
           {
             'states': [
-              {'type': 'balance', 'object': {'address': 'a', 'amount': '10'}}
-            ]
-          }
-        ]
+              {
+                'type': 'balance',
+                'object': {'address': 'a', 'amount': '10'},
+              },
+            ],
+          },
+        ],
       };
 
       final out = ContractOutput.fromJson(input);
@@ -184,10 +213,10 @@ void main() {
             'log_index': 1,
             'transaction_hash': 'a' * 64,
             'event': eventBase64,
-            'contract_version': 'v1',
+            'contract_version': 'walletV2',
             'contract_address': DEPLOY_CONTRACT_ADDRESS,
-          }
-        ]
+          },
+        ],
       };
 
       final out = ContractOutput.fromJson(input);
@@ -199,7 +228,7 @@ void main() {
       expect(log.logType, 'event');
       expect(log.logIndex, 1);
       expect(log.transactionHash, 'a' * 64);
-      expect(log.contractVersion, 'v1');
+      expect(log.contractVersion, 'walletV2');
       expect(log.contractAddress, DEPLOY_CONTRACT_ADDRESS);
       expect(log.event, eventBase64);
       final decoded = unmarshalEvent<Map<String, dynamic>>(log.event, (m) => m);
@@ -208,6 +237,5 @@ void main() {
       final json = out.toJson();
       expect(json, input);
     });
-
   });
 }

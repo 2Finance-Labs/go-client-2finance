@@ -1,0 +1,104 @@
+{
+  "id": "lifecycle_v2",
+  "title": "Lifecycle client contract",
+  "owner": "sdk",
+  "status": "active",
+  "layers": ["harness-small", "contract-unit"],
+  "cases": [
+    {
+      "id": "lifecycle.start_fx",
+      "title": "startFX sends start_FX with address in payload",
+      "tags": ["lifecycle", "fx", "go-compat"],
+      "test_refs": ["test/blockchain/contract/lifecycle/lifecycle_test.dart"],
+      "given": {
+        "active_signer": "$signerPublicKey",
+        "lifecycle_address": "$lifecycleAddress",
+        "request_id": "fx-001"
+      },
+      "when": {
+        "client_call": "startFX",
+        "args": {
+          "address": "$lifecycleAddress",
+          "data": {
+            "request_id": "fx-001"
+          }
+        }
+      },
+      "then": {
+        "request_method": "send_transaction",
+        "transaction": {
+          "from": "$signerPublicKey",
+          "to": "$lifecycleAddress",
+          "method": "start_FX",
+          "version": 1,
+          "data": {
+            "address": "$lifecycleAddress",
+            "request_id": "fx-001"
+          }
+        }
+      }
+    },
+    {
+      "id": "lifecycle.advance_sending",
+      "title": "advanceSending sends advance_Sending",
+      "tags": ["lifecycle", "sending", "go-compat"],
+      "test_refs": ["test/blockchain/contract/lifecycle/lifecycle_test.dart"],
+      "given": {
+        "active_signer": "$signerPublicKey",
+        "lifecycle_address": "$lifecycleAddress",
+        "request_id": "sending-001"
+      },
+      "when": {
+        "client_call": "advanceSending",
+        "args": {
+          "address": "$lifecycleAddress",
+          "data": {
+            "request_id": "sending-001",
+            "status": "funded"
+          }
+        }
+      },
+      "then": {
+        "request_method": "send_transaction",
+        "transaction": {
+          "from": "$signerPublicKey",
+          "to": "$lifecycleAddress",
+          "method": "advance_Sending",
+          "version": 1,
+          "data": {
+            "address": "$lifecycleAddress",
+            "request_id": "sending-001",
+            "status": "funded"
+          }
+        }
+      }
+    },
+    {
+      "id": "lifecycle.get_sending",
+      "title": "getSending queries lifecycle state by request_id",
+      "tags": ["lifecycle", "sending", "query", "go-compat"],
+      "test_refs": ["test/blockchain/contract/lifecycle/lifecycle_test.dart"],
+      "given": {
+        "lifecycle_address": "$lifecycleAddress",
+        "request_id": "sending-001"
+      },
+      "when": {
+        "client_call": "getSending",
+        "args": {
+          "address": "$lifecycleAddress",
+          "requestId": "sending-001"
+        }
+      },
+      "then": {
+        "request_method": "get_state",
+        "state_query": {
+          "to": "$lifecycleAddress",
+          "method": "get_Sending",
+          "data": {
+            "request_id": "sending-001"
+          }
+        }
+      }
+    }
+  ]
+}

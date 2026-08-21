@@ -1,0 +1,84 @@
+{
+  "id": "wallet_v2",
+  "title": "Wallet V2 client contract",
+  "owner": "sdk",
+  "status": "active",
+  "layers": ["harness-small", "contract-unit"],
+  "cases": [
+    {
+      "id": "wallet.add",
+      "title": "addWallet sends a signed transaction to the wallet contract address",
+      "tags": ["wallet", "mqtt", "go-compat"],
+      "test_refs": ["test/blockchain/contract/walletV2/wallet_unit_test.dart"],
+      "given": {
+        "active_signer": "$signerPublicKey",
+        "wallet_contract_address": "$walletAddress",
+        "wallet_public_key": "$walletPublicKey"
+      },
+      "when": {
+        "client_call": "addWallet",
+        "args": ["$walletAddress", "$walletPublicKey"]
+      },
+      "then": {
+        "request_method": "send_transaction",
+        "transaction": {
+          "from": "$signerPublicKey",
+          "to": "$walletAddress",
+          "method": "add_Wallet",
+          "version": 1,
+          "data": {
+            "address": "$walletAddress",
+            "public_key": "$walletPublicKey"
+          }
+        }
+      }
+    },
+    {
+      "id": "wallet.get_by_address",
+      "title": "getWalletByAddress queries state by wallet address",
+      "tags": ["wallet", "query", "go-compat"],
+      "test_refs": ["test/blockchain/contract/walletV2/wallet_unit_test.dart"],
+      "given": {
+        "wallet_contract_address": "$walletAddress"
+      },
+      "when": {
+        "client_call": "getWalletByAddress",
+        "args": ["$walletAddress"]
+      },
+      "then": {
+        "request_method": "get_state",
+        "state_query": {
+          "to": "$walletAddress",
+          "method": "get_WalletByAddress",
+          "data": {
+            "address": "$walletAddress"
+          }
+        }
+      }
+    },
+    {
+      "id": "wallet.get_by_public_key",
+      "title": "getWalletByPublicKey keeps global contract-version lookup",
+      "tags": ["wallet", "query", "go-compat"],
+      "test_refs": ["test/blockchain/contract/walletV2/wallet_unit_test.dart"],
+      "given": {
+        "wallet_public_key": "$walletPublicKey"
+      },
+      "when": {
+        "client_call": "getWalletByPublicKey",
+        "args": ["$walletPublicKey"]
+      },
+      "then": {
+        "request_method": "get_state",
+        "state_query": {
+          "to": "",
+          "method": "get_WalletByPublicKey",
+          "data": {
+            "public_key": "$walletPublicKey",
+            "contract_version": "walletV2"
+          }
+        }
+      }
+    }
+  ]
+}

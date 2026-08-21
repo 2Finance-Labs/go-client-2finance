@@ -185,19 +185,22 @@ public final class DomainClients {
         }
 
         public String virtualMachine() throws IOException, InterruptedException {
-            return get("/v1/2finance-network/virtual-machine");
+            return post(
+                "/v2/2finance-network/query",
+                "{\"method\":\"get_blocks\",\"params\":{\"page\":1,\"limit\":1}}"
+            );
         }
 
         public String marketCandles(String market, String query) throws IOException, InterruptedException {
-            return get("/v1/2finance-network/markets/" + encode(market) + "/candles" + (query == null || query.isBlank() ? "" : "?" + query));
+            return get("/v2/2finance-network/markets/" + encode(market) + "/candles" + (query == null || query.isBlank() ? "" : "?" + query));
         }
 
         public String products(String productType) throws IOException, InterruptedException {
-            return get("/v1/2finance-network/products/" + encode(productType));
+            return get("/v2/2finance-network/products/" + encode(productType));
         }
 
         public String createProduct(String productType, String jsonBody) throws IOException, InterruptedException {
-            return post("/v1/2finance-network/products/" + encode(productType), jsonBody);
+            return post("/v2/2finance-network/products/" + encode(productType), jsonBody);
         }
 
         public String bonds() throws IOException, InterruptedException {
@@ -455,17 +458,17 @@ public final class DomainClients {
         public String orderCommand(String commandJson) {
             String body = commandJson == null || commandJson.isBlank() ? "{}" : commandJson.trim();
             if (body.equals("{}")) {
-                return "{\"schema\":\"matchengine.order_command.v1\"}";
+                return "{\"schema\":\"matchengine.order_command.v2\",\"message_type\":\"ORDER\",\"operation\":\"ADD\"}";
             }
-            return "{\"schema\":\"matchengine.order_command.v1\"," + body.replaceFirst("^\\{", "");
+            return "{\"schema\":\"matchengine.order_command.v2\",\"message_type\":\"ORDER\",\"operation\":\"ADD\"," + body.replaceFirst("^\\{", "");
         }
 
         public String marketDataSubscribe(String requestJson) {
             String body = requestJson == null || requestJson.isBlank() ? "{}" : requestJson.trim();
             if (body.equals("{}")) {
-                return "{\"schema\":\"matchengine.market_data_subscribe.v1\"}";
+                return "{\"schema\":\"matchengine.market_data_subscribe.v2\"}";
             }
-            return "{\"schema\":\"matchengine.market_data_subscribe.v1\"," + body.replaceFirst("^\\{", "");
+            return "{\"schema\":\"matchengine.market_data_subscribe.v2\"," + body.replaceFirst("^\\{", "");
         }
 
         public String sendOrder(Function<String, String> sender, String commandJson) {

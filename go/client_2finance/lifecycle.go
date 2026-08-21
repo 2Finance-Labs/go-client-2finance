@@ -4,96 +4,96 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/fxLifecycleV1"
-	inputsFXLifecycleV1 "gitlab.com/2finance/2finance-network/blockchain/contract/fxLifecycleV1/inputs"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/lifecycleCommonV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/multiCurrencyLifecycleV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/onboardingLifecycleV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/receivingLifecycleV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/sendingLifecycleV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/fxLifecycleV2"
+	inputsFXLifecycleV2 "gitlab.com/2finance/2finance-network/blockchain/contract/fxLifecycleV2/inputs"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/lifecycleCommonV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/multiCurrencyLifecycleV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/onboardingLifecycleV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/receivingLifecycleV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/sendingLifecycleV2"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
-func (c *NetworkClient) StartFX(in inputsFXLifecycleV1.InputStartFX) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, fxLifecycleV1.METHOD_START_FX, in)
+func (c *NetworkClient) StartFX(in inputsFXLifecycleV2.InputStartFX) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, fxLifecycleV2.METHOD_START_FX, in)
 }
 
-func (c *NetworkClient) AdvanceFX(in inputsFXLifecycleV1.InputAdvanceFX) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, fxLifecycleV1.METHOD_ADVANCE_FX, in)
+func (c *NetworkClient) AdvanceFX(in inputsFXLifecycleV2.InputAdvanceFX) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, fxLifecycleV2.METHOD_ADVANCE_FX, in)
 }
 
-func (c *NetworkClient) FailFX(in inputsFXLifecycleV1.InputFailFX) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, fxLifecycleV1.METHOD_FAIL_FX, in)
+func (c *NetworkClient) FailFX(in inputsFXLifecycleV2.InputFailFX) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, fxLifecycleV2.METHOD_FAIL_FX, in)
 }
 
 func (c *NetworkClient) GetFX(address, requestID string) (types.ContractOutput, error) {
-	return c.getLifecycleState(address, requestID, fxLifecycleV1.METHOD_GET_FX)
+	return c.getLifecycleState(address, requestID, fxLifecycleV2.METHOD_GET_FX)
 }
 
-func (c *NetworkClient) StartOnboarding(in lifecycleCommonV1.StartInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, onboardingLifecycleV1.METHOD_START_ONBOARDING, in)
+func (c *NetworkClient) StartOnboarding(in lifecycleCommonV2.StartInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, onboardingLifecycleV2.METHOD_START_ONBOARDING, in)
 }
 
-func (c *NetworkClient) AdvanceOnboarding(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, onboardingLifecycleV1.METHOD_ADVANCE_ONBOARDING, in)
+func (c *NetworkClient) AdvanceOnboarding(in lifecycleCommonV2.AdvanceInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, onboardingLifecycleV2.METHOD_ADVANCE_ONBOARDING, in)
 }
 
-func (c *NetworkClient) FailOnboarding(in lifecycleCommonV1.FailInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, onboardingLifecycleV1.METHOD_FAIL_ONBOARDING, in)
+func (c *NetworkClient) FailOnboarding(in lifecycleCommonV2.FailInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, onboardingLifecycleV2.METHOD_FAIL_ONBOARDING, in)
 }
 
 func (c *NetworkClient) GetOnboarding(address, requestID string) (types.ContractOutput, error) {
-	return c.getLifecycleState(address, requestID, onboardingLifecycleV1.METHOD_GET_ONBOARDING)
+	return c.getLifecycleState(address, requestID, onboardingLifecycleV2.METHOD_GET_ONBOARDING)
 }
 
-func (c *NetworkClient) StartReceiving(in lifecycleCommonV1.StartInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, receivingLifecycleV1.METHOD_START_RECEIVING, in)
+func (c *NetworkClient) StartReceiving(in lifecycleCommonV2.StartInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, receivingLifecycleV2.METHOD_START_RECEIVING, in)
 }
 
-func (c *NetworkClient) AdvanceReceiving(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, receivingLifecycleV1.METHOD_ADVANCE_RECEIVING, in)
+func (c *NetworkClient) AdvanceReceiving(in lifecycleCommonV2.AdvanceInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, receivingLifecycleV2.METHOD_ADVANCE_RECEIVING, in)
 }
 
-func (c *NetworkClient) FailReceiving(in lifecycleCommonV1.FailInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, receivingLifecycleV1.METHOD_FAIL_RECEIVING, in)
+func (c *NetworkClient) FailReceiving(in lifecycleCommonV2.FailInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, receivingLifecycleV2.METHOD_FAIL_RECEIVING, in)
 }
 
 func (c *NetworkClient) GetReceiving(address, requestID string) (types.ContractOutput, error) {
-	return c.getLifecycleState(address, requestID, receivingLifecycleV1.METHOD_GET_RECEIVING)
+	return c.getLifecycleState(address, requestID, receivingLifecycleV2.METHOD_GET_RECEIVING)
 }
 
-func (c *NetworkClient) StartSending(in lifecycleCommonV1.StartInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, sendingLifecycleV1.METHOD_START_SENDING, in)
+func (c *NetworkClient) StartSending(in lifecycleCommonV2.StartInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, sendingLifecycleV2.METHOD_START_SENDING, in)
 }
 
-func (c *NetworkClient) AdvanceSending(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, sendingLifecycleV1.METHOD_ADVANCE_SENDING, in)
+func (c *NetworkClient) AdvanceSending(in lifecycleCommonV2.AdvanceInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, sendingLifecycleV2.METHOD_ADVANCE_SENDING, in)
 }
 
-func (c *NetworkClient) FailSending(in lifecycleCommonV1.FailInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, sendingLifecycleV1.METHOD_FAIL_SENDING, in)
+func (c *NetworkClient) FailSending(in lifecycleCommonV2.FailInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, sendingLifecycleV2.METHOD_FAIL_SENDING, in)
 }
 
 func (c *NetworkClient) GetSending(address, requestID string) (types.ContractOutput, error) {
-	return c.getLifecycleState(address, requestID, sendingLifecycleV1.METHOD_GET_SENDING)
+	return c.getLifecycleState(address, requestID, sendingLifecycleV2.METHOD_GET_SENDING)
 }
 
-func (c *NetworkClient) StartMultiCurrency(in lifecycleCommonV1.StartInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, multiCurrencyLifecycleV1.METHOD_START_MULTI_CURRENCY, in)
+func (c *NetworkClient) StartMultiCurrency(in lifecycleCommonV2.StartInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, multiCurrencyLifecycleV2.METHOD_START_MULTI_CURRENCY, in)
 }
 
-func (c *NetworkClient) AdvanceMultiCurrency(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, multiCurrencyLifecycleV1.METHOD_ADVANCE_MULTI_CURRENCY, in)
+func (c *NetworkClient) AdvanceMultiCurrency(in lifecycleCommonV2.AdvanceInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, multiCurrencyLifecycleV2.METHOD_ADVANCE_MULTI_CURRENCY, in)
 }
 
-func (c *NetworkClient) FailMultiCurrency(in lifecycleCommonV1.FailInput) (types.ContractOutput, error) {
-	return c.sendLifecycleTransaction(in.Address, multiCurrencyLifecycleV1.METHOD_FAIL_MULTI_CURRENCY, in)
+func (c *NetworkClient) FailMultiCurrency(in lifecycleCommonV2.FailInput) (types.ContractOutput, error) {
+	return c.sendLifecycleTransaction(in.Address, multiCurrencyLifecycleV2.METHOD_FAIL_MULTI_CURRENCY, in)
 }
 
 func (c *NetworkClient) GetMultiCurrency(address, requestID string) (types.ContractOutput, error) {
-	return c.getLifecycleState(address, requestID, multiCurrencyLifecycleV1.METHOD_GET_MULTI_CURRENCY)
+	return c.getLifecycleState(address, requestID, multiCurrencyLifecycleV2.METHOD_GET_MULTI_CURRENCY)
 }
 
 func (c *NetworkClient) sendLifecycleTransaction(address, method string, input any) (types.ContractOutput, error) {

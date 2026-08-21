@@ -3,8 +3,8 @@ package client_2finance
 import (
 	"fmt"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/paymentV2/inputs"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
@@ -68,7 +68,7 @@ func (c *NetworkClient) CreatePayment(in inputs.InputCreate) (types.ContractOutp
 	}
 
 	to := in.Address
-	method := paymentV1.METHOD_CREATE_PAYMENT
+	method := paymentV2.METHOD_CREATE_PAYMENT
 
 	data := map[string]interface{}{
 		"address":       in.Address,
@@ -148,7 +148,7 @@ func (c *NetworkClient) DirectPay(in inputs.InputDirectPay) (types.ContractOutpu
 	}
 
 	to := in.Address
-	method := paymentV1.METHOD_DIRECT_PAY
+	method := paymentV2.METHOD_DIRECT_PAY
 
 	data := map[string]interface{}{
 		"address":       in.Address,
@@ -185,7 +185,7 @@ func (c *NetworkClient) AuthorizePayment(in inputs.InputAuthorize) (types.Contra
 	}
 
 	to := in.Address
-	method := paymentV1.METHOD_AUTHORIZE_PAYMENT
+	method := paymentV2.METHOD_AUTHORIZE_PAYMENT
 	data := map[string]interface{}{
 		"address": in.Address,
 	}
@@ -214,7 +214,7 @@ func (c *NetworkClient) CapturePayment(in inputs.InputCapture) (types.ContractOu
 	}
 
 	to := in.Address
-	method := paymentV1.METHOD_CAPTURE_PAYMENT
+	method := paymentV2.METHOD_CAPTURE_PAYMENT
 	data := map[string]interface{}{
 		"address": in.Address,
 	}
@@ -246,7 +246,7 @@ func (c *NetworkClient) RefundPayment(in inputs.InputRefund) (types.ContractOutp
 	}
 
 	to := in.Address
-	method := paymentV1.METHOD_REFUND_PAYMENT
+	method := paymentV2.METHOD_REFUND_PAYMENT
 	data := map[string]interface{}{
 		"address": in.Address,
 		"amount":  in.Amount,
@@ -276,7 +276,7 @@ func (c *NetworkClient) VoidPayment(in inputs.InputVoidPayment) (types.ContractO
 	}
 
 	to := in.Address
-	method := paymentV1.METHOD_VOID_PAYMENT
+	method := paymentV2.METHOD_VOID_PAYMENT
 	data := map[string]interface{}{
 		"address": in.Address,
 	}
@@ -308,7 +308,7 @@ func (c *NetworkClient) PausePayment(in inputs.InputPause) (types.ContractOutput
 	}
 
 	to := in.Address
-	method := paymentV1.METHOD_PAUSE_PAYMENT
+	method := paymentV2.METHOD_PAUSE_PAYMENT
 	data := map[string]interface{}{
 		"address": in.Address,
 		"paused":  in.Paused,
@@ -341,7 +341,7 @@ func (c *NetworkClient) UnpausePayment(in inputs.InputPause) (types.ContractOutp
 	}
 
 	to := in.Address
-	method := paymentV1.METHOD_UNPAUSE_PAYMENT
+	method := paymentV2.METHOD_UNPAUSE_PAYMENT
 	data := map[string]interface{}{
 		"address": in.Address,
 		"paused":  in.Paused,
@@ -371,7 +371,7 @@ func (c *NetworkClient) GetPayment(address string) (types.ContractOutput, error)
 		return types.ContractOutput{}, fmt.Errorf("invalid payment address: %w", err)
 	}
 
-	method := paymentV1.METHOD_GET_PAYMENT
+	method := paymentV2.METHOD_GET_PAYMENT
 	return c.GetState(address, method, nil)
 }
 
@@ -405,7 +405,7 @@ func (c *NetworkClient) ListPayments(in inputs.InputList) (types.ContractOutput,
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
-	method := paymentV1.METHOD_LIST_PAYMENTS
+	method := paymentV2.METHOD_LIST_PAYMENTS
 	data := map[string]interface{}{
 		"order_id":         in.OrderId,
 		"token_address":    in.TokenAddress,
@@ -415,7 +415,7 @@ func (c *NetworkClient) ListPayments(in inputs.InputList) (types.ContractOutput,
 		"page":             in.Page,
 		"limit":            in.Limit,
 		"ascending":        in.Ascending,
-		"contract_version": paymentV1.PAYMENT_CONTRACT_V1,
+		"contract_version": paymentV2.PAYMENT_CONTRACT_V2,
 	}
 
 	return c.GetState("", method, data)

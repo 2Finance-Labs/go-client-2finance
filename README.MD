@@ -58,6 +58,35 @@ client := twofinance.NewFromEnv()
 The Go SDK exposes domain clients for auth, network, analytics, orchestrator,
 MCP, planner, trading control, matchengine, hummingbot, keystore, and providers.
 
+## Blockchain protocol v2
+
+Go and Dart use one signed transaction shape for both Native Go contracts and
+EVM execution. A write returns the early business commit immediately; the same
+transaction hash can then be queried for its deterministic execution artifact,
+block envelope, ordered membership and 3-validator commit certificate.
+
+```go
+prepared, err := protocol.PrepareNativeGoTransactionV2(
+	protocol.NativeGoTransactionV2Input{
+		ChainID: 2,
+		From: walletManager.OwnerAddress(),
+		To: deployAddress,
+		Method: "deploy_contract",
+		Payload: map[string]any{"contract_version": "walletV2"},
+	},
+)
+signed, err := walletManager.SignPreparedTransaction(prepared)
+submitted, err := client.Network.SubmitSignedTransactionV2(ctx, signed)
+proof, err := client.Network.TransactionFinalityV2(
+	ctx,
+	submitted.Transaction.TransactionHash,
+)
+```
+
+Use `protocol.PrepareEVMTransactionV2` with `protocol.EVMMessageV2` to route the
+same signed envelope to the EVM. Contract-oriented Go callers can use
+`client_2finance.NewV2`; Dart callers use `HttpFinanceNetworkTransport`.
+
 ## Request options
 
 The SDK service clients share a per-request options shape for query parameters,
@@ -70,7 +99,7 @@ single call.
 
 ## Language status
 
-- Go: primary implementation with domain clients and legacy blockchain compatibility.
+- Go: primary implementation with domain clients and commit-first blockchain v2.
 - Dart: unified client facade plus migrated auth and blockchain packages.
 - TypeScript: typed client surface for auth, network, analytics, orchestrator, MCP, trading control, matchengine, keystore, hummingbot, and providers.
 - JavaScript: dependency-free Node 18+ client surface mirroring TypeScript.
@@ -85,7 +114,7 @@ single call.
 make test
 ```
 
-Live blockchain/MQTT checks remain opt-in via `make dart-blockchain-e2e`.
+Live blockchain checks use the HTTP v2 endpoint and remain opt-in.
 
 ## Examples
 

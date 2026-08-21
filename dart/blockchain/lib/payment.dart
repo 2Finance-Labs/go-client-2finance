@@ -298,7 +298,7 @@ extension PaymentClient on TwoFinanceBlockchain {
         'page': page,
         'limit': limit,
         'ascending': ascending,
-        'contract_version': PAYMENT_CONTRACT_V1,
+        'contract_version': PAYMENT_CONTRACT_V2,
       },
     );
   }

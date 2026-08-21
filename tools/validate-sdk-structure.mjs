@@ -127,12 +127,12 @@ contains("README.MD", "Auth examples");
 contains("README.MD", "Error handling examples");
 
 for (const contract of [
-  "contracts/schemas/domain-operations.v1.json",
-  "contracts/schemas/error.v1.json",
-  "contracts/schemas/idempotency.v1.json",
-  "contracts/schemas/pagination.v1.json",
-  "contracts/schemas/request-options.v1.json",
-  "contracts/schemas/service-catalog.v1.json",
+  "contracts/schemas/domain-operations.v2.json",
+  "contracts/schemas/error.v2.json",
+  "contracts/schemas/idempotency.v2.json",
+  "contracts/schemas/pagination.v2.json",
+  "contracts/schemas/request-options.v2.json",
+  "contracts/schemas/service-catalog.v2.json",
   "contracts/examples/domain-operations.json",
   "contracts/examples/error.json",
   "contracts/examples/idempotency.json",
@@ -480,7 +480,7 @@ const languageChecks = [
       ["go/client_test.go", "TestDomainClientsEscapePathParamsAndExposeOrchestratorEndpoints"],
       ["go/client_test.go", "TestMatchEngineMarketDataSubscribeDefaultsSchema"],
       ["go/client_test.go", "ConnectorConfig"],
-      ["go/client_test.go", "matchengine.market_data_subscribe.v1"],
+      ["go/client_test.go", "matchengine.market_data_subscribe.v2"],
       ["go/client_test.go", "OperationalPlan"],
       ["go/client_test.go", "ValidateToken"],
       ["go/client_test.go", "CreateQuote"],
@@ -577,7 +577,7 @@ const languageChecks = [
       ["dart/sdk/test/two_finance_sdk_client_test.dart", "pub%2F1"],
       ["dart/sdk/test/two_finance_sdk_client_test.dart", "session%2F1"],
       ["dart/sdk/test/two_finance_sdk_client_test.dart", "connectorConfig"],
-      ["dart/sdk/test/two_finance_sdk_client_test.dart", "matchengine.market_data_subscribe.v1"],
+      ["dart/sdk/test/two_finance_sdk_client_test.dart", "matchengine.market_data_subscribe.v2"],
       ["dart/sdk/test/two_finance_sdk_client_test.dart", "sendOrder"],
       ["dart/sdk/test/two_finance_sdk_client_test.dart", "subscribeMarketData"],
       ["dart/sdk/test/two_finance_sdk_client_test.dart", "operationalPlan"],
@@ -681,7 +681,7 @@ const languageChecks = [
       ["typescript/tests/sdk.test.ts", "client.matchEngine.marketDataSubscribe"],
       ["typescript/tests/sdk.test.ts", "client.matchEngine.sendOrder"],
       ["typescript/tests/sdk.test.ts", "client.matchEngine.subscribeMarketData"],
-      ["typescript/tests/sdk.test.ts", "matchengine.market_data_subscribe.v1"],
+      ["typescript/tests/sdk.test.ts", "matchengine.market_data_subscribe.v2"],
       ["typescript/tests/sdk.test.ts", "await client.planner.operationalPlan"],
       ["typescript/tests/sdk.test.ts", "await client.auth.jwks"],
       ["typescript/tests/sdk.test.ts", "await client.auth.validateToken"],
@@ -743,7 +743,7 @@ const languageChecks = [
       ["javascript/src/index.js", "marketDataSubscribe(request)"],
       ["javascript/src/index.js", "sendOrder(transport"],
       ["javascript/src/index.js", "subscribeMarketData(transport"],
-      ["javascript/src/index.js", "matchengine.market_data_subscribe.v1"],
+      ["javascript/src/index.js", "matchengine.market_data_subscribe.v2"],
       ["javascript/src/index.js", "operationalPlan(request)"],
       ["javascript/src/index.js", "balances(accountID)"],
       ["javascript/src/index.js", "blackScholes(query"],
@@ -843,7 +843,7 @@ const languageChecks = [
       ["python/twofinance_sdk_client/domains.py", "def send_order"],
       ["python/twofinance_sdk_client/domains.py", "def subscribe_market_data"],
       ["python/twofinance_sdk_client/domains.py", "def operational_plan"],
-      ["python/twofinance_sdk_client/domains.py", "matchengine.market_data_subscribe.v1"],
+      ["python/twofinance_sdk_client/domains.py", "matchengine.market_data_subscribe.v2"],
       ["python/twofinance_sdk_client/domains.py", "def upsert_candles"],
       ["python/twofinance_sdk_client/domains.py", "def health"],
       ["python/twofinance_sdk_client/domains.py", "def readiness"],
@@ -948,7 +948,7 @@ const languageChecks = [
       ["php/src/DomainClients.php", "public function sendOrder"],
       ["php/src/DomainClients.php", "public function subscribeMarketData"],
       ["php/src/DomainClients.php", "public function operationalPlan"],
-      ["php/src/DomainClients.php", "matchengine.market_data_subscribe.v1"],
+      ["php/src/DomainClients.php", "matchengine.market_data_subscribe.v2"],
       ["php/src/DomainClients.php", "public function upsertCandles"],
       ["php/src/DomainClients.php", "public function health"],
       ["php/src/DomainClients.php", "public function readiness"],
@@ -1059,7 +1059,7 @@ const languageChecks = [
       ["java/src/main/java/com/twofinance/sdk/DomainClients.java", "public String sendOrder"],
       ["java/src/main/java/com/twofinance/sdk/DomainClients.java", "public String subscribeMarketData"],
       ["java/src/main/java/com/twofinance/sdk/DomainClients.java", "public String operationalPlan"],
-      ["java/src/main/java/com/twofinance/sdk/DomainClients.java", "matchengine.market_data_subscribe.v1"],
+      ["java/src/main/java/com/twofinance/sdk/DomainClients.java", "matchengine.market_data_subscribe.v2"],
       ["java/src/main/java/com/twofinance/sdk/DomainClients.java", "public String upsertCandles"],
       ["java/src/main/java/com/twofinance/sdk/DomainClients.java", "public String health"],
       ["java/src/main/java/com/twofinance/sdk/DomainClients.java", "public String readiness"],
@@ -1172,7 +1172,7 @@ const languageChecks = [
       ["cpp/include/twofinance/sdk_client.hpp", "send_order"],
       ["cpp/include/twofinance/sdk_client.hpp", "subscribe_market_data"],
       ["cpp/include/twofinance/sdk_client.hpp", "operational_plan"],
-      ["cpp/include/twofinance/sdk_client.hpp", "matchengine.market_data_subscribe.v1"],
+      ["cpp/include/twofinance/sdk_client.hpp", "matchengine.market_data_subscribe.v2"],
       ["cpp/include/twofinance/sdk_client.hpp", "class MCPClient"],
       ["cpp/include/twofinance/sdk_client.hpp", "class OrchestratorClient"],
       ["cpp/include/twofinance/sdk_client.hpp", "class TradingControlClient"],
@@ -1345,7 +1345,7 @@ for (const service of [
 }
 
 const domainOperations = JSON.parse(read("contracts/examples/domain-operations.json"));
-if (domainOperations.schema !== "sdk.domain_operations.v1") {
+if (domainOperations.schema !== "sdk.domain_operations.v2") {
   throw new Error("domain operations fixture has an invalid schema");
 }
 
@@ -1469,7 +1469,7 @@ if (idempotencyFixture.idempotency_key !== "idem-001") {
 }
 
 const requestOptionsFixture = JSON.parse(read("contracts/examples/request-options.json"));
-if (requestOptionsFixture.schema !== "sdk.request_options.v1") {
+if (requestOptionsFixture.schema !== "sdk.request_options.v2") {
   throw new Error("request options fixture has unexpected schema");
 }
 if (requestOptionsFixture.request.idempotency_key !== "idem-1") {

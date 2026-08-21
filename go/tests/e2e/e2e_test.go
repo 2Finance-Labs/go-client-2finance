@@ -12,6 +12,7 @@ import (
 	//"encoding/json"
 	"fmt"
 	"math/big"
+	"net/http"
 	"os"
 	"time"
 
@@ -58,21 +59,11 @@ func setupClient(t *testing.T, wallet wallet_manager.IWalletManager) client2f.Cl
 
 	config.Load_config(env, "./../../../.env")
 
-	emqxHost := fmt.Sprintf(
-		"%s://%s:%s",
-		config.EMQX_SCHEME,
-		config.EMQX_HOST,
-		config.EMQX_PORT,
-	)
-
-	base := config.EMQX_CLIENT_ID
-	if base == "" {
-		base = "e2e"
+	baseURL := strings.TrimSpace(os.Getenv("TWO_FINANCE_NETWORK_URL"))
+	if baseURL == "" {
+		baseURL = "http://127.0.0.1:19295"
 	}
-
-	id := fmt.Sprintf("%s-%s", base, randSuffix(8))
-
-	c := client2f.New(emqxHost, id, false, wallet)
+	c := client2f.NewV2(baseURL, http.DefaultClient, wallet)
 	c.SetChainID(config.CHAIN_ID)
 
 	return c

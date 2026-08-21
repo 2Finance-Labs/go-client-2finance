@@ -10,10 +10,7 @@ class RequestPayload {
 
   RequestPayload({required this.method, required this.params});
 
-  Map<String, dynamic> toJson() => {
-        'method': method,
-        'params': params,
-      };
+  Map<String, dynamic> toJson() => {'method': method, 'params': params};
 }
 
 class ResponsePayload {

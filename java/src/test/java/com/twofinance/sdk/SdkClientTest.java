@@ -26,7 +26,7 @@ public final class SdkClientTest {
             throw new AssertionError("SDK service catalog should expose env vars");
         }
         Models.DomainOperationsCatalog operationsCatalog = new Models.DomainOperationsCatalog(
-                "sdk.domain_operations.v1",
+                "sdk.domain_operations.v2",
                 List.of(new Models.DomainOperationsDomain(
                         "auth",
                         "TWO_FINANCE_AUTH_URL",
@@ -120,18 +120,18 @@ public final class SdkClientTest {
         if (!"wss://matchengine.example/ws".equals(client.matchEngine.webSocketUrl)) {
             throw new AssertionError("matchengine URL was not loaded");
         }
-        if (!client.matchEngine.orderCommand("{\"symbol\":\"BTC-USDT\"}").contains("matchengine.order_command.v1")) {
+        if (!client.matchEngine.orderCommand("{\"symbol\":\"BTC-USDT\"}").contains("matchengine.order_command.v2")) {
             throw new AssertionError("matchengine schema was not defaulted");
         }
-        if (!client.matchEngine.marketDataSubscribe("{\"symbols\":[\"BTC-USDT\"]}").contains("matchengine.market_data_subscribe.v1")) {
+        if (!client.matchEngine.marketDataSubscribe("{\"symbols\":[\"BTC-USDT\"]}").contains("matchengine.market_data_subscribe.v2")) {
             throw new AssertionError("matchengine market data schema was not defaulted");
         }
         String sentOrder = client.matchEngine.sendOrder(message -> "sent:" + message, "{\"symbol\":\"BTC-USDT\"}");
-        if (!sentOrder.contains("matchengine.order_command.v1")) {
+        if (!sentOrder.contains("matchengine.order_command.v2")) {
             throw new AssertionError("matchengine sendOrder should send defaulted order payload");
         }
         String sentSubscription = client.matchEngine.subscribeMarketData(message -> "sent:" + message, "{\"symbols\":[\"BTC-USDT\"]}");
-        if (!sentSubscription.contains("matchengine.market_data_subscribe.v1")) {
+        if (!sentSubscription.contains("matchengine.market_data_subscribe.v2")) {
             throw new AssertionError("matchengine subscribeMarketData should send defaulted subscription payload");
         }
         if (!"https://analytics.example/analytics/candles:upsert".equals(client.analytics.url("/analytics/candles:upsert"))) {
@@ -269,7 +269,7 @@ public final class SdkClientTest {
         String pagination = Files.readString(Path.of("..", "contracts", "examples", "pagination.json"));
         String idempotency = Files.readString(Path.of("..", "contracts", "examples", "idempotency.json"));
 
-        assertContains(domains, "\"schema\": \"sdk.domain_operations.v1\"");
+        assertContains(domains, "\"schema\": \"sdk.domain_operations.v2\"");
         assertContains(domains, "\"name\": \"planner\"");
         assertContains(domains, "\"name\": \"trading_plan\"");
         assertContains(domains, "\"path\": \"/portfolio-manager/balances/{account_id}\"");
@@ -459,7 +459,7 @@ public final class SdkClientTest {
             }
             String catalogResponse = client.analytics.requestCatalogOperation(
                     new Models.DomainOperationsCatalog(
-                            "sdk.domain_operations.v1",
+                            "sdk.domain_operations.v2",
                             List.of(new Models.DomainOperationsDomain(
                                     "analytics",
                                     "TWO_FINANCE_ANALYTICS_URL",
@@ -550,19 +550,19 @@ public final class SdkClientTest {
             client.orchestrator.deleteSession("session/1 ok");
 
             assertSeen(seen, "GET /portfolio-manager/balances/acct%2F1%20ok");
-            assertSeen(seen, "GET /v1/2finance-network/markets/BTC%2FUSDT%20spot/candles?limit=10");
-            assertSeen(seen, "GET /v1/2finance-network/products/bonds");
-            assertSeen(seen, "POST /v1/2finance-network/products/bonds");
-            assertSeen(seen, "GET /v1/2finance-network/products/loans");
-            assertSeen(seen, "POST /v1/2finance-network/products/loans");
-            assertSeen(seen, "GET /v1/2finance-network/products/swaps");
-            assertSeen(seen, "POST /v1/2finance-network/products/swaps");
-            assertSeen(seen, "GET /v1/2finance-network/products/staking");
-            assertSeen(seen, "POST /v1/2finance-network/products/staking");
-            assertSeen(seen, "GET /v1/2finance-network/products/synthetic-assets");
-            assertSeen(seen, "POST /v1/2finance-network/products/synthetic-assets");
-            assertSeen(seen, "GET /v1/2finance-network/products/liquidity-pools");
-            assertSeen(seen, "POST /v1/2finance-network/products/liquidity-pools");
+            assertSeen(seen, "GET /v2/2finance-network/markets/BTC%2FUSDT%20spot/candles?limit=10");
+            assertSeen(seen, "GET /v2/2finance-network/products/bonds");
+            assertSeen(seen, "POST /v2/2finance-network/products/bonds");
+            assertSeen(seen, "GET /v2/2finance-network/products/loans");
+            assertSeen(seen, "POST /v2/2finance-network/products/loans");
+            assertSeen(seen, "GET /v2/2finance-network/products/swaps");
+            assertSeen(seen, "POST /v2/2finance-network/products/swaps");
+            assertSeen(seen, "GET /v2/2finance-network/products/staking");
+            assertSeen(seen, "POST /v2/2finance-network/products/staking");
+            assertSeen(seen, "GET /v2/2finance-network/products/synthetic-assets");
+            assertSeen(seen, "POST /v2/2finance-network/products/synthetic-assets");
+            assertSeen(seen, "GET /v2/2finance-network/products/liquidity-pools");
+            assertSeen(seen, "POST /v2/2finance-network/products/liquidity-pools");
             assertSeen(seen, "POST /robots/robot%2F1%20ok:pause");
             assertSeen(seen, "GET /risk-view/robot%2F1%20ok");
             assertSeen(seen, "GET /strategies");

@@ -77,7 +77,7 @@ int main() {
   int fixture_timeout_ms = json_int(fixture, "timeout_ms");
   int fixture_max_retries = json_int(fixture, "max_retries");
 
-  assert(domain_operations.find("\"schema\": \"sdk.domain_operations.v1\"") != std::string::npos);
+  assert(domain_operations.find("\"schema\": \"sdk.domain_operations.v2\"") != std::string::npos);
   assert(domain_operations.find("\"name\": \"planner\"") != std::string::npos);
   assert(domain_operations.find("\"name\": \"trading_plan\"") != std::string::npos);
   assert(domain_operations.find("\"path\": \"/portfolio-manager/balances/{account_id}\"") != std::string::npos);
@@ -98,7 +98,7 @@ int main() {
   twofinance::IdempotencyRecord idempotency{"idem-001", "matchengine.order_command", "client_order_id", "req_2finance_001"};
   twofinance::ServiceCatalog catalog{{{"auth", "TWO_FINANCE_AUTH_URL"}}};
   twofinance::DomainOperationsCatalog operations_catalog{
-      "sdk.domain_operations.v1",
+      "sdk.domain_operations.v2",
       {{"auth",
         "TWO_FINANCE_AUTH_URL",
         "http",
@@ -163,7 +163,7 @@ int main() {
   resolved_service.request_operation(twofinance::ResolvedOperation{"GET", "/portfolio-manager/balances/acct%2Fresolved"});
   assert(resolved_seen == "GET https://analytics.example/portfolio-manager/balances/acct%2Fresolved");
   twofinance::DomainOperationsCatalog request_catalog{
-      "sdk.domain_operations.v1",
+      "sdk.domain_operations.v2",
       {{"analytics",
         "TWO_FINANCE_ANALYTICS_URL",
         "http",
@@ -258,33 +258,34 @@ int main() {
       }
     } else if (request.url == "https://analytics.example/portfolio-manager/balances/acct%2F1") {
       assert(request.method == "GET");
-    } else if (request.url == "https://network.example/v1/2finance-network/markets/BTC%2FUSDT/candles?limit=10") {
+    } else if (request.url == "https://network.example/v2/2finance-network/markets/BTC%2FUSDT/candles?limit=10") {
       assert(request.method == "GET");
-    } else if (request.url == "https://network.example/v1/2finance-network/virtual-machine") {
-      saw_network_vm = request.method == "GET";
-    } else if (request.url == "https://network.example/v1/2finance-network/products/bonds" && request.method == "GET") {
+    } else if (request.url == "https://network.example/v2/2finance-network/query") {
+      saw_network_vm = request.method == "POST" &&
+                       request.body.find("get_blocks") != std::string::npos;
+    } else if (request.url == "https://network.example/v2/2finance-network/products/bonds" && request.method == "GET") {
       saw_network_bonds = true;
-    } else if (request.url == "https://network.example/v1/2finance-network/products/bonds") {
+    } else if (request.url == "https://network.example/v2/2finance-network/products/bonds") {
       saw_network_create_bond = request.method == "POST";
-    } else if (request.url == "https://network.example/v1/2finance-network/products/loans" && request.method == "GET") {
+    } else if (request.url == "https://network.example/v2/2finance-network/products/loans" && request.method == "GET") {
       saw_network_loans = true;
-    } else if (request.url == "https://network.example/v1/2finance-network/products/loans") {
+    } else if (request.url == "https://network.example/v2/2finance-network/products/loans") {
       saw_network_create_loan = request.method == "POST";
-    } else if (request.url == "https://network.example/v1/2finance-network/products/swaps" && request.method == "GET") {
+    } else if (request.url == "https://network.example/v2/2finance-network/products/swaps" && request.method == "GET") {
       saw_network_swaps = true;
-    } else if (request.url == "https://network.example/v1/2finance-network/products/swaps") {
+    } else if (request.url == "https://network.example/v2/2finance-network/products/swaps") {
       saw_network_create_swap = request.method == "POST";
-    } else if (request.url == "https://network.example/v1/2finance-network/products/staking" && request.method == "GET") {
+    } else if (request.url == "https://network.example/v2/2finance-network/products/staking" && request.method == "GET") {
       saw_network_staking = true;
-    } else if (request.url == "https://network.example/v1/2finance-network/products/staking") {
+    } else if (request.url == "https://network.example/v2/2finance-network/products/staking") {
       saw_network_create_staking = request.method == "POST";
-    } else if (request.url == "https://network.example/v1/2finance-network/products/synthetic-assets" && request.method == "GET") {
+    } else if (request.url == "https://network.example/v2/2finance-network/products/synthetic-assets" && request.method == "GET") {
       saw_network_synthetic_assets = true;
-    } else if (request.url == "https://network.example/v1/2finance-network/products/synthetic-assets") {
+    } else if (request.url == "https://network.example/v2/2finance-network/products/synthetic-assets") {
       saw_network_create_synthetic_asset = request.method == "POST";
-    } else if (request.url == "https://network.example/v1/2finance-network/products/liquidity-pools" && request.method == "GET") {
+    } else if (request.url == "https://network.example/v2/2finance-network/products/liquidity-pools" && request.method == "GET") {
       saw_network_liquidity_pools = true;
-    } else if (request.url == "https://network.example/v1/2finance-network/products/liquidity-pools") {
+    } else if (request.url == "https://network.example/v2/2finance-network/products/liquidity-pools") {
       saw_network_create_liquidity_pool = request.method == "POST";
     } else if (request.url == "https://mcp.example/mcp") {
       saw_plan = saw_plan || request.body.find("finance_assistant.conversation.plan") != std::string::npos;
@@ -490,15 +491,15 @@ int main() {
   assert(saw_airwallex_beneficiaries);
   assert(saw_airwallex_create_beneficiary);
   assert(client.match_engine.websocket_url() == "wss://matchengine.example/ws");
-  assert(client.match_engine.order_command("{\"symbol\":\"BTC-USDT\"}").find("matchengine.order_command.v1") != std::string::npos);
-  assert(client.match_engine.market_data_subscribe("{\"symbols\":[\"BTC-USDT\"]}").find("matchengine.market_data_subscribe.v1") != std::string::npos);
+  assert(client.match_engine.order_command("{\"symbol\":\"BTC-USDT\"}").find("matchengine.order_command.v2") != std::string::npos);
+  assert(client.match_engine.market_data_subscribe("{\"symbols\":[\"BTC-USDT\"]}").find("matchengine.market_data_subscribe.v2") != std::string::npos);
   std::string last_matchengine_message;
   auto sender = [&](const std::string& message) {
     last_matchengine_message = message;
     return twofinance::HttpResponse{200, "{\"ok\":true}"};
   };
   assert(client.match_engine.send_order(sender, "{\"symbol\":\"BTC-USDT\"}").body == "{\"ok\":true}");
-  assert(last_matchengine_message.find("matchengine.order_command.v1") != std::string::npos);
+  assert(last_matchengine_message.find("matchengine.order_command.v2") != std::string::npos);
   assert(client.match_engine.subscribe_market_data(sender, "{\"symbols\":[\"BTC-USDT\"]}").body == "{\"ok\":true}");
-  assert(last_matchengine_message.find("matchengine.market_data_subscribe.v1") != std::string::npos);
+  assert(last_matchengine_message.find("matchengine.market_data_subscribe.v2") != std::string::npos);
 }

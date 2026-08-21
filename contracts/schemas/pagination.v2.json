@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.2finance.dev/sdk/pagination.v2.json",
+  "title": "2Finance pagination",
+  "type": "object",
+  "properties": {
+    "limit": { "type": "integer", "minimum": 1 },
+    "cursor": { "type": "string" },
+    "next_cursor": { "type": "string" }
+  },
+  "additionalProperties": true
+}

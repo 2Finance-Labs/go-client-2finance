@@ -28,11 +28,11 @@ void validateUUID7(String s) {
   }
 
   final variant = (bytes[8] >> 6) & 0x03;
-  if (variant != 2) { // RFC4122
+  if (variant != 2) {
+    // RFC4122
     throw Exception("invalid UUID variant");
   }
 }
-
 
 void validateUUID7Strict(String s) {
   late final Uint8List bytes;
@@ -61,7 +61,7 @@ void validateUUID7Strict(String s) {
       (bytes[1] << 32) |
       (bytes[2] << 24) |
       (bytes[3] << 16) |
-      (bytes[4] << 8)  |
+      (bytes[4] << 8) |
       (bytes[5]);
 
   final now = DateTime.now().millisecondsSinceEpoch;

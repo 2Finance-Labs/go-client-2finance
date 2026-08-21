@@ -2,18 +2,19 @@ import 'dart:convert';
 
 import 'package:test/test.dart';
 
-import 'package:two_finance_blockchain/blockchain/contract/contractV1/models/model.dart' as models;
-import 'package:two_finance_blockchain/blockchain/contract/contractV1/domain/contract.dart' as domain;
-import 'package:two_finance_blockchain/blockchain/contract/walletV1/models/wallet.dart';
+import 'package:two_finance_blockchain/blockchain/contract/contractV2/models/model.dart'
+    as models;
+import 'package:two_finance_blockchain/blockchain/contract/contractV2/domain/contract.dart'
+    as domain;
+import 'package:two_finance_blockchain/blockchain/contract/walletV2/models/wallet.dart';
 import 'package:two_finance_blockchain/blockchain/keys/keys.dart';
 import 'package:two_finance_blockchain/two_finance_blockchain.dart';
 import 'package:two_finance_blockchain/blockchain/utils/json.dart';
 // constants (ajuste se seu nome/paths forem diferentes)
-import 'package:two_finance_blockchain/blockchain/contract/walletV1/constants.dart';
+import 'package:two_finance_blockchain/blockchain/contract/walletV2/constants.dart';
 import 'package:two_finance_blockchain/blockchain/utils/marshal.dart';
 import 'helpers/helpers.dart';
 import 'e2e_test.dart';
-
 
 void main() {
   // Esses timeouts são comuns em E2E por causa de rede/infra
@@ -48,12 +49,12 @@ void main() {
       KeyManager.validateEDDSAPublicKeyHex(c.publicKeyHex!);
     });
 
-    test('deployContract (Wallet V1) retorna estado do contrato', () async {
+    test('deployContract (Wallet V2) retorna estado do contrato', () async {
       // precisa de signer ativo
       final kp = await c.generateKeyEd25519();
       await c.setPrivateKey(kp.privateKey);
 
-      final contractOutput = await c.deployContract1(WALLET_CONTRACT_V1);
+      final contractOutput = await c.deployContract1(WALLET_CONTRACT_V2);
 
       expect(contractOutput, isNotNull);
       expect(contractOutput.logs, isNotNull);
@@ -63,22 +64,20 @@ void main() {
       expect(firstLog.logType, 'Contract_Deployed');
       expect(firstLog.logIndex, 1);
       expect(firstLog.transactionHash, isNotEmpty);
-      expect(firstLog.contractVersion, WALLET_CONTRACT_V1);
+      expect(firstLog.contractVersion, WALLET_CONTRACT_V2);
       expect(firstLog.contractAddress, isNotEmpty);
       expect(firstLog.event, isNotEmpty);
 
       final deployed = unmarshalEvent<domain.Contract>(
-          firstLog.event,
-          domain.Contract.fromJson,
+        firstLog.event,
+        domain.Contract.fromJson,
       );
 
       expect(deployed.address, isNotEmpty);
-      expect(deployed.contractVersion, equals(WALLET_CONTRACT_V1));
-      
+      expect(deployed.contractVersion, equals(WALLET_CONTRACT_V2));
     });
 
     test('getState: record not found retorna "0" (fallback)', () async {
-
       final kp = await c.generateKeyEd25519();
       await c.setPrivateKey(kp.privateKey);
 

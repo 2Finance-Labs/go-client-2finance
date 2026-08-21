@@ -1,27 +1,29 @@
 package client_2finance
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"gitlab.com/2finance/2finance-network/blockchain/block"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
-	inputsDropV1 "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/inputs"
-	inputsFXLifecycleV1 "gitlab.com/2finance/2finance-network/blockchain/contract/fxLifecycleV1/inputs"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/lifecycleCommonV1"
-	inputsPaymentV1 "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV2"
+	inputsDropV2 "gitlab.com/2finance/2finance-network/blockchain/contract/dropV2/inputs"
+	inputsFXLifecycleV2 "gitlab.com/2finance/2finance-network/blockchain/contract/fxLifecycleV2/inputs"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/lifecycleCommonV2"
+	inputsPaymentV2 "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV2/inputs"
+	"gitlab.com/2finance/2finance-network/blockchain/contractversionv2"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 	"gitlab.com/2finance/2finance-network/blockchain/virtualmachine"
-	"gitlab.com/2finance/2finance-network/infra/mqtt"
 
-	"strings"
-
+	sdknetwork "github.com/2Finance-Labs/2finance-sdk-client/network"
 	"github.com/2Finance-Labs/2finance-sdk-client/protocol"
 	"github.com/2Finance-Labs/2finance-sdk-client/wallet_manager"
 	"github.com/google/uuid"
@@ -138,11 +140,11 @@ type Client2FinanceNetwork interface {
 	ListTokenBalances(tokenAddress, ownerAddress, tokenType string, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	NewDrop(
-		in inputsDropV1.InputNewDrop,
+		in inputsDropV2.InputNewDrop,
 	) (types.ContractOutput, error)
 
 	UpdateDropMetadata(
-		in inputsDropV1.InputUpdateDropMetadata,
+		in inputsDropV2.InputUpdateDropMetadata,
 	) (types.ContractOutput, error)
 
 	AllowOracles(
@@ -310,19 +312,19 @@ type Client2FinanceNetwork interface {
 	ListCoupons(owner, tokenAddress, discountType string, paused *bool, page, limit int, ascending bool) (types.ContractOutput, error)
 
 	// Payment
-	CreatePayment(in inputsPaymentV1.InputCreate) (types.ContractOutput, error)
-	DirectPay(in inputsPaymentV1.InputDirectPay) (types.ContractOutput, error)
+	CreatePayment(in inputsPaymentV2.InputCreate) (types.ContractOutput, error)
+	DirectPay(in inputsPaymentV2.InputDirectPay) (types.ContractOutput, error)
 
-	AuthorizePayment(in inputsPaymentV1.InputAuthorize) (types.ContractOutput, error)
-	CapturePayment(in inputsPaymentV1.InputCapture) (types.ContractOutput, error)
-	VoidPayment(in inputsPaymentV1.InputVoidPayment) (types.ContractOutput, error)
-	RefundPayment(in inputsPaymentV1.InputRefund) (types.ContractOutput, error)
+	AuthorizePayment(in inputsPaymentV2.InputAuthorize) (types.ContractOutput, error)
+	CapturePayment(in inputsPaymentV2.InputCapture) (types.ContractOutput, error)
+	VoidPayment(in inputsPaymentV2.InputVoidPayment) (types.ContractOutput, error)
+	RefundPayment(in inputsPaymentV2.InputRefund) (types.ContractOutput, error)
 
-	UnpausePayment(in inputsPaymentV1.InputPause) (types.ContractOutput, error)
-	PausePayment(in inputsPaymentV1.InputPause) (types.ContractOutput, error)
+	UnpausePayment(in inputsPaymentV2.InputPause) (types.ContractOutput, error)
+	PausePayment(in inputsPaymentV2.InputPause) (types.ContractOutput, error)
 
 	GetPayment(address string) (types.ContractOutput, error)
-	ListPayments(in inputsPaymentV1.InputList) (types.ContractOutput, error)
+	ListPayments(in inputsPaymentV2.InputList) (types.ContractOutput, error)
 	//MEMBER GET MEMBER
 	AddMgM(
 		address string,
@@ -404,48 +406,50 @@ type Client2FinanceNetwork interface {
 	ListPrizes(raffleAddress string, page, limit int, asc bool) (types.ContractOutput, error)
 
 	// LIFECYCLES
-	StartFX(in inputsFXLifecycleV1.InputStartFX) (types.ContractOutput, error)
-	AdvanceFX(in inputsFXLifecycleV1.InputAdvanceFX) (types.ContractOutput, error)
-	FailFX(in inputsFXLifecycleV1.InputFailFX) (types.ContractOutput, error)
+	StartFX(in inputsFXLifecycleV2.InputStartFX) (types.ContractOutput, error)
+	AdvanceFX(in inputsFXLifecycleV2.InputAdvanceFX) (types.ContractOutput, error)
+	FailFX(in inputsFXLifecycleV2.InputFailFX) (types.ContractOutput, error)
 	GetFX(address, requestID string) (types.ContractOutput, error)
 
-	StartOnboarding(in lifecycleCommonV1.StartInput) (types.ContractOutput, error)
-	AdvanceOnboarding(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error)
-	FailOnboarding(in lifecycleCommonV1.FailInput) (types.ContractOutput, error)
+	StartOnboarding(in lifecycleCommonV2.StartInput) (types.ContractOutput, error)
+	AdvanceOnboarding(in lifecycleCommonV2.AdvanceInput) (types.ContractOutput, error)
+	FailOnboarding(in lifecycleCommonV2.FailInput) (types.ContractOutput, error)
 	GetOnboarding(address, requestID string) (types.ContractOutput, error)
 
-	StartReceiving(in lifecycleCommonV1.StartInput) (types.ContractOutput, error)
-	AdvanceReceiving(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error)
-	FailReceiving(in lifecycleCommonV1.FailInput) (types.ContractOutput, error)
+	StartReceiving(in lifecycleCommonV2.StartInput) (types.ContractOutput, error)
+	AdvanceReceiving(in lifecycleCommonV2.AdvanceInput) (types.ContractOutput, error)
+	FailReceiving(in lifecycleCommonV2.FailInput) (types.ContractOutput, error)
 	GetReceiving(address, requestID string) (types.ContractOutput, error)
 
-	StartSending(in lifecycleCommonV1.StartInput) (types.ContractOutput, error)
-	AdvanceSending(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error)
-	FailSending(in lifecycleCommonV1.FailInput) (types.ContractOutput, error)
+	StartSending(in lifecycleCommonV2.StartInput) (types.ContractOutput, error)
+	AdvanceSending(in lifecycleCommonV2.AdvanceInput) (types.ContractOutput, error)
+	FailSending(in lifecycleCommonV2.FailInput) (types.ContractOutput, error)
 	GetSending(address, requestID string) (types.ContractOutput, error)
 
-	StartMultiCurrency(in lifecycleCommonV1.StartInput) (types.ContractOutput, error)
-	AdvanceMultiCurrency(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error)
-	FailMultiCurrency(in lifecycleCommonV1.FailInput) (types.ContractOutput, error)
+	StartMultiCurrency(in lifecycleCommonV2.StartInput) (types.ContractOutput, error)
+	AdvanceMultiCurrency(in lifecycleCommonV2.AdvanceInput) (types.ContractOutput, error)
+	FailMultiCurrency(in lifecycleCommonV2.FailInput) (types.ContractOutput, error)
 	GetMultiCurrency(address, requestID string) (types.ContractOutput, error)
 }
 
 type NetworkClient struct {
-	mqttClient    mqtt.IMQTT
+	protocolV2    *sdknetwork.Client
 	replyTo       string
 	chainId       uint8
 	walletManager wallet_manager.IWalletManager
 }
 
-// New creates a new client
-func New(broker, clientID string, debug bool, walletManager wallet_manager.IWalletManager) Client2FinanceNetwork {
-
-	mqttClient := mqtt.New(broker, clientID, debug)
-	mqttClient.Connect()
-	replyTo := uuid.NewString()
+// NewV2 creates the contract-oriented client on top of the commit-first HTTP
+// API. Contract reads continue through the HTTP protocol-V2 query endpoint;
+// every signed write is submitted through /v2/2finance-network/transactions.
+func NewV2(
+	baseURL string,
+	httpClient *http.Client,
+	walletManager wallet_manager.IWalletManager,
+) Client2FinanceNetwork {
 	return &NetworkClient{
-		mqttClient:    mqttClient,
-		replyTo:       replyTo,
+		protocolV2:    sdknetwork.New(baseURL, httpClient),
+		replyTo:       uuid.NewString(),
 		walletManager: walletManager,
 	}
 }
@@ -466,20 +470,6 @@ func (c *NetworkClient) SetWalletManager(wallet wallet_manager.IWalletManager) {
 
 func (c *NetworkClient) GetChainID() uint8 {
 	return c.chainId
-}
-
-// SendRequest publishes the payload to the MQTT broker
-func (c *NetworkClient) sendRequest(topic string, payload interface{}) error {
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("marshal payload error: %w", err)
-	}
-
-	if err := c.mqttClient.Publish(topic, data); err != nil {
-		return fmt.Errorf("publish error: %w", err)
-	}
-
-	return nil
 }
 
 func (c *NetworkClient) ListTransactions(from, to, hash string, dataFilter map[string]interface{}, version uint8,
@@ -561,67 +551,75 @@ func (c *NetworkClient) ListLogs(logType []string, logIndex uint, transactionHas
 	return logs, nil
 }
 
-func (c *NetworkClient) sendAndWaitResponse(method string, params interface{}, replyTo string) ([]byte, error) {
-	replyTopic := fmt.Sprintf("%s/%s", event.TRANSACTIONS_RESPONSE_TOPIC, replyTo)
-	responseChan := make(chan []byte, 1)
-	if err := c.receiveResponse(replyTopic, func(data []byte) {
-		responseChan <- data
-	}); err != nil {
-		return nil, fmt.Errorf("failed to subscribe to reply topic: %w", err)
-	}
-
-	payload := event.RequestPayload{
-		Method: method,
-		Params: params,
-	}
-	// Use the original topic and append the replyTo
-	orig := event.TRANSACTIONS_REQUEST_TOPIC
-	base := strings.TrimSuffix(orig, "/+")
-	newTopic := fmt.Sprintf("%s/%s", base, replyTo)
-	if err := c.sendRequest(newTopic, payload); err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-
-	select {
-	case resp := <-responseChan:
-		return resp, nil
-	case <-time.After(10 * time.Second):
-		return nil, fmt.Errorf("timeout waiting for response on topic %s", replyTo)
-	}
-}
-
-// ReceiveResponse subscribes to a topic and calls the handler with raw payload
-func (c *NetworkClient) receiveResponse(topic string, handler func([]byte)) error {
-	return c.mqttClient.SubscribeWithHandler(topic, func(_ mqtt.Client, msg mqtt.Message) {
-		handler(msg.Payload())
-	})
-}
-
 func (c *NetworkClient) SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error) {
+	if c.protocolV2 == nil {
+		return nil, fmt.Errorf("protocol V2 is unavailable: configure the protocol V2 HTTP client")
+	}
+	return c.sendHTTPV2(method, tx)
+}
 
-	// Send the transaction to the network
-	bytes, err := c.sendAndWaitResponse(method, tx, replyTo)
+func (c *NetworkClient) sendHTTPV2(method string, params interface{}) ([]byte, error) {
+	if method == virtualmachine.REQUEST_METHOD_SEND {
+		networkTransaction, err := networkTransactionFrom(params)
+		if err != nil {
+			return nil, err
+		}
+		signed, err := protocol.SignedTransactionFromNetwork(networkTransaction)
+		if err != nil {
+			return nil, err
+		}
+		result, err := c.protocolV2.SubmitSignedTransactionV2(context.Background(), signed)
+		if err != nil {
+			return nil, fmt.Errorf("submit commit-first transaction: %w", err)
+		}
+		return append([]byte(nil), result.ExecutionOutput...), nil
+	}
+
+	var response struct {
+		Code int             `json:"code"`
+		Msg  string          `json:"msg"`
+		Data json.RawMessage `json:"data"`
+	}
+	normalizedParams, err := normalizePublicContractVersionsV2(params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send transaction: - Handler Request %w", err)
+		return nil, fmt.Errorf("normalize protocol V2 query: %w", err)
 	}
-
-	// Decode the response envelope
-	var resp event.ResponsePayload
-	if err := json.Unmarshal(bytes, &resp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-	}
-
-	// Re-encode the inner Data to raw JSON bytes
-	outputBytes, err = json.Marshal(resp.Data)
+	err = c.protocolV2.Post(
+		context.Background(),
+		"/v2/2finance-network/query",
+		event.RequestPayload{Method: method, Params: normalizedParams},
+		&response,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal response data: %w", err)
+		return nil, fmt.Errorf("query finance network over HTTP: %w", err)
 	}
-
-	if resp.Status == event.RESPONSE_STATUS_ERROR {
-		return nil, fmt.Errorf("error in response: %s", resp.Message)
+	if response.Code != http.StatusOK {
+		return nil, fmt.Errorf("finance network query returned code %d: %s", response.Code, response.Msg)
 	}
+	return append([]byte(nil), response.Data...), nil
+}
 
-	return outputBytes, nil
+func networkTransactionFrom(value interface{}) (*transaction.Transaction, error) {
+	switch typed := value.(type) {
+	case *transaction.Transaction:
+		if typed == nil {
+			return nil, fmt.Errorf("signed transaction is nil")
+		}
+		return typed, nil
+	case transaction.Transaction:
+		copy := typed
+		return &copy, nil
+	default:
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			return nil, fmt.Errorf("encode signed transaction: %w", err)
+		}
+		var decoded transaction.Transaction
+		if err := json.Unmarshal(encoded, &decoded); err != nil {
+			return nil, fmt.Errorf("decode signed transaction: %w", err)
+		}
+		return &decoded, nil
+	}
 }
 
 func (c *NetworkClient) SignAndSendTransaction(
@@ -645,17 +643,37 @@ func (c *NetworkClient) SignAndSendTransaction(
 		return types.ContractOutput{}, fmt.Errorf("wallet is locked")
 	}
 
-	txSigned, err := c.walletManager.SignTransaction(wallet_manager.SignTransactionInput{
-		ChainID: chainId,
-		From:    from,
-		To:      to,
-		Method:  method,
-		Data:    data,
-		Version: version,
-		UUID7:   uuid7,
-	})
+	if c.protocolV2 == nil {
+		return types.ContractOutput{}, fmt.Errorf("protocol V2 is unavailable: configure the protocol V2 HTTP client")
+	}
+	normalizedValue, normalizeErr := normalizePublicContractVersionsV2(data)
+	if normalizeErr != nil {
+		return types.ContractOutput{}, normalizeErr
+	}
+	normalizedData, ok := normalizedValue.(map[string]interface{})
+	if !ok {
+		return types.ContractOutput{}, fmt.Errorf("protocol V2 transaction data must be an object")
+	}
+	prepared, prepareErr := protocol.PrepareNativeGoTransactionV2(
+		protocol.NativeGoTransactionV2Input{
+			ChainID: chainId,
+			From:    from,
+			To:      to,
+			Method:  method,
+			Payload: normalizedData,
+			UUID7:   uuid7,
+		},
+	)
+	if prepareErr != nil {
+		return types.ContractOutput{}, fmt.Errorf("prepare native Go v2 transaction: %w", prepareErr)
+	}
+	signed, err := c.walletManager.SignPreparedTransaction(prepared)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
+	}
+	txSigned, err := signed.ToNetworkTransaction()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("convert signed V2 transaction: %w", err)
 	}
 
 	contractOutputBytes, err := c.SendTransaction(
@@ -752,9 +770,13 @@ func (c *NetworkClient) DeployContract1(contractVersion string) (types.ContractO
 	if contractVersion == "" {
 		return types.ContractOutput{}, fmt.Errorf("contract version is required")
 	}
+	contractVersion, err := publicContractVersionV2(contractVersion)
+	if err != nil {
+		return types.ContractOutput{}, err
+	}
 
 	to := types.DEPLOY_CONTRACT_ADDRESS
-	method := contractV1.METHOD_DEPLOY_CONTRACT
+	method := contractV2.METHOD_DEPLOY_CONTRACT
 
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
@@ -800,6 +822,10 @@ func (c *NetworkClient) DeployContract2(contractVersion, contractAddress string)
 	if contractVersion == "" {
 		return types.ContractOutput{}, fmt.Errorf("contract version is required")
 	}
+	contractVersion, err := publicContractVersionV2(contractVersion)
+	if err != nil {
+		return types.ContractOutput{}, err
+	}
 
 	if contractAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("contract address is required")
@@ -810,7 +836,7 @@ func (c *NetworkClient) DeployContract2(contractVersion, contractAddress string)
 	}
 
 	to := contractAddress
-	method := contractV1.METHOD_DEPLOY_CONTRACT2
+	method := contractV2.METHOD_DEPLOY_CONTRACT2
 
 	data := map[string]interface{}{
 		"contract_version": contractVersion,
@@ -837,4 +863,60 @@ func (c *NetworkClient) DeployContract2(contractVersion, contractAddress string)
 	}
 
 	return contractOutput, nil
+}
+
+func publicContractVersionV2(version string) (string, error) {
+	if _, ok := contractversionv2.Implementation(version); ok {
+		return version, nil
+	}
+	return "", fmt.Errorf("unsupported native V2 contract version: %s", version)
+}
+
+func normalizePublicContractVersionsV2(value interface{}) (interface{}, error) {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+	decoder := json.NewDecoder(bytes.NewReader(encoded))
+	decoder.UseNumber()
+	var decoded interface{}
+	if err := decoder.Decode(&decoded); err != nil {
+		return nil, err
+	}
+	return normalizeContractVersionValueV2(decoded)
+}
+
+func normalizeContractVersionValueV2(value interface{}) (interface{}, error) {
+	switch typed := value.(type) {
+	case map[string]interface{}:
+		for key, child := range typed {
+			if key == "contract_version" {
+				version, ok := child.(string)
+				if !ok {
+					return nil, fmt.Errorf("contract_version must be a string")
+				}
+				public, err := publicContractVersionV2(version)
+				if err != nil {
+					return nil, err
+				}
+				typed[key] = public
+				continue
+			}
+			normalized, err := normalizeContractVersionValueV2(child)
+			if err != nil {
+				return nil, err
+			}
+			typed[key] = normalized
+		}
+		return typed, nil
+	case []interface{}:
+		for index, child := range typed {
+			normalized, err := normalizeContractVersionValueV2(child)
+			if err != nil {
+				return nil, err
+			}
+			typed[index] = normalized
+		}
+	}
+	return value, nil
 }

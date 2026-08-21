@@ -10,10 +10,7 @@ import 'package:two_finance_blockchain/blockchain/utils/json.dart';
 
 JsonMessage _validData() {
   // mapToJsonRawMessage espera Map<String,dynamic>
-  return {
-    'amount': '10',
-    'memo': 'hello',
-  };
+  return {'amount': '10', 'memo': 'hello'};
 }
 
 Future<Transaction> _buildSignedValidTx({
@@ -25,10 +22,11 @@ Future<Transaction> _buildSignedValidTx({
   String? uuid7,
 }) async {
   final pair = await validKeyPair();
-  
+
   final f = from ?? pair.publicKey;
   final t = to ?? await validPublicKeyHex();
-  final id = uuid7 ??
+  final id =
+      uuid7 ??
       // use um UUIDv7 válido no seu projeto. Se você tiver um gerador, use aqui.
       // Caso não tenha, substitua por um UUIDv7 real que seu validateUUID7 aceite.
       '018f4c3e-9c2a-7b8e-8f14-6c4c2a1d9a33';
@@ -100,10 +98,7 @@ void main() {
       final tx = await _buildSignedValidTx();
       tx.hash = repeatHex('e', 64);
 
-      expect(
-        () async => tx.validateHash(),
-        throwsA(isA<Exception>()),
-      );
+      expect(() async => tx.validateHash(), throwsA(isA<Exception>()));
     });
   });
 
@@ -140,10 +135,7 @@ void main() {
         uuid7: '018f4c3e-9c2a-7b8e-8f14-6c4c2a1d9a33',
       );
 
-      expect(
-        () async => signTransaction('aa', tx),
-        throwsA(isA<Exception>()),
-      );
+      expect(() async => signTransaction('aa', tx), throwsA(isA<Exception>()));
     });
   });
 
@@ -215,7 +207,8 @@ void main() {
 
     test('allows DEPLOY_CONTRACT_ADDRESS without pubkey validation', () async {
       final tx = await _buildSignedValidTx(to: DEPLOY_CONTRACT_ADDRESS);
-      await tx.validateTransaction(); // should not throw if deploy address bypass works
+      await tx
+          .validateTransaction(); // should not throw if deploy address bypass works
     });
   });
 
@@ -256,7 +249,6 @@ void main() {
     });
   });
 
-
   group('Transaction.calculateHash() JCS invariants', () {
     /// If your calculateHash is truly JCS, changing map insertion order in the
     /// *semantic* data should not change the hash.
@@ -264,15 +256,9 @@ void main() {
       final pair = await validKeyPair();
 
       // Same semantic content, different insertion order
-      final JsonMessage dataA = {
-        'amount': '10',
-        'memo': 'hello',
-      };
+      final JsonMessage dataA = {'amount': '10', 'memo': 'hello'};
 
-      final JsonMessage dataB = {
-        'memo': 'hello',
-        'amount': '10',
-      };
+      final JsonMessage dataB = {'memo': 'hello', 'amount': '10'};
 
       final from = pair.publicKey;
       final to = await validPublicKeyHex(); // different key from `from`
@@ -310,6 +296,4 @@ void main() {
       expect(RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(h), isTrue);
     });
   });
-
-  
 }

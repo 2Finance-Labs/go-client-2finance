@@ -299,7 +299,7 @@ extension CashbackClient on TwoFinanceBlockchain {
         'limit': limit,
         'ascending': ascending,
         'token_address': tokenAddress,
-        'contract_version': CASHBACK_CONTRACT_V1,
+        'contract_version': CASHBACK_CONTRACT_V2,
       },
     );
   }

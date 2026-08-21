@@ -26,7 +26,7 @@ Arquivos principais:
 - `specs/**/*.spec.json`
 - `test/spec_harness/spec_files_test.dart`
 - `test/two_finance_blockchain_client_unit_test.dart`
-- `test/blockchain/contract/walletV1/wallet_unit_test.dart`
+- `test/blockchain/contract/walletV2/wallet_unit_test.dart`
 - `test/blockchain/contract/lifecycle/lifecycle_test.dart`
 
 ## E2E

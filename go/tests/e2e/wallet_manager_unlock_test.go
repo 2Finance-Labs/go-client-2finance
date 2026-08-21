@@ -102,7 +102,7 @@ func TestWalletManager_SignPreparedTransaction_WorksAfterUnlockWithPassword(t *t
 		To:      publicKey,
 		Method:  "start_Sending",
 		Data: map[string]interface{}{
-			"contract_version": "sendingLifecycleV1",
+			"contract_version": "sendingLifecycleV2",
 			"request_id":       "send-001",
 		},
 		Version: 1,
@@ -114,8 +114,8 @@ func TestWalletManager_SignPreparedTransaction_WorksAfterUnlockWithPassword(t *t
 	if signed.Hash == "" || signed.Signature == "" {
 		t.Fatalf("hash/signature should not be empty")
 	}
-	if signed.Data["contract_version"] != "sendingLifecycleV1" {
-		t.Fatalf("contract_version = %v, want sendingLifecycleV1", signed.Data["contract_version"])
+	if signed.Data["contract_version"] != "sendingLifecycleV2" {
+		t.Fatalf("contract_version = %v, want sendingLifecycleV2", signed.Data["contract_version"])
 	}
 }
 

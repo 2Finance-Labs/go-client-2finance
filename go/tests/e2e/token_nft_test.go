@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
-	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2"
+	tokenV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
+	tokenV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/models"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
@@ -39,7 +39,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	// ------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(tokenV2.TOKEN_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -56,8 +56,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 
 	address := contractLog.ContractAddress
 	decimals := 0
-	tokenType := tokenV1Domain.NON_FUNGIBLE
-	assetType := tokenV1Domain.TOKEN_ASSET_TYPE
+	tokenType := tokenV2Domain.NON_FUNGIBLE
+	assetType := tokenV2Domain.TOKEN_ASSET_TYPE
 	symbol := "2NFT" + randSuffix(4)
 	name := "2Finance NFT"
 	totalSupply := "1"
@@ -121,9 +121,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddToken.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_CREATED_LOG, unmarshalLogToken.LogType, "add-token log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_CREATED_LOG, unmarshalLogToken.LogType, "add-token log type mismatch")
 
-	tok, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogToken.Event)
+	tok, err := utils.UnmarshalEvent[tokenV2Domain.Token](unmarshalLogToken.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddToken.Logs[0]): %v", err)
 	}
@@ -159,8 +159,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut.States[0].Object, &tokenState)
+	var tokenState tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut.States[0].Object, &tokenState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -206,9 +206,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (MintToken.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_MINTED_NFT_LOG, unmarshalLogMint.LogType, "mint log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_MINTED_NFT_LOG, unmarshalLogMint.LogType, "mint log type mismatch")
 
-	mint, err := utils.UnmarshalEvent[tokenV1Domain.MintNFT](unmarshalLogMint.Event)
+	mint, err := utils.UnmarshalEvent[tokenV2Domain.MintNFT](unmarshalLogMint.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (MintToken.Logs[0]): %v", err)
 	}
@@ -226,9 +226,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (MintToken.Logs[1]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_TOTAL_SUPPLY_INCREASED_LOG, unmarshalLogSupply.LogType, "supply log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_TOTAL_SUPPLY_INCREASED_LOG, unmarshalLogSupply.LogType, "supply log type mismatch")
 
-	supply, err := utils.UnmarshalEvent[tokenV1Domain.Supply](unmarshalLogSupply.Event)
+	supply, err := utils.UnmarshalEvent[tokenV2Domain.Supply](unmarshalLogSupply.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (MintToken.Logs[1]): %v", err)
 	}
@@ -239,9 +239,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (MintToken.Logs[2]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_BALANCE_INCREASED_NFT_LOG, unmarshalLogBalance.LogType, "balance log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_BALANCE_INCREASED_NFT_LOG, unmarshalLogBalance.LogType, "balance log type mismatch")
 
-	balance, err := utils.UnmarshalEvent[tokenV1Domain.BalanceNFT](unmarshalLogBalance.Event)
+	balance, err := utils.UnmarshalEvent[tokenV2Domain.BalanceNFT](unmarshalLogBalance.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (MintToken.Logs[2]): %v", err)
 	}
@@ -257,8 +257,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState2 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut2.States[0].Object, &tokenState2)
+	var tokenState2 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut2.States[0].Object, &tokenState2)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -285,9 +285,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (TransferToken.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_TRANSFERRED_NFT_LOG, unmarshalLogTransfer.LogType, "transfer log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_TRANSFERRED_NFT_LOG, unmarshalLogTransfer.LogType, "transfer log type mismatch")
 
-	transferNFT, err := utils.UnmarshalEvent[tokenV1Domain.TransferNFT](unmarshalLogTransfer.Event)
+	transferNFT, err := utils.UnmarshalEvent[tokenV2Domain.TransferNFT](unmarshalLogTransfer.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (TransferToken.Logs[0]): %v", err)
 	}
@@ -302,9 +302,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (TransferToken.Logs[1]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_BALANCE_DECREASED_NFT_LOG, unmarshalLogBalanceFrom.LogType, "sender balance decreased log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_BALANCE_DECREASED_NFT_LOG, unmarshalLogBalanceFrom.LogType, "sender balance decreased log type mismatch")
 
-	balanceFrom, err := utils.UnmarshalEvent[tokenV1Domain.BalanceNFT](unmarshalLogBalanceFrom.Event)
+	balanceFrom, err := utils.UnmarshalEvent[tokenV2Domain.BalanceNFT](unmarshalLogBalanceFrom.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (TransferToken.Logs[1]): %v", err)
 	}
@@ -318,9 +318,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (TransferToken.Logs[2]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_BALANCE_INCREASED_NFT_LOG, unmarshalLogBalanceTo.LogType, "receiver balance increased log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_BALANCE_INCREASED_NFT_LOG, unmarshalLogBalanceTo.LogType, "receiver balance increased log type mismatch")
 
-	balanceTo, err := utils.UnmarshalEvent[tokenV1Domain.BalanceNFT](unmarshalLogBalanceTo.Event)
+	balanceTo, err := utils.UnmarshalEvent[tokenV2Domain.BalanceNFT](unmarshalLogBalanceTo.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (TransferToken.Logs[2]): %v", err)
 	}
@@ -335,8 +335,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance (receiver): %v", err)
 	}
 
-	var balanceReceiver tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](getBalanceReceiver.States[0].Object, &balanceReceiver)
+	var balanceReceiver tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](getBalanceReceiver.States[0].Object, &balanceReceiver)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetTokenBalance receiver): %v", err)
 	}
@@ -347,7 +347,7 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	assert.Equal(t, "1", balanceReceiver.Amount, "receiver balance amount mismatch after transfer")
 	assert.NotNil(t, balanceReceiver.CreatedAt, "receiver balance created at should not be nil")
 	assert.NotNil(t, balanceReceiver.UpdatedAt, "receiver balance updated at should not be nil")
-	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, balanceReceiver.TokenType, "receiver balance token type mismatch after transfer")
+	assert.Equal(t, tokenV2Domain.NON_FUNGIBLE, balanceReceiver.TokenType, "receiver balance token type mismatch after transfer")
 
 	// ------------------
 	//        BURN
@@ -364,9 +364,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (BurnToken.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_BURNED_NFT_LOG, unmarshalLogBurn.LogType, "burn log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_BURNED_NFT_LOG, unmarshalLogBurn.LogType, "burn log type mismatch")
 
-	burn, err := utils.UnmarshalEvent[tokenV1Domain.BurnNFT](unmarshalLogBurn.Event)
+	burn, err := utils.UnmarshalEvent[tokenV2Domain.BurnNFT](unmarshalLogBurn.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (BurnToken.Logs[0]): %v", err)
 	}
@@ -380,9 +380,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (BurnToken.Logs[1]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_TOTAL_SUPPLY_DECREASED_LOG, unmarshalLogSupply2.LogType, "supply log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_TOTAL_SUPPLY_DECREASED_LOG, unmarshalLogSupply2.LogType, "supply log type mismatch")
 
-	supply2, err := utils.UnmarshalEvent[tokenV1Domain.Supply](unmarshalLogSupply2.Event)
+	supply2, err := utils.UnmarshalEvent[tokenV2Domain.Supply](unmarshalLogSupply2.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (BurnToken.Logs[1]): %v", err)
 	}
@@ -393,9 +393,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (BurnToken.Logs[2]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_BALANCE_DECREASED_NFT_LOG, unmarshalLogBalance2.LogType, "balance log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_BALANCE_DECREASED_NFT_LOG, unmarshalLogBalance2.LogType, "balance log type mismatch")
 
-	balance2, err := utils.UnmarshalEvent[tokenV1Domain.BalanceNFT](unmarshalLogBalance2.Event)
+	balance2, err := utils.UnmarshalEvent[tokenV2Domain.BalanceNFT](unmarshalLogBalance2.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (BurnToken.Logs[2]): %v", err)
 	}
@@ -410,8 +410,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState3 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut3.States[0].Object, &tokenState3)
+	var tokenState3 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut3.States[0].Object, &tokenState3)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -433,14 +433,14 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalanceNFT: %v", err)
 	}
 
-	var balanceStateAfterBurn tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](tokenBalanceNFT.States[0].Object, &balanceStateAfterBurn)
+	var balanceStateAfterBurn tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](tokenBalanceNFT.States[0].Object, &balanceStateAfterBurn)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetTokenBalanceNFT after burn): %v", err)
 	}
 
 	assert.Equal(t, "1", balanceStateAfterBurn.Amount, "receiver balance amount mismatch after burn")
-	assert.Equal(t, tokenV1Domain.NON_FUNGIBLE, balanceStateAfterBurn.TokenType, "receiver balance token type mismatch after burn")
+	assert.Equal(t, tokenV2Domain.NON_FUNGIBLE, balanceStateAfterBurn.TokenType, "receiver balance token type mismatch after burn")
 	assert.Equal(t, mintedUUID, balanceStateAfterBurn.TokenUUID, "receiver balance token UUID mismatch after burn")
 	assert.Equal(t, tok.Address, balanceStateAfterBurn.TokenAddress, "receiver balance token address mismatch after burn")
 	assert.Equal(t, receiver.PublicKey, balanceStateAfterBurn.OwnerAddress, "receiver balance owner mismatch after burn")
@@ -467,9 +467,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddAllowedUsers.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_ALLOWED_USERS_ADDED_LOG, unmarshalLogAllow.LogType, "allow users log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_ALLOWED_USERS_ADDED_LOG, unmarshalLogAllow.LogType, "allow users log type mismatch")
 
-	allow, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogAllow.Event)
+	allow, err := utils.UnmarshalEvent[tokenV2Domain.AccessPolicy](unmarshalLogAllow.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddAllowedUsers.Logs[0]): %v", err)
 	}
@@ -481,8 +481,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState5 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut5.States[0].Object, &tokenState5)
+	var tokenState5 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut5.States[0].Object, &tokenState5)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -499,9 +499,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (RemoveAllowedUsers.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_ALLOWED_USERS_REMOVED_LOG, unmarshalLogRemoveAllow.LogType, "remove allowed users log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_ALLOWED_USERS_REMOVED_LOG, unmarshalLogRemoveAllow.LogType, "remove allowed users log type mismatch")
 
-	removeAllowed, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogRemoveAllow.Event)
+	removeAllowed, err := utils.UnmarshalEvent[tokenV2Domain.AccessPolicy](unmarshalLogRemoveAllow.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (RemoveAllowedUsers.Logs[0]): %v", err)
 	}
@@ -513,8 +513,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState6 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut6.States[0].Object, &tokenState6)
+	var tokenState6 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut6.States[0].Object, &tokenState6)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -538,9 +538,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddBlockedUsers.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_BLOCKED_USERS_ADDED_LOG, unmarshalLogBlocked.LogType, "add blocked users log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_BLOCKED_USERS_ADDED_LOG, unmarshalLogBlocked.LogType, "add blocked users log type mismatch")
 
-	blocked, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogBlocked.Event)
+	blocked, err := utils.UnmarshalEvent[tokenV2Domain.AccessPolicy](unmarshalLogBlocked.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddBlockedUsers.Logs[0]): %v", err)
 	}
@@ -552,8 +552,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState8 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut8.States[0].Object, &tokenState8)
+	var tokenState8 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut8.States[0].Object, &tokenState8)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -570,9 +570,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (RemoveBlockedUsers.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_BLOCKED_USERS_REMOVED_LOG, unmarshalLogRemoveBlocked.LogType, "remove blocked users log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_BLOCKED_USERS_REMOVED_LOG, unmarshalLogRemoveBlocked.LogType, "remove blocked users log type mismatch")
 
-	removeBlocked, err := utils.UnmarshalEvent[tokenV1Domain.AccessPolicy](unmarshalLogRemoveBlocked.Event)
+	removeBlocked, err := utils.UnmarshalEvent[tokenV2Domain.AccessPolicy](unmarshalLogRemoveBlocked.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (RemoveBlockedUsers.Logs[0]): %v", err)
 	}
@@ -585,8 +585,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState9 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut9.States[0].Object, &tokenState9)
+	var tokenState9 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut9.States[0].Object, &tokenState9)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -608,9 +608,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (PauseToken.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_PAUSED_LOG, unmarshalLogPause.LogType, "pause token log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_PAUSED_LOG, unmarshalLogPause.LogType, "pause token log type mismatch")
 
-	pause, err := utils.UnmarshalEvent[tokenV1Domain.PausePolicy](unmarshalLogPause.Event)
+	pause, err := utils.UnmarshalEvent[tokenV2Domain.PausePolicy](unmarshalLogPause.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (PauseToken.Logs[0]): %v", err)
 	}
@@ -622,8 +622,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState10 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut10.States[0].Object, &tokenState10)
+	var tokenState10 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut10.States[0].Object, &tokenState10)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -643,9 +643,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (UnpauseToken.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_UNPAUSED_LOG, unmarshalLogUnpause.LogType, "unpause token log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_UNPAUSED_LOG, unmarshalLogUnpause.LogType, "unpause token log type mismatch")
 
-	unpause, err := utils.UnmarshalEvent[tokenV1Domain.PausePolicy](unmarshalLogUnpause.Event)
+	unpause, err := utils.UnmarshalEvent[tokenV2Domain.PausePolicy](unmarshalLogUnpause.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UnpauseToken.Logs[0]): %v", err)
 	}
@@ -657,8 +657,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState11 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut11.States[0].Object, &tokenState11)
+	var tokenState11 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut11.States[0].Object, &tokenState11)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -678,9 +678,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (UpdateFeeAddress.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_FEE_ADDRESS_UPDATED_LOG, unmarshalLogFeeAddress.LogType, "update fee address log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_FEE_ADDRESS_UPDATED_LOG, unmarshalLogFeeAddress.LogType, "update fee address log type mismatch")
 
-	feeAddressEvent, err := utils.UnmarshalEvent[tokenV1Domain.Fee](unmarshalLogFeeAddress.Event)
+	feeAddressEvent, err := utils.UnmarshalEvent[tokenV2Domain.Fee](unmarshalLogFeeAddress.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UpdateFeeAddress.Logs[0]): %v", err)
 	}
@@ -692,8 +692,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState13 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut13.States[0].Object, &tokenState13)
+	var tokenState13 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut13.States[0].Object, &tokenState13)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -729,9 +729,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (UpdateMetadata.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_METADATA_UPDATED_LOG, unmarshalLogMetadata.LogType, "update metadata log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_METADATA_UPDATED_LOG, unmarshalLogMetadata.LogType, "update metadata log type mismatch")
 
-	metadataEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogMetadata.Event)
+	metadataEvent, err := utils.UnmarshalEvent[tokenV2Domain.Token](unmarshalLogMetadata.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UpdateMetadata.Logs[0]): %v", err)
 	}
@@ -753,8 +753,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState14 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut14.States[0].Object, &tokenState14)
+	var tokenState14 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut14.States[0].Object, &tokenState14)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -783,9 +783,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (FreezeWallet.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_FREEZE_ACCOUNT_LOG, unmarshalLogFreeze.LogType, "freeze wallet log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_FREEZE_ACCOUNT_LOG, unmarshalLogFreeze.LogType, "freeze wallet log type mismatch")
 
-	freezeEvent, err := utils.UnmarshalEvent[tokenV1Domain.Freeze](unmarshalLogFreeze.Event)
+	freezeEvent, err := utils.UnmarshalEvent[tokenV2Domain.Freeze](unmarshalLogFreeze.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (FreezeWallet.Logs[0]): %v", err)
 	}
@@ -796,8 +796,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState15 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut15.States[0].Object, &tokenState15)
+	var tokenState15 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut15.States[0].Object, &tokenState15)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -817,9 +817,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (UnfreezeWallet.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_UNFREEZE_ACCOUNT_LOG, unmarshalLogUnfreeze.LogType, "unfreeze wallet log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_UNFREEZE_ACCOUNT_LOG, unmarshalLogUnfreeze.LogType, "unfreeze wallet log type mismatch")
 
-	unfreezeEvent, err := utils.UnmarshalEvent[tokenV1Domain.Freeze](unmarshalLogUnfreeze.Event)
+	unfreezeEvent, err := utils.UnmarshalEvent[tokenV2Domain.Freeze](unmarshalLogUnfreeze.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UnfreezeWallet.Logs[0]): %v", err)
 	}
@@ -830,8 +830,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState16 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut16.States[0].Object, &tokenState16)
+	var tokenState16 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut16.States[0].Object, &tokenState16)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -854,9 +854,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (UpdateGlbFile.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_UPDATE_GLB_FILE_LOG, unmarshalLogUpdateGlbFile.LogType, "update glb file log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_UPDATE_GLB_FILE_LOG, unmarshalLogUpdateGlbFile.LogType, "update glb file log type mismatch")
 
-	updateGlbFileEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogUpdateGlbFile.Event)
+	updateGlbFileEvent, err := utils.UnmarshalEvent[tokenV2Domain.Token](unmarshalLogUpdateGlbFile.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UpdateGlbFile.Logs[0]): %v", err)
 	}
@@ -868,8 +868,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState17 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut17.States[0].Object, &tokenState17)
+	var tokenState17 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut17.States[0].Object, &tokenState17)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -889,9 +889,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (RevokeFreezeAuthority.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_FREEZE_AUTHORITY_REVOKED_LOG, unmarshalLogRevokeFreezeAuthority.LogType, "revoke freeze authority log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_FREEZE_AUTHORITY_REVOKED_LOG, unmarshalLogRevokeFreezeAuthority.LogType, "revoke freeze authority log type mismatch")
 
-	revokeFreezeAuthorityEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogRevokeFreezeAuthority.Event)
+	revokeFreezeAuthorityEvent, err := utils.UnmarshalEvent[tokenV2Domain.Token](unmarshalLogRevokeFreezeAuthority.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (RevokeFreezeAuthority.Logs[0]): %v", err)
 	}
@@ -903,8 +903,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState18 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut18.States[0].Object, &tokenState18)
+	var tokenState18 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut18.States[0].Object, &tokenState18)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -919,9 +919,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (RevokeMintAuthority.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_MINT_AUTHORITY_REVOKED_LOG, unmarshalLogRevokeMint.LogType, "revoke mint authority log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_MINT_AUTHORITY_REVOKED_LOG, unmarshalLogRevokeMint.LogType, "revoke mint authority log type mismatch")
 
-	revokeMintEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogRevokeMint.Event)
+	revokeMintEvent, err := utils.UnmarshalEvent[tokenV2Domain.Token](unmarshalLogRevokeMint.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (RevokeMintAuthority.Logs[0]): %v", err)
 	}
@@ -933,8 +933,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState19 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut19.States[0].Object, &tokenState19)
+	var tokenState19 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut19.States[0].Object, &tokenState19)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -949,9 +949,9 @@ func TestTokenFlowNonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (RevokeUpdateAuthority.Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_UPDATE_AUTHORITY_REVOKED_LOG, unmarshalLogRevokeUpdate.LogType, "revoke update authority log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_UPDATE_AUTHORITY_REVOKED_LOG, unmarshalLogRevokeUpdate.LogType, "revoke update authority log type mismatch")
 
-	revokeUpdateEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLogRevokeUpdate.Event)
+	revokeUpdateEvent, err := utils.UnmarshalEvent[tokenV2Domain.Token](unmarshalLogRevokeUpdate.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (RevokeUpdateAuthority.Logs[0]): %v", err)
 	}
@@ -963,8 +963,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetToken: %v", err)
 	}
 
-	var tokenState20 tokenV1Models.TokenStateModel
-	err = utils.UnmarshalState[tokenV1Models.TokenStateModel](getTokenOut20.States[0].Object, &tokenState20)
+	var tokenState20 tokenV2Models.TokenStateModel
+	err = utils.UnmarshalState[tokenV2Models.TokenStateModel](getTokenOut20.States[0].Object, &tokenState20)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetToken.States[0]): %v", err)
 	}
@@ -980,8 +980,8 @@ func TestTokenFlowNonFungible(t *testing.T) {
 		t.Fatalf("GetTokenBalance(owner): %v", err)
 	}
 
-	var balanceNFTState tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](balanceNFT.States[0].Object, &balanceNFTState)
+	var balanceNFTState tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](balanceNFT.States[0].Object, &balanceNFTState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetTokenBalanceNFT.States[0]): %v", err)
 	}

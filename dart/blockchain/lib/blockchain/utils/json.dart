@@ -2,6 +2,7 @@ import 'dart:convert'; // jsonEncode, jsonDecode, utf8
 import 'dart:typed_data'; // Uint8List
 
 typedef JsonMessage = Map<String, dynamic>;
+
 /// Canonical JSON (JCS-like) encoder:
 /// - sorts object keys lexicographically
 /// - no whitespace
@@ -12,9 +13,7 @@ String canonicalJsonEncode(dynamic value) {
     final entries = <String>[];
 
     for (final k in keys) {
-      entries.add(
-        '${jsonEncode(k)}:${canonicalJsonEncode(value[k])}',
-      );
+      entries.add('${jsonEncode(k)}:${canonicalJsonEncode(value[k])}');
     }
     return '{${entries.join(',')}}';
   }

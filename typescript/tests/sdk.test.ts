@@ -136,7 +136,7 @@ function contractFixtureSmoke(): void {
   const pagination = fixture<{ limit: number; next_cursor: string }>("pagination.json");
   const idempotency = fixture<{ idempotency_key: string }>("idempotency.json");
 
-  assertEqual(domains.schema, "sdk.domain_operations.v1", "domain operations schema should match");
+  assertEqual(domains.schema, "sdk.domain_operations.v2", "domain operations schema should match");
   assertEqual(
     operation(domains, "analytics", "balances").path,
     "/portfolio-manager/balances/{account_id}",
@@ -364,19 +364,20 @@ async function sdkSmoke(): Promise<void> {
   const command = client.matchEngine.orderCommand({
     client_order_id: "co-1",
     idempotency_key: "idem-1",
-    symbol: "BTC-USDT",
-    side: "buy",
-    type: "limit",
+    order_type: "LIMIT",
+    wallet_id: 1,
+    symbol_id: 1,
+    side: "BUY",
     quantity: "0.01"
   });
   command.schema satisfies string;
-  assertEqual(command.schema, "matchengine.order_command.v1", "matchengine schema should default");
+  assertEqual(command.schema, "matchengine.order_command.v2", "matchengine schema should default");
   const subscription = client.matchEngine.marketDataSubscribe({
     symbols: ["BTC-USDT"],
     channels: ["book"]
   });
   subscription.schema satisfies string;
-  assertEqual(subscription.schema, "matchengine.market_data_subscribe.v1", "matchengine market data schema should default");
+  assertEqual(subscription.schema, "matchengine.market_data_subscribe.v2", "matchengine market data schema should default");
   const matchMessages: unknown[] = [];
   const matchTransport = {
     send(message: unknown): unknown {
@@ -392,12 +393,12 @@ async function sdkSmoke(): Promise<void> {
   client.matchEngine.subscribeMarketData(matchTransport, subscription);
   assertEqual(
     (matchMessages[0] as { schema: string }).schema,
-    "matchengine.order_command.v1",
+    "matchengine.order_command.v2",
     "matchengine sendOrder should send order schema"
   );
   assertEqual(
     (matchMessages[1] as { schema: string }).schema,
-    "matchengine.market_data_subscribe.v1",
+    "matchengine.market_data_subscribe.v2",
     "matchengine subscribeMarketData should send subscription schema"
   );
 }
@@ -426,18 +427,18 @@ async function behaviorSmoke(): Promise<void> {
     "GET https://analytics.example/portfolio-manager/balances/acct%2F1",
     "GET https://analytics.example/portfolio-manager/balances/acct%2Fresolved",
     "GET https://analytics.example/portfolio-manager/balances/acct%2F1%20ok",
-    "GET https://network.example/v1/2finance-network/products/bonds",
-    "POST https://network.example/v1/2finance-network/products/bonds",
-    "GET https://network.example/v1/2finance-network/products/loans",
-    "POST https://network.example/v1/2finance-network/products/loans",
-    "GET https://network.example/v1/2finance-network/products/swaps",
-    "POST https://network.example/v1/2finance-network/products/swaps",
-    "GET https://network.example/v1/2finance-network/products/staking",
-    "POST https://network.example/v1/2finance-network/products/staking",
-    "GET https://network.example/v1/2finance-network/products/synthetic-assets",
-    "POST https://network.example/v1/2finance-network/products/synthetic-assets",
-    "GET https://network.example/v1/2finance-network/products/liquidity-pools",
-    "POST https://network.example/v1/2finance-network/products/liquidity-pools",
+    "GET https://network.example/v2/2finance-network/products/bonds",
+    "POST https://network.example/v2/2finance-network/products/bonds",
+    "GET https://network.example/v2/2finance-network/products/loans",
+    "POST https://network.example/v2/2finance-network/products/loans",
+    "GET https://network.example/v2/2finance-network/products/swaps",
+    "POST https://network.example/v2/2finance-network/products/swaps",
+    "GET https://network.example/v2/2finance-network/products/staking",
+    "POST https://network.example/v2/2finance-network/products/staking",
+    "GET https://network.example/v2/2finance-network/products/synthetic-assets",
+    "POST https://network.example/v2/2finance-network/products/synthetic-assets",
+    "GET https://network.example/v2/2finance-network/products/liquidity-pools",
+    "POST https://network.example/v2/2finance-network/products/liquidity-pools",
     "GET https://auth.example/realms/2finance/protocol/openid-connect/certs",
     "POST https://auth.example/realms/2finance/protocol/openid-connect/token/introspect",
     "DELETE https://orchestrator.example/v1/mcphost/sessions/session%2F1",

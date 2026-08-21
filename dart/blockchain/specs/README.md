@@ -6,8 +6,8 @@ As specs usam JSON para evitar dependências novas no projeto. O formato é prop
 
 ```json
 {
-  "id": "wallet_v1",
-  "title": "Wallet V1 client contract",
+  "id": "wallet_v2",
+  "title": "Wallet V2 client contract",
   "owner": "sdk",
   "status": "active",
   "layers": ["harness-small", "contract-unit"],
@@ -16,7 +16,7 @@ As specs usam JSON para evitar dependências novas no projeto. O formato é prop
       "id": "wallet.add",
       "title": "Add wallet sends Go-compatible payload",
       "tags": ["wallet", "mqtt"],
-      "test_refs": ["test/blockchain/contract/walletV1/wallet_unit_test.dart"],
+      "test_refs": ["test/blockchain/contract/walletV2/wallet_unit_test.dart"],
       "given": {},
       "when": {},
       "then": {}
