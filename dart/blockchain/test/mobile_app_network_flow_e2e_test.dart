@@ -5,10 +5,10 @@ import 'package:two_finance_blockchain/two_finance_blockchain.dart';
 
 import 'helpers/helpers.dart';
 
-const _fxLifecycleV1 = 'fxLifecycleV1';
-const _receivingLifecycleV1 = 'receivingLifecycleV1';
-const _sendingLifecycleV1 = 'sendingLifecycleV1';
-const _multiCurrencyLifecycleV1 = 'multiCurrencyLifecycleV1';
+const _fxLifecycleV2 = 'fxLifecycleV2';
+const _receivingLifecycleV2 = 'receivingLifecycleV2';
+const _sendingLifecycleV2 = 'sendingLifecycleV2';
+const _multiCurrencyLifecycleV2 = 'multiCurrencyLifecycleV2';
 
 void main() {
   final runE2E = Platform.environment['RUN_E2E_MQTT'] == '1';
@@ -24,10 +24,10 @@ void main() {
           final signer = await validKeyPair();
           await client.setPrivateKey(signer.privateKey);
 
-          final fxAddress = await _deploy(client, _fxLifecycleV1);
-          final receivingAddress = await _deploy(client, _receivingLifecycleV1);
-          final sendingAddress = await _deploy(client, _sendingLifecycleV1);
-          final multiAddress = await _deploy(client, _multiCurrencyLifecycleV1);
+          final fxAddress = await _deploy(client, _fxLifecycleV2);
+          final receivingAddress = await _deploy(client, _receivingLifecycleV2);
+          final sendingAddress = await _deploy(client, _sendingLifecycleV2);
+          final multiAddress = await _deploy(client, _multiCurrencyLifecycleV2);
 
           final receiver = await validKeyPair();
           final suffix = DateTime.now().microsecondsSinceEpoch;

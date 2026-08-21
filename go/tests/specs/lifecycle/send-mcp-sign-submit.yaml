@@ -28,14 +28,14 @@ fixtures:
   provider: wise
   currency: USD
   amount: "25.50"
-  contract_version: sendingLifecycleV1
+  contract_version: sendingLifecycleV2
 steps:
   - id: deploy-prepare
     via: mcp_http
     tool: finance.contract.deploy.prepare
     action: prepare_contract_deploy
     expect:
-      workflow: contract.deploy.sendingLifecycleV1
+      workflow: contract.deploy.sendingLifecycleV2
       unsigned_transaction.method: deploy_contract2
       unsigned_transaction.hash: ""
       unsigned_transaction.signature: ""
@@ -58,7 +58,7 @@ steps:
     expect:
       workflow: send.start
       unsigned_transaction.method: start_Sending
-      unsigned_transaction.data.contract_version: sendingLifecycleV1
+      unsigned_transaction.data.contract_version: sendingLifecycleV2
       unsigned_transaction.hash: ""
       unsigned_transaction.signature: ""
   - id: send-start-sign

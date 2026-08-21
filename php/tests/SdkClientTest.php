@@ -77,7 +77,7 @@ assertSameValue('0.1.0', Metadata::SDK_VERSION, 'SDK version should be public');
 assertSameValue(12, count(Metadata::SERVICE_CATALOG), 'SDK service catalog should expose canonical services');
 assertSameValue('TWO_FINANCE_AUTH_URL', Metadata::serviceCatalog()->services[0]->env, 'SDK service catalog should expose env vars');
 
-assertSameValue('sdk.domain_operations.v1', $domainOperationsFixture['schema'], 'domain operations fixture schema should match');
+assertSameValue('sdk.domain_operations.v2', $domainOperationsFixture['schema'], 'domain operations fixture schema should match');
 assertSameValue(
     '/portfolio-manager/balances/{account_id}',
     contractOperation($domainOperationsFixture, 'analytics', 'balances')['path'],
@@ -109,7 +109,7 @@ assertSameValue(25, $pagination->limit, 'pagination model should parse limit');
 assertSameValue('cursor-next', $pagination->nextCursor, 'pagination model should parse next cursor');
 assertSameValue('idem-001', $idempotency->idempotencyKey, 'idempotency model should parse key');
 assertSameValue('auth', $catalog->services[0]->name, 'service catalog model should parse services');
-assertSameValue('sdk.domain_operations.v1', $operations->schema, 'domain operations model should parse schema');
+assertSameValue('sdk.domain_operations.v2', $operations->schema, 'domain operations model should parse schema');
 assertSameValue('auth.login.request.v1', $operations->domains[0]->operations[0]->requestSchema, 'domain operations model should parse request schema');
 assertSameValue('/portfolio-manager/balances/{account_id}', $operations->operation('analytics', 'balances')->path, 'domain operations model should locate operation');
 $resolvedBalances = $operations->operation('analytics', 'balances')->resolve(['account_id' => 'acct/1 ok']);
@@ -268,13 +268,13 @@ $command = $matchClient->matchEngine->orderCommand([
     'quantity' => '0.01',
 ]);
 assertSameValue('wss://matchengine.example/ws', $matchClient->matchEngine->webSocketUrl, 'matchengine URL should load');
-assertSameValue('matchengine.order_command.v1', $command['schema'], 'matchengine schema should default');
+assertSameValue('matchengine.order_command.v2', $command['schema'], 'matchengine schema should default');
 assertSameValue('BTC-USDT', $command['symbol'], 'matchengine symbol should pass through');
 $subscription = $matchClient->matchEngine->marketDataSubscribe([
     'symbols' => ['BTC-USDT'],
     'channels' => ['book'],
 ]);
-assertSameValue('matchengine.market_data_subscribe.v1', $subscription['schema'], 'matchengine market data schema should default');
+assertSameValue('matchengine.market_data_subscribe.v2', $subscription['schema'], 'matchengine market data schema should default');
 assertSameValue(['BTC-USDT'], $subscription['symbols'], 'matchengine market data symbols should pass through');
 $matchMessages = [];
 $sender = static function (array $message) use (&$matchMessages): array {
@@ -283,8 +283,8 @@ $sender = static function (array $message) use (&$matchMessages): array {
 };
 assertSameValue(['ok' => true], $matchClient->matchEngine->sendOrder($sender, $command), 'matchengine sendOrder should return sender result');
 assertSameValue(['ok' => true], $matchClient->matchEngine->subscribeMarketData($sender, $subscription), 'matchengine subscribeMarketData should return sender result');
-assertSameValue('matchengine.order_command.v1', $matchMessages[0]['schema'], 'matchengine sendOrder should send order schema');
-assertSameValue('matchengine.market_data_subscribe.v1', $matchMessages[1]['schema'], 'matchengine subscribeMarketData should send market data schema');
+assertSameValue('matchengine.order_command.v2', $matchMessages[0]['schema'], 'matchengine sendOrder should send order schema');
+assertSameValue('matchengine.market_data_subscribe.v2', $matchMessages[1]['schema'], 'matchengine subscribeMarketData should send market data schema');
 
 $domainSeen = [];
 $domainTransport = static function (HttpRequest $request) use (&$domainSeen): HttpResponse {
@@ -363,19 +363,19 @@ foreach ([
     'GET https://analytics.example/portfolio-manager/balances/acct%2F1%20ok',
     'GET https://analytics.example/risk-manager/blackscholes?symbol=BTC',
     'GET https://analytics.example/staking',
-    'GET https://network.example/v1/2finance-network/markets/BTC%2FUSDT%20spot/candles?limit=10',
-    'GET https://network.example/v1/2finance-network/products/bonds',
-    'POST https://network.example/v1/2finance-network/products/bonds',
-    'GET https://network.example/v1/2finance-network/products/loans',
-    'POST https://network.example/v1/2finance-network/products/loans',
-    'GET https://network.example/v1/2finance-network/products/swaps',
-    'POST https://network.example/v1/2finance-network/products/swaps',
-    'GET https://network.example/v1/2finance-network/products/staking',
-    'POST https://network.example/v1/2finance-network/products/staking',
-    'GET https://network.example/v1/2finance-network/products/synthetic-assets',
-    'POST https://network.example/v1/2finance-network/products/synthetic-assets',
-    'GET https://network.example/v1/2finance-network/products/liquidity-pools',
-    'POST https://network.example/v1/2finance-network/products/liquidity-pools',
+    'GET https://network.example/v2/2finance-network/markets/BTC%2FUSDT%20spot/candles?limit=10',
+    'GET https://network.example/v2/2finance-network/products/bonds',
+    'POST https://network.example/v2/2finance-network/products/bonds',
+    'GET https://network.example/v2/2finance-network/products/loans',
+    'POST https://network.example/v2/2finance-network/products/loans',
+    'GET https://network.example/v2/2finance-network/products/swaps',
+    'POST https://network.example/v2/2finance-network/products/swaps',
+    'GET https://network.example/v2/2finance-network/products/staking',
+    'POST https://network.example/v2/2finance-network/products/staking',
+    'GET https://network.example/v2/2finance-network/products/synthetic-assets',
+    'POST https://network.example/v2/2finance-network/products/synthetic-assets',
+    'GET https://network.example/v2/2finance-network/products/liquidity-pools',
+    'POST https://network.example/v2/2finance-network/products/liquidity-pools',
     'POST https://trading.example/robots/robot%2F1%20ok:start',
     'POST https://trading.example/robots/robot%2F1%20ok:pause',
     'GET https://trading.example/robots/robot%2F1%20ok/risk-policy',

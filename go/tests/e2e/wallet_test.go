@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/domain"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
-	walletDomain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
-	walletModels "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV2/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV2"
+	walletDomain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV2/domain"
+	walletModels "gitlab.com/2finance/2finance-network/blockchain/contract/walletV2/models"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
@@ -28,7 +28,7 @@ func TestWalletWorkflow(t *testing.T) {
 	// ------------------
 	//   DEPLOY WALLET CONTRACT
 	// ------------------
-	deployedContract, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(walletV2.WALLET_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}

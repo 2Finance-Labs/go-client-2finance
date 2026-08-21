@@ -1,7 +1,6 @@
 part of 'two_finance_blockchain.dart';
 
 extension Faucet on TwoFinanceBlockchain {
-
   // Future<ContractOutput> addFaucet(
   //   String address,
   //   String owner,
@@ -15,7 +14,7 @@ extension Faucet on TwoFinanceBlockchain {
   // ) async {
   //   final from = _publicKeyHex!;
   //   final to = address;
-  //   final contractVersion = FAUCET_CONTRACT_V1;
+  //   final contractVersion = FAUCET_CONTRACT_V2;
   //   final method = METHOD_ADD_FAUCET;
   //   if (from.isEmpty) throw Exception("from address not set");
   //   KeyManager.validateEDDSAPublicKeyHex(from);
@@ -62,7 +61,7 @@ extension Faucet on TwoFinanceBlockchain {
   // ) async {
   //   final from = _publicKeyHex!;
   //   final to = address;
-  //   const contractVersion = FAUCET_CONTRACT_V1;
+  //   const contractVersion = FAUCET_CONTRACT_V2;
   //   const method = METHOD_UPDATE_FAUCET;
   //   if (from.isEmpty) throw Exception("from address not set");
   //   KeyManager.validateEDDSAPublicKeyHex(from);
@@ -97,7 +96,7 @@ extension Faucet on TwoFinanceBlockchain {
   //   KeyManager.validateEDDSAPublicKeyHex(from);
 
   //   final to = address;
-  //   const contractVersion = FAUCET_CONTRACT_V1;
+  //   const contractVersion = FAUCET_CONTRACT_V2;
   //   const method = METHOD_PAUSE_FAUCET;
 
   //   final data = {
@@ -123,7 +122,7 @@ extension Faucet on TwoFinanceBlockchain {
   //   KeyManager.validateEDDSAPublicKeyHex(from);
 
   //   final to = address;
-  //   const contractVersion = FAUCET_CONTRACT_V1;
+  //   const contractVersion = FAUCET_CONTRACT_V2;
   //   const method = METHOD_UNPAUSE_FAUCET;
 
   //   final data = {
@@ -150,7 +149,7 @@ extension Faucet on TwoFinanceBlockchain {
   //   KeyManager.validateEDDSAPublicKeyHex(from);
 
   //   final to = address;
-  //   const contractVersion = FAUCET_CONTRACT_V1;
+  //   const contractVersion = FAUCET_CONTRACT_V2;
   //   const method = METHOD_DEPOSIT_FUNDS;
 
   //   final data = {
@@ -178,7 +177,7 @@ extension Faucet on TwoFinanceBlockchain {
   //   KeyManager.validateEDDSAPublicKeyHex(from);
 
   //   final to = address;
-  //   const contractVersion = FAUCET_CONTRACT_V1;
+  //   const contractVersion = FAUCET_CONTRACT_V2;
   //   const method = METHOD_WITHDRAW_FUNDS;
 
   //   final data = {
@@ -205,7 +204,7 @@ extension Faucet on TwoFinanceBlockchain {
   //   KeyManager.validateEDDSAPublicKeyHex(from);
 
   //   final to = address;
-  //   const contractVersion = FAUCET_CONTRACT_V1;
+  //   const contractVersion = FAUCET_CONTRACT_V2;
   //   const method = METHOD_UPDATE_REQUEST_LIMIT_PER_USER;
 
   //   final data = {
@@ -228,7 +227,7 @@ extension Faucet on TwoFinanceBlockchain {
   //   if (from.isEmpty) throw Exception("from address not set");
   //   KeyManager.validateEDDSAPublicKeyHex(from);
 
-  //   const contractVersion = FAUCET_CONTRACT_V1;
+  //   const contractVersion = FAUCET_CONTRACT_V2;
   //   const method = METHOD_CLAIM_FUNDS;
   //   final to = address;
 
@@ -252,7 +251,7 @@ extension Faucet on TwoFinanceBlockchain {
   //   KeyManager.validateEDDSAPublicKeyHex(from);
   //   KeyManager.validateEDDSAPublicKeyHex(faucetAddress);
 
-  //   const contractVersion = FAUCET_CONTRACT_V1;
+  //   const contractVersion = FAUCET_CONTRACT_V2;
   //   const method = METHOD_GET_FAUCET;
   //   final data = {
   //     "address": faucetAddress,
@@ -283,7 +282,7 @@ extension Faucet on TwoFinanceBlockchain {
   //   if (page < 1) throw Exception("page must be greater than 0");
   //   if (limit < 1) throw Exception("limit must be greater than 0");
 
-  //   const contractVersion = FAUCET_CONTRACT_V1;
+  //   const contractVersion = FAUCET_CONTRACT_V2;
   //   const method = METHOD_LIST_FAUCETS;
 
   //   final data = {

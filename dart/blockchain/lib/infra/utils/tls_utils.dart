@@ -16,7 +16,9 @@ SecurityContext createSecurityContext(String caCertPath) {
   try {
     context.setTrustedCertificates(caCertPath);
   } on TlsException catch (e) {
-    throw Exception('❌ TLS Error: Failed to load CA certificate from $caCertPath: ${e.message}');
+    throw Exception(
+      '❌ TLS Error: Failed to load CA certificate from $caCertPath: ${e.message}',
+    );
   } catch (e) {
     throw Exception('❌ TLS Error: Unexpected error loading CA cert: $e');
   }

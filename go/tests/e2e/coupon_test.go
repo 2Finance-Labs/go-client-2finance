@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
-	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
-	couponV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/models"
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
-	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
+	couponV2 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV2"
+	couponV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV2/domain"
+	couponV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/couponV2/models"
+	tokenV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
+	tokenV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/models"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
@@ -29,7 +29,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	// ------------------
 	//   DEPLOY COUPON
 	// ------------------
-	deployedContract, err := c.DeployContract1(couponV1.COUPON_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(couponV2.COUPON_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -49,13 +49,13 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	// ------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	start := time.Now().Add(2 * time.Second)
-	exp := time.Now().Add(25 * time.Minute)
+	start := time.Now().Add(-time.Minute)
+	exp := start.Add(25 * time.Minute)
 
 	raw := sha256.Sum256([]byte("e2e-passcode"))
 	pcHash := hex.EncodeToString(raw[:])
 
-	discountType := couponV1Domain.DISCOUNT_TYPE_PERCENTAGE
+	discountType := couponV2Domain.DISCOUNT_TYPE_PERCENTAGE
 	percentageBPS := "1000"
 	fixedAmount := ""
 	minOrder := "50"
@@ -117,9 +117,9 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalLog (AddCoupon.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, couponV1Domain.COUPON_CREATED_LOG, couponLog.LogType, "add-coupon log type mismatch")
+	assert.Equal(t, couponV2Domain.COUPON_CREATED_LOG, couponLog.LogType, "add-coupon log type mismatch")
 
-	coupon, err := utils.UnmarshalEvent[couponV1Domain.Coupon](couponLog.Event)
+	coupon, err := utils.UnmarshalEvent[couponV2Domain.Coupon](couponLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddCoupon.Logs[0]): %v", err)
 	}
@@ -145,7 +145,7 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddCoupon.DelegatedCall[0].Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_CREATED_LOG, delegatedCreatedTokenLog.LogType, "delegated call log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_CREATED_LOG, delegatedCreatedTokenLog.LogType, "delegated call log type mismatch")
 
 	delegatedTokenTransfer := outAddCoupon.DelegatedCall[1]
 	assert.NotNil(t, delegatedTokenTransfer)
@@ -154,18 +154,18 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddCoupon.DelegatedCall[1].Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_TRANSFERRED_NFT_LOG, delegatedTokenTransferLog.LogType, "delegated token transfer log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_TRANSFERRED_NFT_LOG, delegatedTokenTransferLog.LogType, "delegated token transfer log type mismatch")
 
 	// ------------------
 	//   BALANCE AFTER ADD
 	// ------------------
-	outBalance, err := c.ListTokenBalances(coupon.TokenAddress, voucherOwner, tokenV1Domain.NON_FUNGIBLE, 1, 3, true)
+	outBalance, err := c.ListTokenBalances(coupon.TokenAddress, voucherOwner, tokenV2Domain.NON_FUNGIBLE, 1, 3, true)
 	if err != nil {
 		t.Fatalf("ListTokenBalances: %v", err)
 	}
 
-	var balanceStates []tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[[]tokenV1Models.BalanceStateModel](outBalance.States[0].Object, &balanceStates)
+	var balanceStates []tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[[]tokenV2Models.BalanceStateModel](outBalance.States[0].Object, &balanceStates)
 	if err != nil {
 		t.Fatalf("UnmarshalState (ListTokenBalances.States[0]): %v", err)
 	}
@@ -180,12 +180,12 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	// ------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	updatedDiscountType := couponV1Domain.DISCOUNT_TYPE_FIXED
+	updatedDiscountType := couponV2Domain.DISCOUNT_TYPE_FIXED
 	updatedPercentageBPS := ""
 	updatedFixedAmount := "10000"
 	updatedMinOrder := "50"
-	updatedStart := time.Now().Add(1 * time.Second)
-	updatedExp := time.Now().Add(10 * time.Minute)
+	updatedStart := time.Now().Add(-time.Minute)
+	updatedExp := updatedStart.Add(10 * time.Minute)
 
 	raw2 := sha256.Sum256([]byte("e2e-passcode-2"))
 	updatedPcHash := hex.EncodeToString(raw2[:])
@@ -217,9 +217,9 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalLog (UpdateCoupon.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, couponV1Domain.COUPON_UPDATED_LOG, updateCouponLog.LogType, "update-coupon log type mismatch")
+	assert.Equal(t, couponV2Domain.COUPON_UPDATED_LOG, updateCouponLog.LogType, "update-coupon log type mismatch")
 
-	updatedCoupon, err := utils.UnmarshalEvent[couponV1Domain.Coupon](updateCouponLog.Event)
+	updatedCoupon, err := utils.UnmarshalEvent[couponV2Domain.Coupon](updateCouponLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UpdateCoupon.Logs[0]): %v", err)
 	}
@@ -255,9 +255,9 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalLog (IssueVoucher.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, couponV1Domain.VOUCHER_ISSUED_LOG, issueLog.LogType, "issue-voucher log type mismatch")
+	assert.Equal(t, couponV2Domain.VOUCHER_ISSUED_LOG, issueLog.LogType, "issue-voucher log type mismatch")
 
-	issuedVoucher, err := utils.UnmarshalEvent[couponV1Domain.IssueVoucher](issueLog.Event)
+	issuedVoucher, err := utils.UnmarshalEvent[couponV2Domain.IssueVoucher](issueLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (IssueVoucher.Logs[0]): %v", err)
 	}
@@ -273,15 +273,15 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (IssueVoucher.DelegatedCall[0].Logs[0]): %v", err)
 	}
-	assert.Equal(t, tokenV1Domain.TOKEN_MINTED_NFT_LOG, delegatedIssueLog.LogType, "delegated issue voucher log type mismatch")
+	assert.Equal(t, tokenV2Domain.TOKEN_MINTED_NFT_LOG, delegatedIssueLog.LogType, "delegated issue voucher log type mismatch")
 
-	outBalanceOwner, err := c.ListTokenBalances(coupon.TokenAddress, ownerSigner.PublicKey, tokenV1Domain.NON_FUNGIBLE, 1, 3, true)
+	outBalanceOwner, err := c.ListTokenBalances(coupon.TokenAddress, ownerSigner.PublicKey, tokenV2Domain.NON_FUNGIBLE, 1, 3, true)
 	if err != nil {
 		t.Fatalf("ListTokenBalances owner: %v", err)
 	}
 
-	var balanceStatesOwner []tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[[]tokenV1Models.BalanceStateModel](outBalanceOwner.States[0].Object, &balanceStatesOwner)
+	var balanceStatesOwner []tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[[]tokenV2Models.BalanceStateModel](outBalanceOwner.States[0].Object, &balanceStatesOwner)
 	if err != nil {
 		t.Fatalf("UnmarshalState (ListTokenBalances owner.States[0]): %v", err)
 	}
@@ -307,9 +307,9 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalLog (RedeemVoucher.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, couponV1Domain.VOUCHER_REDEEMED_LOG, redeemLog.LogType, "redeem-voucher log type mismatch")
+	assert.Equal(t, couponV2Domain.VOUCHER_REDEEMED_LOG, redeemLog.LogType, "redeem-voucher log type mismatch")
 
-	redeemedVoucher, err := utils.UnmarshalEvent[couponV1Domain.RedeemVoucher](redeemLog.Event)
+	redeemedVoucher, err := utils.UnmarshalEvent[couponV2Domain.RedeemVoucher](redeemLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (RedeemVoucher.Logs[0]): %v", err)
 	}
@@ -336,9 +336,9 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalLog (PauseCoupon.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, couponV1Domain.COUPON_PAUSED_LOG, pausedLog.LogType, "pause-coupon log type mismatch")
+	assert.Equal(t, couponV2Domain.COUPON_PAUSED_LOG, pausedLog.LogType, "pause-coupon log type mismatch")
 
-	pausedCoupon, err := utils.UnmarshalEvent[couponV1Domain.Pause](pausedLog.Event)
+	pausedCoupon, err := utils.UnmarshalEvent[couponV2Domain.Pause](pausedLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (PauseCoupon.Logs[0]): %v", err)
 	}
@@ -358,9 +358,9 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("UnmarshalLog (UnpauseCoupon.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, couponV1Domain.COUPON_UNPAUSED_LOG, unpausedLog.LogType, "unpause-coupon log type mismatch")
+	assert.Equal(t, couponV2Domain.COUPON_UNPAUSED_LOG, unpausedLog.LogType, "unpause-coupon log type mismatch")
 
-	unpausedCoupon, err := utils.UnmarshalEvent[couponV1Domain.Pause](unpausedLog.Event)
+	unpausedCoupon, err := utils.UnmarshalEvent[couponV2Domain.Pause](unpausedLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UnpauseCoupon.Logs[0]): %v", err)
 	}
@@ -376,8 +376,8 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("GetCoupon: %v", err)
 	}
 
-	var couponState couponV1Models.CouponStateModel
-	err = utils.UnmarshalState[couponV1Models.CouponStateModel](couponStateOutput.States[0].Object, &couponState)
+	var couponState couponV2Models.CouponStateModel
+	err = utils.UnmarshalState[couponV2Models.CouponStateModel](couponStateOutput.States[0].Object, &couponState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetCoupon.State): %v", err)
 	}
@@ -407,8 +407,8 @@ func TestCouponFlow_NonFungible(t *testing.T) {
 		t.Fatalf("ListCoupons: %v", err)
 	}
 
-	var couponsList []couponV1Models.CouponStateModel
-	err = utils.UnmarshalState[[]couponV1Models.CouponStateModel](couponsListOutput.States[0].Object, &couponsList)
+	var couponsList []couponV2Models.CouponStateModel
+	err = utils.UnmarshalState[[]couponV2Models.CouponStateModel](couponsListOutput.States[0].Object, &couponsList)
 	if err != nil {
 		t.Fatalf("UnmarshalState (ListCoupons.States[0]): %v", err)
 	}

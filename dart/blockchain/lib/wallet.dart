@@ -54,7 +54,7 @@ extension Wallet on TwoFinanceBlockchain {
     }
 
     const String method = METHOD_GET_WALLET_BY_PUBLIC_KEY;
-    const String contractVersion = WALLET_CONTRACT_V1;
+    const String contractVersion = WALLET_CONTRACT_V2;
     final JsonMessage data = {
       'public_key': pubKey,
       'contract_version': contractVersion,

@@ -6,13 +6,13 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
-import 'package:two_finance_blockchain/blockchain/contract/tokenV1/constants.dart';
-import 'package:two_finance_blockchain/blockchain/contract/tokenV1/models/balance.dart';
+import 'package:two_finance_blockchain/blockchain/contract/tokenV2/constants.dart';
+import 'package:two_finance_blockchain/blockchain/contract/tokenV2/models/balance.dart';
 import 'package:two_finance_blockchain/blockchain/keys/keys.dart';
 import 'package:two_finance_blockchain/blockchain/types/types.dart';
 import 'package:two_finance_blockchain/blockchain/utils/marshal.dart';
 import 'package:two_finance_blockchain/config/config.dart';
-import 'package:two_finance_blockchain/infra/mqtt/mqtt.dart';
+import 'package:two_finance_blockchain/infra/http/http_transport.dart';
 import 'package:two_finance_blockchain/two_finance_blockchain.dart';
 
 class TestUser {
@@ -77,20 +77,10 @@ Future<TwoFinanceBlockchain> setupClient() async {
       path: 'packages/two_finance_blockchain/assets/.env',
     );
 
-    final uniqueClientId =
-        "${Config.emqxClientId}-${DateTime.now().millisecondsSinceEpoch}";
-
-    final mqttClient = MqttClientWrapper(
-      host: Config.emqxHost,
-      port: Config.emqxPort,
-      clientId: uniqueClientId,
-      useSSL: Config.emqxSSL,
-      username: Config.emqxUsername,
-      password: Config.emqxPassword,
-      caCertPath: Config.emqxCaCertPath,
-    );
-
-    await mqttClient.connect();
+    final networkUrl =
+        Platform.environment['TWO_FINANCE_NETWORK_URL'] ??
+        'http://127.0.0.1:19295';
+    final transport = HttpFinanceNetworkTransport(baseUrl: networkUrl);
     print('Initializing TwoFinanceBlockchain plugin...');
 
     final keyManager = KeyManager();
@@ -101,7 +91,7 @@ Future<TwoFinanceBlockchain> setupClient() async {
 
     final plugin = TwoFinanceBlockchain(
       keyManager: keyManager,
-      mqttClient: mqttClient,
+      mqttClient: transport,
       chainID: chainID,
     );
 
@@ -114,16 +104,7 @@ Future<TwoFinanceBlockchain> setupClient() async {
 }
 
 Future<void> teardownClient(TwoFinanceBlockchain c) async {
-  try {
-    final mc = (c as dynamic)._mqttClient;
-    if (mc != null) {
-      if ((mc as dynamic).disconnect != null) {
-        await (mc as dynamic).disconnect();
-      }
-    }
-  } catch (_) {
-    // ignore
-  }
+  // The shared HTTP transport has no session or subscription to tear down.
 }
 
 String randSuffix(int n) {
@@ -398,7 +379,7 @@ Future<String> createBasicToken(
 }) async {
   await c.setPrivateKey(ownerPrivateKey);
 
-  final deployedToken = await c.deployContract1(TOKEN_CONTRACT_V1);
+  final deployedToken = await c.deployContract1(TOKEN_CONTRACT_V2);
 
   expect(deployedToken, isA<ContractOutput>());
   expect(deployedToken.logs, isNotNull);
@@ -487,7 +468,7 @@ Future<MintedNftPrize> createAndMintNftPrize(
 }) async {
   await c.setPrivateKey(ownerUser.privateKey);
 
-  final deployedPrize = await c.deployContract1(TOKEN_CONTRACT_V1);
+  final deployedPrize = await c.deployContract1(TOKEN_CONTRACT_V2);
   expect(deployedPrize, isA<ContractOutput>());
   expect(deployedPrize.logs, isNotNull);
   expect(deployedPrize.logs!, isNotEmpty);

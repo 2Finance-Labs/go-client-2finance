@@ -16,7 +16,7 @@ import 'helpers/helpers.dart';
 // ----------------------------------------------------------------------------
 
 void main() {
-  test('SetupClient', () async{
+  test('SetupClient', () async {
     expect(await setupClient(), isA<TwoFinanceBlockchain>());
   });
 
@@ -49,11 +49,8 @@ void main() {
     await future;
     expect(count, 3);
   });
-  
 }
 
 // ----------------------------------------------------------------------------
 // Stub Client (substitua pelo real)
 // ----------------------------------------------------------------------------
-
-

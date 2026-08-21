@@ -230,17 +230,20 @@ class KeyStoreClient(ServiceClient):
 
 class NetworkClient(ServiceClient):
     def virtual_machine(self) -> Any:
-        return self.get("/v1/2finance-network/virtual-machine")
+        return self.post(
+            "/v2/2finance-network/query",
+            {"method": "get_blocks", "params": {"page": 1, "limit": 1}},
+        )
 
     def market_candles(self, market: str, query: str = "") -> Any:
         suffix = f"?{query}" if query else ""
-        return self.get(f"/v1/2finance-network/markets/{_path(market)}/candles{suffix}")
+        return self.get(f"/v2/2finance-network/markets/{_path(market)}/candles{suffix}")
 
     def products(self, product_type: str) -> Any:
-        return self.get(f"/v1/2finance-network/products/{_path(product_type)}")
+        return self.get(f"/v2/2finance-network/products/{_path(product_type)}")
 
     def create_product(self, product_type: str, request: dict[str, Any]) -> Any:
-        return self.post(f"/v1/2finance-network/products/{_path(product_type)}", request)
+        return self.post(f"/v2/2finance-network/products/{_path(product_type)}", request)
 
     def bonds(self) -> Any:
         return self.products("bonds")
@@ -333,12 +336,16 @@ class MatchEngineClient:
         self.websocket_url = (websocket_url or "").strip()
 
     def order_command(self, **command: Any) -> dict[str, Any]:
-        payload = {"schema": "matchengine.order_command.v1"}
+        payload = {
+            "schema": "matchengine.order_command.v2",
+            "message_type": "ORDER",
+            "operation": "ADD",
+        }
         payload.update(command)
         return payload
 
     def market_data_subscribe(self, **request: Any) -> dict[str, Any]:
-        payload = {"schema": "matchengine.market_data_subscribe.v1"}
+        payload = {"schema": "matchengine.market_data_subscribe.v2"}
         payload.update(request)
         return payload
 

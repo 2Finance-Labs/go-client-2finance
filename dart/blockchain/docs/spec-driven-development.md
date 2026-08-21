@@ -29,7 +29,7 @@ O projeto é um SDK Dart que fala com uma rede via MQTT e precisa ficar compatí
 
 ## Convenções
 
-- Um arquivo por área funcional: `wallet_v1.spec.json`, `lifecycle_v1.spec.json`.
+- Um arquivo por área funcional: `wallet_v2.spec.json`, `lifecycle_v2.spec.json`.
 - Cada spec tem `id`, `title`, `owner`, `status`, `layers` e `cases`.
 - Cada case tem `given`, `when`, `then` e pelo menos um `tags`.
 - `given` descreve estado e dados.
@@ -56,8 +56,8 @@ specs/
   client/
     queries.spec.json
   contracts/
-    lifecycle_v1.spec.json
-    wallet_v1.spec.json
+    lifecycle_v2.spec.json
+    wallet_v2.spec.json
 test/
   spec_harness/
     spec_files_test.dart

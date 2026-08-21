@@ -238,24 +238,27 @@ final class NetworkClient
 
     public function virtualMachine(): mixed
     {
-        return $this->service->get('/v1/2finance-network/virtual-machine');
+        return $this->service->post('/v2/2finance-network/query', [
+            'method' => 'get_blocks',
+            'params' => ['page' => 1, 'limit' => 1],
+        ]);
     }
 
     public function marketCandles(string $market, string $query = ''): mixed
     {
         return $this->service->get(
-            '/v1/2finance-network/markets/' . rawurlencode($market) . '/candles' . ($query === '' ? '' : '?' . $query),
+            '/v2/2finance-network/markets/' . rawurlencode($market) . '/candles' . ($query === '' ? '' : '?' . $query),
         );
     }
 
     public function products(string $productType): mixed
     {
-        return $this->service->get('/v1/2finance-network/products/' . rawurlencode($productType));
+        return $this->service->get('/v2/2finance-network/products/' . rawurlencode($productType));
     }
 
     public function createProduct(string $productType, array $request): mixed
     {
-        return $this->service->post('/v1/2finance-network/products/' . rawurlencode($productType), $request);
+        return $this->service->post('/v2/2finance-network/products/' . rawurlencode($productType), $request);
     }
 
     public function bonds(): mixed
@@ -613,7 +616,11 @@ final class MatchEngineClient
      */
     public function orderCommand(array $command): array
     {
-        return ['schema' => 'matchengine.order_command.v1'] + $command;
+        return array_merge([
+            'schema' => 'matchengine.order_command.v2',
+            'message_type' => 'ORDER',
+            'operation' => 'ADD',
+        ], $command);
     }
 
     /**
@@ -622,7 +629,7 @@ final class MatchEngineClient
      */
     public function marketDataSubscribe(array $request): array
     {
-        return ['schema' => 'matchengine.market_data_subscribe.v1'] + $request;
+        return ['schema' => 'matchengine.market_data_subscribe.v2'] + $request;
     }
 
     public function sendOrder(callable $sender, array $command): mixed

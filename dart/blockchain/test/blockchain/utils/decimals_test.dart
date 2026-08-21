@@ -68,7 +68,11 @@ void main() {
       );
 
       expect(
-        () => rescaleDecimalString('1.2.3', 2, 2), // split => "1" + "2" but extra dot breaks numeric
+        () => rescaleDecimalString(
+          '1.2.3',
+          2,
+          2,
+        ), // split => "1" + "2" but extra dot breaks numeric
         throwsA(isA<FormatException>()),
       );
     });
@@ -84,33 +88,36 @@ void main() {
     });
 
     test('throws FormatException for multiple decimal separators (1.2.3)', () {
-        expect(
-            () => rescaleDecimalString('1.2.3', 2, 2),
-            throwsA(isA<FormatException>()),
-        );
+      expect(
+        () => rescaleDecimalString('1.2.3', 2, 2),
+        throwsA(isA<FormatException>()),
+      );
 
-        expect(
-            () => rescaleDecimalString('1,2,3', 2, 2),
-            throwsA(isA<FormatException>()),
-        );
+      expect(
+        () => rescaleDecimalString('1,2,3', 2, 2),
+        throwsA(isA<FormatException>()),
+      );
     });
-    test('invalid input "1.2.3" throws FormatException and surfaces the error', () {
+    test(
+      'invalid input "1.2.3" throws FormatException and surfaces the error',
+      () {
         expect(
-            () => rescaleDecimalString('1.2.3', 2, 2),
-            throwsA(
+          () => rescaleDecimalString('1.2.3', 2, 2),
+          throwsA(
             isA<FormatException>().having(
-                (e) => e.message,
-                'message',
-                contains('Invalid numeric input'),
+              (e) => e.message,
+              'message',
+              contains('Invalid numeric input'),
             ),
-            ),
+          ),
         );
-    });
+      },
+    );
     test('invalid input "1,2,3" throws FormatException', () {
-        expect(
-            () => rescaleDecimalString('1,2,3', 2, 2),
-            throwsA(isA<FormatException>()),
-        );
+      expect(
+        () => rescaleDecimalString('1,2,3', 2, 2),
+        throwsA(isA<FormatException>()),
+      );
     });
   });
 }

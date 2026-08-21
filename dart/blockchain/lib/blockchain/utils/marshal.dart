@@ -2,10 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:two_finance_blockchain/blockchain/log/log.dart';
 
-T unmarshalState<T>(
-  Object? obj,
-  T Function(Map<String, dynamic>) fromJson,
-) {
+T unmarshalState<T>(Object? obj, T Function(Map<String, dynamic>) fromJson) {
   if (obj == null) {
     throw Exception('unmarshalState: object is null');
   }
@@ -60,10 +57,7 @@ T unmarshalState<T>(
   );
 }
 
-T unmarshalLog<T>(
-  dynamic obj,
-  T Function(Map<String, dynamic>) fromJson,
-) {
+T unmarshalLog<T>(dynamic obj, T Function(Map<String, dynamic>) fromJson) {
   try {
     if (obj is Map<String, dynamic>) {
       return fromJson(obj);
@@ -86,10 +80,7 @@ T unmarshalLog<T>(
   }
 }
 
-T unmarshalEvent<T>(
-  String event,
-  T Function(Map<String, dynamic>) fromJson,
-) {
+T unmarshalEvent<T>(String event, T Function(Map<String, dynamic>) fromJson) {
   if (event.isEmpty) {
     throw Exception("empty event");
   }

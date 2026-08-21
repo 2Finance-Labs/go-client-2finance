@@ -131,19 +131,22 @@ final class NetworkClient {
   final ServiceClient service;
 
   Future<Object?> virtualMachine() {
-    return service.get('/v1/2finance-network/virtual-machine');
+    return service.post('/v2/2finance-network/query', {
+      'method': 'get_blocks',
+      'params': {'page': 1, 'limit': 1},
+    });
   }
 
   Future<Object?> marketCandles(String market, [String query = '']) {
     final suffix = query.isEmpty ? '' : '?$query';
     return service.get(
-      '/v1/2finance-network/markets/${Uri.encodeComponent(market)}/candles$suffix',
+      '/v2/2finance-network/markets/${Uri.encodeComponent(market)}/candles$suffix',
     );
   }
 
   Future<Object?> products(String productType) {
     return service.get(
-      '/v1/2finance-network/products/${Uri.encodeComponent(productType)}',
+      '/v2/2finance-network/products/${Uri.encodeComponent(productType)}',
     );
   }
 
@@ -152,7 +155,7 @@ final class NetworkClient {
     Map<String, Object?> request,
   ) {
     return service.post(
-      '/v1/2finance-network/products/${Uri.encodeComponent(productType)}',
+      '/v2/2finance-network/products/${Uri.encodeComponent(productType)}',
       request,
     );
   }
@@ -355,11 +358,16 @@ final class MatchEngineClient {
   final String webSocketUrl;
 
   Map<String, Object?> orderCommand(Map<String, Object?> command) {
-    return {'schema': 'matchengine.order_command.v1', ...command};
+    return {
+      'schema': 'matchengine.order_command.v2',
+      'message_type': 'ORDER',
+      'operation': 'ADD',
+      ...command,
+    };
   }
 
   Map<String, Object?> marketDataSubscribe(Map<String, Object?> request) {
-    return {'schema': 'matchengine.market_data_subscribe.v1', ...request};
+    return {'schema': 'matchengine.market_data_subscribe.v2', ...request};
   }
 
   FutureOr<Object?> sendOrder(

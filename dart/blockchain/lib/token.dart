@@ -709,7 +709,7 @@ extension Token on TwoFinanceBlockchain {
       return getState(to: tokenAddress, method: METHOD_GET_TOKEN, data: data);
     }
 
-    data["contract_version"] = TOKEN_CONTRACT_V1;
+    data["contract_version"] = TOKEN_CONTRACT_V2;
 
     // Caso contrário, query global (to:'')
     return getState(to: '', method: METHOD_GET_TOKEN, data: data);
@@ -738,7 +738,7 @@ extension Token on TwoFinanceBlockchain {
       "page": page,
       "limit": limit,
       "ascending": ascending,
-      "contract_version": TOKEN_CONTRACT_V1,
+      "contract_version": TOKEN_CONTRACT_V2,
     };
     if (tokenType.isNotEmpty) {
       data["token_type"] = tokenType;
@@ -814,7 +814,7 @@ extension Token on TwoFinanceBlockchain {
       "page": page,
       "limit": limit,
       "ascending": ascending,
-      "contract_version": TOKEN_CONTRACT_V1,
+      "contract_version": TOKEN_CONTRACT_V2,
     };
     if (tokenType.isNotEmpty) {
       data["token_type"] = tokenType;

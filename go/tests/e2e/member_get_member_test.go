@@ -4,12 +4,12 @@ import (
 	"testing"
 	// "time"
 	// "fmt"
-	// "gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/models"
-	// faucetV1 "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1"
-	// faucetV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV1/domain"
-	// mgmV1 "gitlab.com/2finance/2finance-network/blockchain/contract/memberGetMemberV1"
-	// mgmV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/memberGetMemberV1/models"
-	// tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	// "gitlab.com/2finance/2finance-network/blockchain/contract/contractV2/models"
+	// faucetV2 "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV2"
+	// faucetV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/faucetV2/domain"
+	// mgmV2 "gitlab.com/2finance/2finance-network/blockchain/contract/memberGetMemberV2"
+	// mgmV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/memberGetMemberV2/models"
+	// tokenV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
 )
 
 func TestMgMFlow(t *testing.T) {
@@ -23,14 +23,14 @@ func TestMgMFlow(t *testing.T) {
 	// wm.SetPrivateKey(ownerPriv)
 	// dec := 6
 	// stablecoin := true
-	// tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV1Domain.FUNGIBLE, stablecoin)
+	// tok := createBasicToken(t, c, owner.PublicKey, dec, false, tokenV2Domain.FUNGIBLE, stablecoin)
 
 	// // --------------------------------------------------------------------
 	// // Deploy MgM + Faucet contracts
 	// // --------------------------------------------------------------------
 	// var contractState models.ContractStateModel
 
-	// deployedMgm, err := c.DeployContract1(mgmV1.MEMBER_GET_MEMBER_CONTRACT_V1)
+	// deployedMgm, err := c.DeployContract1(mgmV2.MEMBER_GET_MEMBER_CONTRACT_V2)
 	// if err != nil {
 	// 	t.Fatalf("DeployContract (mgm): %v", err)
 	// }
@@ -40,7 +40,7 @@ func TestMgMFlow(t *testing.T) {
 	// 	t.Fatalf("mgmAddress empty")
 	// }
 
-	// deployedFaucet, err := c.DeployContract1(faucetV1.FAUCET_CONTRACT_V1)
+	// deployedFaucet, err := c.DeployContract1(faucetV2.FAUCET_CONTRACT_V2)
 	// if err != nil {
 	// 	t.Fatalf("DeployContract (faucet): %v", err)
 	// }
@@ -58,7 +58,7 @@ func TestMgMFlow(t *testing.T) {
 	// if err != nil {
 	// 	t.Fatalf("AddFaucet: %v", err)
 	// }
-	// var f faucetV1Domain.Faucet
+	// var f faucetV2Domain.Faucet
 	// unmarshalState(t, out.States[0].Object, &f)
 	// if f.Address == "" {
 	// 	t.Fatalf("faucet addr empty")
@@ -72,7 +72,7 @@ func TestMgMFlow(t *testing.T) {
 	// 	t.Fatalf("AddMgM: %v", err)
 	// }
 	// // sanity: state has mgm address
-	// var got mgmV1Models.MgMStateModel
+	// var got mgmV2Models.MgMStateModel
 	// unmarshalState(t, addOut.States[0].Object, &got)
 	// if got.Address == "" {
 	// 	t.Fatalf("AddMgM returned empty address")
@@ -88,10 +88,10 @@ func TestMgMFlow(t *testing.T) {
 	// // --------------------------------------------------------------------
 	// // Deposit/Withdraw pool funds (owner)
 	// // --------------------------------------------------------------------
-	// if _, err := c.DepositMgM(mgmAddress, amt(100, dec), tokenV1Domain.FUNGIBLE, ""); err != nil {
+	// if _, err := c.DepositMgM(mgmAddress, amt(100, dec), tokenV2Domain.FUNGIBLE, ""); err != nil {
 	// 	t.Logf("DepositMgM warning: %v", err) // backend may gate this; don't fail suite
 	// }
-	// if _, err := c.WithdrawMgM(mgmAddress, amt(1, dec), tokenV1Domain.FUNGIBLE, ""); err != nil {
+	// if _, err := c.WithdrawMgM(mgmAddress, amt(1, dec), tokenV2Domain.FUNGIBLE, ""); err != nil {
 	// 	t.Logf("WithdrawMgM warning: %v", err)
 	// }
 
@@ -167,7 +167,7 @@ func TestMgMFlow_NonFungible(t *testing.T) {
 	// wm.SetPrivateKey(ownerPriv)
 
 	// dec := 0
-	// tokenType := tokenV1Domain.NON_FUNGIBLE
+	// tokenType := tokenV2Domain.NON_FUNGIBLE
 	// stablecoin := false
 
 	// tok := createBasicToken(
@@ -194,7 +194,7 @@ func TestMgMFlow_NonFungible(t *testing.T) {
 	// 	t.Fatalf("MintToken NFT: %v", err)
 	// }
 
-	// var mint tokenV1Domain.Mint
+	// var mint tokenV2Domain.Mint
 	// unmarshalState(t, mintOut.States[0].Object, &mint)
 	// if len(mint.TokenUUIDList) != 1 {
 	// 	t.Fatalf("expected 1 NFT uuid, got %d", len(mint.TokenUUIDList))
@@ -206,7 +206,7 @@ func TestMgMFlow_NonFungible(t *testing.T) {
 	// // --------------------------------------------------------------------
 	// var contractState models.ContractStateModel
 
-	// deployedMgm, err := c.DeployContract1(mgmV1.MEMBER_GET_MEMBER_CONTRACT_V1)
+	// deployedMgm, err := c.DeployContract1(mgmV2.MEMBER_GET_MEMBER_CONTRACT_V2)
 	// if err != nil {
 	// 	t.Fatalf("DeployContract (mgm): %v", err)
 	// }
@@ -216,7 +216,7 @@ func TestMgMFlow_NonFungible(t *testing.T) {
 	// 	t.Fatalf("mgmAddress empty")
 	// }
 
-	// deployedFaucet, err := c.DeployContract1(faucetV1.FAUCET_CONTRACT_V1)
+	// deployedFaucet, err := c.DeployContract1(faucetV2.FAUCET_CONTRACT_V2)
 	// if err != nil {
 	// 	t.Fatalf("DeployContract (faucet): %v", err)
 	// }
@@ -247,7 +247,7 @@ func TestMgMFlow_NonFungible(t *testing.T) {
 	// 	t.Fatalf("AddFaucet NFT: %v", err)
 	// }
 
-	// var f faucetV1Domain.Faucet
+	// var f faucetV2Domain.Faucet
 	// unmarshalState(t, out.States[0].Object, &f)
 	// if f.Address == "" {
 	// 	t.Fatalf("faucet addr empty")
@@ -270,7 +270,7 @@ func TestMgMFlow_NonFungible(t *testing.T) {
 	// 	t.Fatalf("AddMgM NFT: %v", err)
 	// }
 
-	// var got mgmV1Models.MgMStateModel
+	// var got mgmV2Models.MgMStateModel
 	// unmarshalState(t, addOut.States[0].Object, &got)
 	// if got.Address == "" {
 	// 	t.Fatalf("AddMgM returned empty address")

@@ -371,7 +371,7 @@ extension CouponClient on TwoFinanceBlockchain {
       'page': page,
       'limit': limit,
       'ascending': ascending,
-      'contract_version': COUPON_CONTRACT_V1,
+      'contract_version': COUPON_CONTRACT_V2,
     };
 
     return getState(to: '', method: method, data: data);

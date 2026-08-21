@@ -39,7 +39,7 @@ void main() {
           from: manager.ownerAddress,
           to: DEPLOY_CONTRACT_ADDRESS,
           method: 'deploy_contract',
-          data: {'contract_version': 'walletV1'},
+          data: {'contract_version': 'walletV2'},
           version: 1,
           uuid7: newUUID7(),
         );

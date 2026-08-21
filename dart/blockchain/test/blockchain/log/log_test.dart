@@ -4,7 +4,7 @@ import 'package:two_finance_blockchain/blockchain/log/log.dart';
 void main() {
   final validTxHash = 'a' * 64;
   const validContractAddress = '0xcontract';
-  const validContractVersion = 'v1';
+  const validContractVersion = 'walletV2';
 
   group('Log constructor & getters', () {
     test('creates log and exposes getters correctly', () {
@@ -60,8 +60,7 @@ void main() {
       expect(
         () => Log.fromJson(json),
         throwsA(
-          predicate((e) =>
-              e is Exception && e.toString().contains('event')),
+          predicate((e) => e is Exception && e.toString().contains('event')),
         ),
       );
     });
@@ -78,14 +77,17 @@ void main() {
 
       final json = log.toJson();
 
-      expect(json, equals({
-        'log_type': 'event',
-        'log_index': 3,
-        'transaction_hash': validTxHash,
-        'event': 'eyJ4IjogMX0=', // base64 encoded '{"x": 1}'
-        'contract_version': validContractVersion,
-        'contract_address': validContractAddress,
-      }));
+      expect(
+        json,
+        equals({
+          'log_type': 'event',
+          'log_index': 3,
+          'transaction_hash': validTxHash,
+          'event': 'eyJ4IjogMX0=', // base64 encoded '{"x": 1}'
+          'contract_version': validContractVersion,
+          'contract_address': validContractAddress,
+        }),
+      );
     });
 
     test('roundtrip toJson -> fromJson -> toJson', () {
@@ -107,13 +109,13 @@ void main() {
 
   group('Log.validateLog', () {
     Log validLog() => Log(
-          logType: 'event',
-          logIndex: 1,
-          transactionHash: validTxHash,
-          event: 'eyJvayI6IHRydWV9', // base64 encoded '{"ok": true}'
-          contractVersion: validContractVersion,
-          contractAddress: validContractAddress,
-        );
+      logType: 'event',
+      logIndex: 1,
+      transactionHash: validTxHash,
+      event: 'eyJvayI6IHRydWV9', // base64 encoded '{"ok": true}'
+      contractVersion: validContractVersion,
+      contractAddress: validContractAddress,
+    );
 
     test('does not throw for valid log', () {
       final log = validLog();
@@ -199,7 +201,8 @@ void main() {
         logType: 'event',
         logIndex: 10,
         transactionHash: validTxHash,
-        event: 'eyJoZWxsbyI6ICJ3b3JsZCJ9', // base64 encoded '{"hello": "world"}'
+        event:
+            'eyJoZWxsbyI6ICJ3b3JsZCJ9', // base64 encoded '{"hello": "world"}'
         contractVersion: validContractVersion,
         contractAddress: validContractAddress,
       );

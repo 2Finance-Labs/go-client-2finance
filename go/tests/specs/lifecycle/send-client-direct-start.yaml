@@ -38,7 +38,7 @@ steps:
     via: client_2finance
     action: deploy_contract2
     expect:
-      contract_version: sendingLifecycleV1
+      contract_version: sendingLifecycleV2
       contract_address: non_empty
   - id: start-sending
     via: client_2finance

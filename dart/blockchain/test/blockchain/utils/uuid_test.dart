@@ -33,24 +33,15 @@ void main() {
     });
 
     test('rejects invalid format', () {
-      expect(
-        () => validateUUID7('not-a-uuid'),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => validateUUID7('not-a-uuid'), throwsA(isA<Exception>()));
 
-      expect(
-        () => validateUUID7(''),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => validateUUID7(''), throwsA(isA<Exception>()));
     });
 
     test('rejects non-v7 UUID (e.g. v4)', () {
       final id = const Uuid().v4();
 
-      expect(
-        () => validateUUID7(id),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => validateUUID7(id), throwsA(isA<Exception>()));
     });
 
     test('rejects wrong variant (non-RFC4122)', () {
@@ -64,10 +55,7 @@ void main() {
 
       final mutated = Uuid.unparse(bytes);
 
-      expect(
-        () => validateUUID7(mutated),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => validateUUID7(mutated), throwsA(isA<Exception>()));
     });
   });
 
@@ -86,10 +74,7 @@ void main() {
 
     test('rejects non-v7 UUID (e.g. v4)', () {
       final id = const Uuid().v4();
-      expect(
-        () => validateUUID7Strict(id),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => validateUUID7Strict(id), throwsA(isA<Exception>()));
     });
 
     test('rejects wrong variant (non-RFC4122)', () {
@@ -100,12 +85,9 @@ void main() {
       // Set variant to 0b11 (future/reserved) instead of 0b10
       bytes[8] = (bytes[8] & 0x3f) | 0xc0; // 11xxxxxx
 
-    final mutated = Uuid.unparse(bytes);
+      final mutated = Uuid.unparse(bytes);
 
-      expect(
-        () => validateUUID7Strict(mutated),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => validateUUID7Strict(mutated), throwsA(isA<Exception>()));
     });
 
     test('rejects UUIDv7 timestamp too far in the future', () {
@@ -134,10 +116,7 @@ void main() {
 
       final mutated = Uuid.unparse(bytes);
 
-      expect(
-        () => validateUUID7Strict(mutated),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => validateUUID7Strict(mutated), throwsA(isA<Exception>()));
     });
   });
 }

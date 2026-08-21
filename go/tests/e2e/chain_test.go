@@ -7,8 +7,8 @@ import (
 
 	"github.com/2Finance-Labs/2finance-sdk-client/wallet_manager"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/domain"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV2/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV2"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
@@ -21,7 +21,7 @@ func TestContractDeployment1(t *testing.T) {
 
 	useWallet(t, c, signer.Wallet)
 
-	contractOutput, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
+	contractOutput, err := c.DeployContract1(walletV2.WALLET_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract wallet: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestContractDeployment1(t *testing.T) {
 	}
 
 	assert.NotEmpty(t, unmarshaledEvent.Address, "deployed contract address should not be empty")
-	assert.Equal(t, walletV1.WALLET_CONTRACT_V1, unmarshaledEvent.ContractVersion, "deployed contract version mismatch")
+	assert.Equal(t, walletV2.WALLET_CONTRACT_V2, unmarshaledEvent.ContractVersion, "deployed contract version mismatch")
 
 	if txs, err := c.ListTransactions(unmarshaledEvent.Address, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
 		_, _ = c.ListLogs([]string{"deploy contract"}, 0, txs[0].Hash, nil, "", 1, 10, true)
@@ -53,7 +53,7 @@ func TestContractDeployment2(t *testing.T) {
 
 	useWallet(t, c, signer.Wallet)
 
-	contractOutput, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, contractAddress)
+	contractOutput, err := c.DeployContract2(walletV2.WALLET_CONTRACT_V2, contractAddress)
 	if err != nil {
 		t.Fatalf("DeployContract2 wallet: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestContractDeployment2(t *testing.T) {
 	}
 
 	assert.NotEmpty(t, unmarshaledEvent.Address, "deployed contract address should not be empty")
-	assert.Equal(t, walletV1.WALLET_CONTRACT_V1, unmarshaledEvent.ContractVersion, "deployed contract version mismatch")
+	assert.Equal(t, walletV2.WALLET_CONTRACT_V2, unmarshaledEvent.ContractVersion, "deployed contract version mismatch")
 	assert.Equal(t, contractAddress, unmarshaledEvent.Address, "deployed contract address mismatch")
 
 	if txs, err := c.ListTransactions(unmarshaledEvent.Address, "", "", nil, 0, 1, 10, true); err == nil && len(txs) > 0 {
@@ -200,7 +200,7 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 	wm := setupWalletManager(t)
 	c := setupClient(t, wm)
 
-	if _, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1); err == nil {
+	if _, err := c.DeployContract1(walletV2.WALLET_CONTRACT_V2); err == nil {
 		t.Fatalf("expected error when from address is not set")
 	}
 
@@ -211,7 +211,7 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 		t.Fatalf("expected error when contract version is empty")
 	}
 
-	deployedContract, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(walletV2.WALLET_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract1: %v", err)
 	}
@@ -227,12 +227,12 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 	}
 
 	assert.NotEmpty(t, contractDomain.Address, "deployed contract address should not be empty")
-	assert.Equal(t, walletV1.WALLET_CONTRACT_V1, contractDomain.ContractVersion, "deployed contract version mismatch")
+	assert.Equal(t, walletV2.WALLET_CONTRACT_V2, contractDomain.ContractVersion, "deployed contract version mismatch")
 
 	tmpWM := setupWalletManager(t)
 	contractAddress, _ := genKey(t, tmpWM)
 
-	deployed2, err := c.DeployContract2(walletV1.WALLET_CONTRACT_V1, contractAddress)
+	deployed2, err := c.DeployContract2(walletV2.WALLET_CONTRACT_V2, contractAddress)
 	if err != nil {
 		t.Fatalf("DeployContract2: %v", err)
 	}
@@ -248,7 +248,7 @@ func Test_DeployContract_ValidationAndSuccess(t *testing.T) {
 	}
 
 	assert.NotEmpty(t, contractDomain2.Address, "deployed contract address should not be empty")
-	assert.Equal(t, walletV1.WALLET_CONTRACT_V1, contractDomain2.ContractVersion, "deployed contract version mismatch")
+	assert.Equal(t, walletV2.WALLET_CONTRACT_V2, contractDomain2.ContractVersion, "deployed contract version mismatch")
 	assert.Equal(t, contractAddress, contractDomain2.Address, "deployed contract address mismatch")
 }
 
@@ -283,7 +283,7 @@ func Test_TransactionRoundtrip_Sanity(t *testing.T) {
 		signer.PublicKey,
 		signer.PublicKey,
 		"echo",
-		json.RawMessage(`{"contract_version": "walletV1", "k": "v"}`),
+		json.RawMessage(`{"contract_version": "walletV2", "k": "v"}`),
 		version,
 		uuid7,
 	)

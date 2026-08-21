@@ -20,7 +20,7 @@ void main() {
     final pagination = contractFixture('pagination.json');
     final idempotency = contractFixture('idempotency.json');
 
-    expect(domains['schema'], 'sdk.domain_operations.v1');
+    expect(domains['schema'], 'sdk.domain_operations.v2');
     expect(
       contractOperation(domains, 'analytics', 'balances')['path'],
       '/portfolio-manager/balances/{account_id}',
@@ -59,7 +59,7 @@ void main() {
     expect(pagination.nextCursor, 'cursor-next');
     expect(idempotency.idempotencyKey, 'idem-001');
     expect(catalog.services.first.name, 'auth');
-    expect(operations.schema, 'sdk.domain_operations.v1');
+    expect(operations.schema, 'sdk.domain_operations.v2');
     expect(
       operations.domains.first.operations.first.requestSchema,
       'auth.login.request.v1',
@@ -518,19 +518,19 @@ void main() {
         'GET https://analytics.example/portfolio-manager/balances/acct%2F1',
         'GET https://analytics.example/risk-manager/blackscholes?symbol=BTC',
         'GET https://analytics.example/staking',
-        'GET https://network.example/v1/2finance-network/markets/BTC%2FUSDT/candles?limit=10',
-        'GET https://network.example/v1/2finance-network/products/bonds',
-        'POST https://network.example/v1/2finance-network/products/bonds',
-        'GET https://network.example/v1/2finance-network/products/loans',
-        'POST https://network.example/v1/2finance-network/products/loans',
-        'GET https://network.example/v1/2finance-network/products/swaps',
-        'POST https://network.example/v1/2finance-network/products/swaps',
-        'GET https://network.example/v1/2finance-network/products/staking',
-        'POST https://network.example/v1/2finance-network/products/staking',
-        'GET https://network.example/v1/2finance-network/products/synthetic-assets',
-        'POST https://network.example/v1/2finance-network/products/synthetic-assets',
-        'GET https://network.example/v1/2finance-network/products/liquidity-pools',
-        'POST https://network.example/v1/2finance-network/products/liquidity-pools',
+        'GET https://network.example/v2/2finance-network/markets/BTC%2FUSDT/candles?limit=10',
+        'GET https://network.example/v2/2finance-network/products/bonds',
+        'POST https://network.example/v2/2finance-network/products/bonds',
+        'GET https://network.example/v2/2finance-network/products/loans',
+        'POST https://network.example/v2/2finance-network/products/loans',
+        'GET https://network.example/v2/2finance-network/products/swaps',
+        'POST https://network.example/v2/2finance-network/products/swaps',
+        'GET https://network.example/v2/2finance-network/products/staking',
+        'POST https://network.example/v2/2finance-network/products/staking',
+        'GET https://network.example/v2/2finance-network/products/synthetic-assets',
+        'POST https://network.example/v2/2finance-network/products/synthetic-assets',
+        'GET https://network.example/v2/2finance-network/products/liquidity-pools',
+        'POST https://network.example/v2/2finance-network/products/liquidity-pools',
         'POST https://trading.example/robots/robot%2F1:start',
         'POST https://trading.example/robots/robot%2F1:pause',
         'GET https://trading.example/robots/robot%2F1/risk-policy',
@@ -577,13 +577,13 @@ void main() {
     });
 
     expect(client.matchEngine.webSocketUrl, 'wss://matchengine.example/ws');
-    expect(command['schema'], 'matchengine.order_command.v1');
+    expect(command['schema'], 'matchengine.order_command.v2');
     expect(command['symbol'], 'BTC-USDT');
     final subscription = client.matchEngine.marketDataSubscribe({
       'symbols': ['BTC-USDT'],
       'channels': ['book'],
     });
-    expect(subscription['schema'], 'matchengine.market_data_subscribe.v1');
+    expect(subscription['schema'], 'matchengine.market_data_subscribe.v2');
     expect(subscription['symbols'], ['BTC-USDT']);
     final sent = <Map<String, Object?>>[];
     final sendResult = client.matchEngine.sendOrder((message) {
@@ -597,8 +597,8 @@ void main() {
 
     expect(sendResult, {'accepted': true});
     expect(subscribeResult, {'subscribed': true});
-    expect(sent[0]['schema'], 'matchengine.order_command.v1');
-    expect(sent[1]['schema'], 'matchengine.market_data_subscribe.v1');
+    expect(sent[0]['schema'], 'matchengine.order_command.v2');
+    expect(sent[1]['schema'], 'matchengine.market_data_subscribe.v2');
   });
 }
 

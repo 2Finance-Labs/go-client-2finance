@@ -38,7 +38,7 @@ steps:
     tool: finance.contract.deploy.prepare
     action: call_tool_with_minimal_valid_arguments
     expect:
-      structured_content.workflow: contract.deploy.sendingLifecycleV1
+      structured_content.workflow: contract.deploy.sendingLifecycleV2
       structured_content.unsigned_transaction.method: deploy_contract2
       structured_content.unsigned_transaction.hash: ""
       structured_content.unsigned_transaction.signature: ""

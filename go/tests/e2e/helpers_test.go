@@ -7,13 +7,13 @@ import (
 	"time"
 
 	client2f "github.com/2Finance-Labs/2finance-sdk-client/client_2finance"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1/domain"
-	couponV1 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
-	couponV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV1/domain"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
-	walletV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV2/domain"
+	couponV2 "gitlab.com/2finance/2finance-network/blockchain/contract/couponV2"
+	couponV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/couponV2/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2"
+	tokenV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV2"
+	walletV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/walletV2/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
@@ -22,10 +22,10 @@ func createWallet(
 	t *testing.T,
 	c client2f.Client2FinanceNetwork,
 	pub string,
-) walletV1Domain.Wallet {
+) walletV2Domain.Wallet {
 	t.Helper()
 
-	deployedContract, err := c.DeployContract1(walletV1.WALLET_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(walletV2.WALLET_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -58,7 +58,7 @@ func createWallet(
 		t.Fatalf("UnmarshalLog (AddWallet.Logs[0]): %v", err)
 	}
 
-	wallet, err := utils.UnmarshalEvent[walletV1Domain.Wallet](lg.Event)
+	wallet, err := utils.UnmarshalEvent[walletV2Domain.Wallet](lg.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddWallet.Logs[0]): %v", err)
 	}
@@ -79,7 +79,7 @@ func createBasicToken(
 	requireFee bool,
 	tokenType string,
 	stablecoin bool,
-) tokenV1Domain.Token {
+) tokenV2Domain.Token {
 	t.Helper()
 
 	symbol := "2F" + randSuffix(4)
@@ -118,7 +118,7 @@ func createBasicToken(
 	paused := false
 	expiredAt := time.Time{}
 
-	deployedContract, err := c.DeployContract1(tokenV1.TOKEN_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(tokenV2.TOKEN_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -130,7 +130,7 @@ func createBasicToken(
 
 	assetGLBUri := "https://example.com/asset.glb"
 	transferable := true
-	assetType := tokenV1Domain.TOKEN_ASSET_TYPE
+	assetType := tokenV2Domain.TOKEN_ASSET_TYPE
 
 	out, err := c.AddToken(
 		address,
@@ -166,12 +166,12 @@ func createBasicToken(
 		t.Fatalf("AddToken: %v", err)
 	}
 
-	var tok tokenV1Domain.Token
+	var tok tokenV2Domain.Token
 	unmarshalLog, err := utils.UnmarshalLog[log.Log](out.Logs[0])
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddToken.Logs[0]): %v", err)
 	}
-	unmarshalEvent, err := utils.UnmarshalEvent[tokenV1Domain.Token](unmarshalLog.Event)
+	unmarshalEvent, err := utils.UnmarshalEvent[tokenV2Domain.Token](unmarshalLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddToken.Logs[0]): %v", err)
 	}
@@ -183,49 +183,49 @@ func createBasicToken(
 	return tok
 }
 
-func createMintFT(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int, tokenType string) tokenV1Domain.MintFT {
+func createMintFT(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV2Domain.Token, to string, amount string, decimals int, tokenType string) tokenV2Domain.MintFT {
 	// t.Helper()
 	// out, err := c.MintToken(token.Address, to, amount, decimals, tokenType)
 	// if err != nil {
 	// 	t.Fatalf("MintToken: %v", err)
 	// }
-	// var m tokenV1Domain.Mint
+	// var m tokenV2Domain.Mint
 	// unmarshalState(t, out.States[0].Object, &m)
 	// if m.TokenAddress != token.Address {
 	// 	t.Fatalf("mint token mismatch: %s != %s", m.TokenAddress, token.Address)
 	// }
 	// return m
-	return tokenV1Domain.MintFT{}
+	return tokenV2Domain.MintFT{}
 }
 
-func createBurnFT(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, amount string, decimals int, tokenType, uuid string) tokenV1Domain.BurnFT {
+func createBurnFT(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV2Domain.Token, amount string, decimals int, tokenType, uuid string) tokenV2Domain.BurnFT {
 	// t.Helper()
 	// out, err := c.BurnToken(token.Address, amount, decimals, tokenType, uuid)
 	// if err != nil {
 	// 	t.Fatalf("BurnToken: %v", err)
 	// }
-	// var b tokenV1Domain.Burn
+	// var b tokenV2Domain.Burn
 	// unmarshalState(t, out.States[0].Object, &b)
 	// if b.TokenAddress != token.Address {
 	// 	t.Fatalf("burn token mismatch: %s != %s", b.TokenAddress, token.Address)
 	// }
 	// return b
-	return tokenV1Domain.BurnFT{}
+	return tokenV2Domain.BurnFT{}
 }
 
-func createTransferFT(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV1Domain.Token, to string, amount string, decimals int, tokenType, uuid string) tokenV1Domain.TransferFT {
+func createTransferFT(t *testing.T, c client2f.Client2FinanceNetwork, token tokenV2Domain.Token, to string, amount string, decimals int, tokenType, uuid string) tokenV2Domain.TransferFT {
 	// t.Helper()
 	// out, err := c.TransferToken(token.Address, to, amount, decimals, tokenType, uuid)
 	// if err != nil {
 	// 	t.Fatalf("TransferToken: %v", err)
 	// }
-	// var tr tokenV1Domain.TransferFT
+	// var tr tokenV2Domain.TransferFT
 	// unmarshalState(t, out.States[0].Object, &tr)
 	// if tr.ToAddress != to {
 	// 	t.Fatalf("transfer to mismatch: %s != %s", tr.ToAddress, to)
 	// }
 	// return tr
-	return tokenV1Domain.TransferFT{}
+	return tokenV2Domain.TransferFT{}
 }
 
 func createBasicCoupon(
@@ -233,10 +233,10 @@ func createBasicCoupon(
 	c client2f.Client2FinanceNetwork,
 	ownerPub string,
 	discountType string,
-) couponV1Domain.Coupon {
+) couponV2Domain.Coupon {
 	t.Helper()
 
-	deployedContract, err := c.DeployContract1(couponV1.COUPON_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(couponV2.COUPON_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -251,8 +251,8 @@ func createBasicCoupon(
 		t.Fatalf("coupon contract address empty")
 	}
 
-	startAt := time.Now().Add(2 * time.Second)
-	expiredAt := time.Now().Add(25 * time.Minute)
+	startAt := time.Now().Add(-time.Minute)
+	expiredAt := startAt.Add(25 * time.Minute)
 
 	passcode := "e2e-passcode-" + randSuffix(6)
 	raw := sha256.Sum256([]byte(passcode))
@@ -263,9 +263,9 @@ func createBasicCoupon(
 	minOrder := "50"
 
 	switch discountType {
-	case couponV1Domain.DISCOUNT_TYPE_PERCENTAGE:
+	case couponV2Domain.DISCOUNT_TYPE_PERCENTAGE:
 		percentageBPS = "1000"
-	case couponV1Domain.DISCOUNT_TYPE_FIXED:
+	case couponV2Domain.DISCOUNT_TYPE_FIXED:
 		fixedAmount = "1000"
 	default:
 		t.Fatalf("unsupported discountType: %s", discountType)
@@ -336,7 +336,7 @@ func createBasicCoupon(
 		t.Fatalf("UnmarshalLog (AddCoupon.Logs[0]): %v", err)
 	}
 
-	coupon, err := utils.UnmarshalEvent[couponV1Domain.Coupon](couponLog.Event)
+	coupon, err := utils.UnmarshalEvent[couponV2Domain.Coupon](couponLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddCoupon.Logs[0]): %v", err)
 	}

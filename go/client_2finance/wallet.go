@@ -5,7 +5,7 @@ import (
 
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/walletV2"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
@@ -35,7 +35,7 @@ func (c *NetworkClient) AddWallet(address, pubKey string) (types.ContractOutput,
 	from := c.walletManager.OwnerAddress()
 
 	to := address
-	method := walletV1.METHOD_ADD_WALLET
+	method := walletV2.METHOD_ADD_WALLET
 	data := map[string]interface{}{
 		"address":    address,
 		"public_key": pubKey,
@@ -70,10 +70,10 @@ func (c *NetworkClient) GetWalletByPublicKey(pubKey string) (types.ContractOutpu
 		return types.ContractOutput{}, fmt.Errorf("invalid public key: %w", err)
 	}
 
-	method := walletV1.METHOD_GET_WALLET_BY_PUBLIC_KEY
+	method := walletV2.METHOD_GET_WALLET_BY_PUBLIC_KEY
 	data := map[string]interface{}{
 		"public_key":       pubKey,
-		"contract_version": walletV1.WALLET_CONTRACT_V1,
+		"contract_version": walletV2.WALLET_CONTRACT_V2,
 	}
 
 	contractOutput, err := c.GetState("", method, data)
@@ -93,7 +93,7 @@ func (c *NetworkClient) GetWalletByAddress(address string) (types.ContractOutput
 		return types.ContractOutput{}, fmt.Errorf("invalid contract address: %w", err)
 	}
 
-	method := walletV1.METHOD_GET_WALLET_BY_ADDRESS
+	method := walletV2.METHOD_GET_WALLET_BY_ADDRESS
 	data := map[string]interface{}{
 		"address": address,
 	}

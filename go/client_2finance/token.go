@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
@@ -94,7 +94,7 @@ func (c *NetworkClient) AddToken(
 	}
 
 	to := address
-	method := tokenV1.METHOD_ADD_TOKEN
+	method := tokenV2.METHOD_ADD_TOKEN
 	data := map[string]interface{}{
 		"symbol":                   symbol,
 		"name":                     name,
@@ -179,7 +179,7 @@ func (c *NetworkClient) MintToken(to, mintTo, amount string) (types.ContractOutp
 		return types.ContractOutput{}, fmt.Errorf("invalid mint to address: %w", err)
 	}
 
-	method := tokenV1.METHOD_MINT_TOKEN
+	method := tokenV2.METHOD_MINT_TOKEN
 	data := map[string]interface{}{
 		"mint_to": mintTo,
 		"amount":  amount,
@@ -220,7 +220,7 @@ func (c *NetworkClient) BurnToken(to, amount string, tokenUUIDList []string) (ty
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_BURN_TOKEN
+	method := tokenV2.METHOD_BURN_TOKEN
 	data := map[string]interface{}{}
 	if len(tokenUUIDList) > 0 {
 		data["uuids"] = tokenUUIDList
@@ -275,7 +275,7 @@ func (c *NetworkClient) TransferToken(tokenAddress string, transferTo string, am
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_TRANSFER_TOKEN
+	method := tokenV2.METHOD_TRANSFER_TOKEN
 	data := map[string]interface{}{
 		"transfer_to": transferTo,
 	}
@@ -327,7 +327,7 @@ func (c *NetworkClient) FreezeWallet(tokenAddress string, wallet string) (types.
 		return types.ContractOutput{}, fmt.Errorf("invalid wallet: %w", err)
 	}
 
-	method := tokenV1.METHOD_FREEZE_WALLET
+	method := tokenV2.METHOD_FREEZE_WALLET
 	data := map[string]interface{}{
 		"wallet": wallet,
 	}
@@ -373,7 +373,7 @@ func (c *NetworkClient) UnfreezeWallet(tokenAddress string, wallet string) (type
 		return types.ContractOutput{}, fmt.Errorf("invalid wallet: %w", err)
 	}
 
-	method := tokenV1.METHOD_UNFREEZE_WALLET
+	method := tokenV2.METHOD_UNFREEZE_WALLET
 	data := map[string]interface{}{
 		"wallet": wallet,
 	}
@@ -421,7 +421,7 @@ func (c *NetworkClient) AddAllowedUsers(tokenAddress string, allowedUsers map[st
 		return types.ContractOutput{}, fmt.Errorf("invalid allow users: %w", err)
 	}
 
-	method := tokenV1.METHOD_ADD_ALLOWED_USERS
+	method := tokenV2.METHOD_ADD_ALLOWED_USERS
 	data := map[string]interface{}{
 		"allowed_users": allowedUsers,
 	}
@@ -470,7 +470,7 @@ func (c *NetworkClient) RemoveAllowedUsers(tokenAddress string, allowedUsers map
 		return types.ContractOutput{}, fmt.Errorf("invalid disallow users: %w", err)
 	}
 
-	method := tokenV1.METHOD_REMOVE_ALLOWED_USERS
+	method := tokenV2.METHOD_REMOVE_ALLOWED_USERS
 	data := map[string]interface{}{
 		"allowed_users": allowedUsers,
 	}
@@ -518,7 +518,7 @@ func (c *NetworkClient) AddBlockedUsers(tokenAddress string, blockedUsers map[st
 		return types.ContractOutput{}, fmt.Errorf("invalid block users: %w", err)
 	}
 
-	method := tokenV1.METHOD_ADD_BLOCKED_USERS
+	method := tokenV2.METHOD_ADD_BLOCKED_USERS
 	data := map[string]interface{}{
 		"blocked_users": blockedUsers,
 	}
@@ -566,7 +566,7 @@ func (c *NetworkClient) RemoveBlockedUsers(tokenAddress string, blockedUsers map
 		return types.ContractOutput{}, fmt.Errorf("invalid unblock users: %w", err)
 	}
 
-	method := tokenV1.METHOD_REMOVE_BLOCKED_USERS
+	method := tokenV2.METHOD_REMOVE_BLOCKED_USERS
 	data := map[string]interface{}{
 		"blocked_users": blockedUsers,
 	}
@@ -606,7 +606,7 @@ func (c *NetworkClient) RevokeFreezeAuthority(tokenAddress string, revoke bool) 
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_REVOKE_FREEZE_AUTHORITY
+	method := tokenV2.METHOD_REVOKE_FREEZE_AUTHORITY
 	data := map[string]interface{}{
 		"revoked": revoke,
 	}
@@ -645,7 +645,7 @@ func (c *NetworkClient) RevokeMintAuthority(tokenAddress string, revoke bool) (t
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_REVOKE_MINT_AUTHORITY
+	method := tokenV2.METHOD_REVOKE_MINT_AUTHORITY
 	data := map[string]interface{}{
 		"revoked": revoke,
 	}
@@ -684,7 +684,7 @@ func (c *NetworkClient) RevokeUpdateAuthority(tokenAddress string, revoke bool) 
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_REVOKE_UPDATE_AUTHORITY
+	method := tokenV2.METHOD_REVOKE_UPDATE_AUTHORITY
 	data := map[string]interface{}{
 		"revoked": revoke,
 	}
@@ -744,7 +744,7 @@ func (c *NetworkClient) UpdateMetadata(tokenAddress, symbol, name string, decima
 	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
-	method := tokenV1.METHOD_UPDATE_METADATA
+	method := tokenV2.METHOD_UPDATE_METADATA
 	data := map[string]interface{}{
 		"symbol":            symbol,
 		"name":              name,
@@ -798,7 +798,7 @@ func (c *NetworkClient) PauseToken(tokenAddress string, paused bool) (types.Cont
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_PAUSE_TOKEN
+	method := tokenV2.METHOD_PAUSE_TOKEN
 	data := map[string]interface{}{
 		"paused": paused,
 	}
@@ -840,7 +840,7 @@ func (c *NetworkClient) UnpauseToken(tokenAddress string, paused bool) (types.Co
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_UNPAUSE_TOKEN
+	method := tokenV2.METHOD_UNPAUSE_TOKEN
 	data := map[string]interface{}{
 		"paused": paused,
 	}
@@ -882,7 +882,7 @@ func (c *NetworkClient) UpdateFeeTiers(tokenAddress string, feeTiersList []map[s
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_UPDATE_FEE_TIERS
+	method := tokenV2.METHOD_UPDATE_FEE_TIERS
 	data := map[string]interface{}{
 		"fee_tiers_list": feeTiersList,
 	}
@@ -924,7 +924,7 @@ func (c *NetworkClient) UpdateFeeAddress(tokenAddress, feeAddress string) (types
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_UPDATE_FEE_ADDRESS
+	method := tokenV2.METHOD_UPDATE_FEE_ADDRESS
 	data := map[string]interface{}{
 		"fee_address": feeAddress,
 	}
@@ -968,7 +968,7 @@ func (c *NetworkClient) UpdateGlbFile(tokenAddress string, newAssetGLBUri string
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_UPDATE_GLB_FILE
+	method := tokenV2.METHOD_UPDATE_GLB_FILE
 	data := map[string]interface{}{
 		"new_asset_glb_uri": newAssetGLBUri,
 	}
@@ -1009,7 +1009,7 @@ func (c *NetworkClient) TransferableToken(tokenAddress string, transferable bool
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_TRANSFERABLE_TOKEN
+	method := tokenV2.METHOD_TRANSFERABLE_TOKEN
 	data := map[string]interface{}{
 		"transferable": transferable,
 	}
@@ -1050,7 +1050,7 @@ func (c *NetworkClient) UntransferableToken(tokenAddress string, transferable bo
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_UNTRANSFERABLE_TOKEN
+	method := tokenV2.METHOD_UNTRANSFERABLE_TOKEN
 	data := map[string]interface{}{
 		"transferable": transferable,
 	}
@@ -1090,7 +1090,7 @@ func (c *NetworkClient) GetToken(tokenAddress string, symbol string, name string
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	method := tokenV1.METHOD_GET_TOKEN
+	method := tokenV2.METHOD_GET_TOKEN
 	data := map[string]interface{}{
 		"symbol": symbol,
 		"name":   name,
@@ -1117,7 +1117,7 @@ func (c *NetworkClient) ListTokens(ownerAddress, symbol, name, tokenType string,
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	method := tokenV1.METHOD_LIST_TOKENS
+	method := tokenV2.METHOD_LIST_TOKENS
 	data := map[string]interface{}{
 		"owner":            ownerAddress,
 		"symbol":           symbol,
@@ -1125,7 +1125,7 @@ func (c *NetworkClient) ListTokens(ownerAddress, symbol, name, tokenType string,
 		"page":             page,
 		"limit":            limit,
 		"ascending":        ascending,
-		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
+		"contract_version": tokenV2.TOKEN_CONTRACT_V2,
 	}
 
 	if tokenType != "" {
@@ -1162,7 +1162,7 @@ func (c *NetworkClient) GetTokenBalance(tokenAddress, ownerAddress string) (type
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
 
-	method := tokenV1.METHOD_GET_TOKEN_BALANCE
+	method := tokenV2.METHOD_GET_TOKEN_BALANCE
 	data := map[string]interface{}{
 		"owner_address": ownerAddress,
 	}
@@ -1200,7 +1200,7 @@ func (c *NetworkClient) GetTokenBalanceNFT(tokenAddress string, ownerAddress str
 		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
 	}
 
-	method := tokenV1.METHOD_GET_TOKEN_BALANCE_NFT
+	method := tokenV2.METHOD_GET_TOKEN_BALANCE_NFT
 	data := map[string]interface{}{
 		"owner_address": ownerAddress,
 		"token_uuid":    tokenUUID,
@@ -1233,14 +1233,14 @@ func (c *NetworkClient) ListTokenBalances(tokenAddress, ownerAddress, tokenType 
 		}
 	}
 
-	method := tokenV1.METHOD_LIST_TOKEN_BALANCES
+	method := tokenV2.METHOD_LIST_TOKEN_BALANCES
 	data := map[string]interface{}{
 		"owner_address":    ownerAddress,
 		"page":             page,
 		"limit":            limit,
 		"ascending":        ascending,
 		"address":          tokenAddress,
-		"contract_version": tokenV1.TOKEN_CONTRACT_V1,
+		"contract_version": tokenV2.TOKEN_CONTRACT_V2,
 	}
 	if tokenType != "" {
 		data["token_type"] = tokenType

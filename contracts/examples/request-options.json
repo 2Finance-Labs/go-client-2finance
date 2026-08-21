@@ -1,5 +1,5 @@
 {
-  "schema": "sdk.request_options.v1",
+  "schema": "sdk.request_options.v2",
   "request": {
     "method": "POST",
     "base_url": "https://analytics.example",

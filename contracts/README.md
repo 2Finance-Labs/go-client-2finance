@@ -3,14 +3,14 @@
 Shared schemas and fixtures used to keep Go, Dart, TypeScript, JavaScript,
 Python, PHP, Java, and C++ SDK behavior aligned.
 
-- `schemas/domain-operations.v1.json`: canonical operation map for public SDK
+- `schemas/domain-operations.v2.json`: canonical operation map for public SDK
   domains, transports, methods, paths, path params, and contract names.
-- `schemas/request-options.v1.json`: shared shape for per-call headers,
+- `schemas/request-options.v2.json`: shared shape for per-call headers,
   idempotency, query params, pagination, timeout, and retry options.
-- `schemas/error.v1.json`: common error response shape used by service clients.
-- `schemas/pagination.v1.json`: common cursor/limit pagination shape.
-- `schemas/idempotency.v1.json`: common idempotency-key fixture shape.
-- `schemas/service-catalog.v1.json`: shared SDK domain-to-environment-variable
+- `schemas/error.v2.json`: common error response shape used by service clients.
+- `schemas/pagination.v2.json`: common cursor/limit pagination shape.
+- `schemas/idempotency.v2.json`: common idempotency-key fixture shape.
+- `schemas/service-catalog.v2.json`: shared SDK domain-to-environment-variable
   catalog shape.
 - `examples/domain-operations.json`: fixture catalog for auth, network,
   analytics, orchestrator, MCP, planner, trading control, matchengine,

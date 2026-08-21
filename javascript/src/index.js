@@ -630,19 +630,22 @@ class KeyStoreClient extends ServiceClient {
 
 class NetworkClient extends ServiceClient {
   virtualMachine() {
-    return this.get("/v1/2finance-network/virtual-machine");
+    return this.post("/v2/2finance-network/query", {
+      method: "get_blocks",
+      params: { page: 1, limit: 1 },
+    });
   }
 
   marketCandles(market, query = "") {
-    return this.get(`/v1/2finance-network/markets/${encodeURIComponent(market)}/candles${query ? `?${query}` : ""}`);
+    return this.get(`/v2/2finance-network/markets/${encodeURIComponent(market)}/candles${query ? `?${query}` : ""}`);
   }
 
   products(productType) {
-    return this.get(`/v1/2finance-network/products/${encodeURIComponent(productType)}`);
+    return this.get(`/v2/2finance-network/products/${encodeURIComponent(productType)}`);
   }
 
   createProduct(productType, request) {
-    return this.post(`/v1/2finance-network/products/${encodeURIComponent(productType)}`, request);
+    return this.post(`/v2/2finance-network/products/${encodeURIComponent(productType)}`, request);
   }
 
   bonds() {
@@ -761,14 +764,16 @@ class MatchEngineClient {
 
   orderCommand(command) {
     return {
-      schema: "matchengine.order_command.v1",
+      schema: "matchengine.order_command.v2",
+      message_type: "ORDER",
+      operation: "ADD",
       ...command
     };
   }
 
   marketDataSubscribe(request) {
     return {
-      schema: "matchengine.market_data_subscribe.v1",
+      schema: "matchengine.market_data_subscribe.v2",
       ...(request || {})
     };
   }

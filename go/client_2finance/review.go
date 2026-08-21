@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/reviewV2"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
@@ -58,7 +58,7 @@ func (c *NetworkClient) AddReview(
 	}
 
 	to := address
-	method := reviewV1.METHOD_ADD_REVIEW
+	method := reviewV2.METHOD_ADD_REVIEW
 
 	data := map[string]interface{}{
 		"address":      address,
@@ -115,7 +115,7 @@ func (c *NetworkClient) UpdateReview(
 	}
 
 	to := address
-	method := reviewV1.METHOD_UPDATE_REVIEW
+	method := reviewV2.METHOD_UPDATE_REVIEW
 
 	data := map[string]interface{}{
 		"address":      address,
@@ -156,7 +156,7 @@ func (c *NetworkClient) HideReview(address string, hidden bool) (types.ContractO
 	}
 
 	to := address
-	method := reviewV1.METHOD_HIDE_REVIEW
+	method := reviewV2.METHOD_HIDE_REVIEW
 	data := map[string]interface{}{
 		"address": address,
 		"hidden":  hidden,
@@ -191,7 +191,7 @@ func (c *NetworkClient) VoteHelpful(address, voter string, isHelpful bool) (type
 	}
 
 	to := address
-	method := reviewV1.METHOD_VOTE_HELPFUL
+	method := reviewV2.METHOD_VOTE_HELPFUL
 	data := map[string]interface{}{
 		"address":    address,
 		"voter":      voter,
@@ -230,7 +230,7 @@ func (c *NetworkClient) ReportReview(address, reporter, reason string) (types.Co
 	}
 
 	to := address
-	method := reviewV1.METHOD_REPORT_REVIEW
+	method := reviewV2.METHOD_REPORT_REVIEW
 	data := map[string]interface{}{
 		"address":  address,
 		"reporter": reporter,
@@ -263,7 +263,7 @@ func (c *NetworkClient) ModerateReview(address, action, note string) (types.Cont
 	}
 
 	to := address
-	method := reviewV1.METHOD_MODERATE_REVIEW
+	method := reviewV2.METHOD_MODERATE_REVIEW
 	data := map[string]interface{}{
 		"address": address,
 		"action":  action,
@@ -291,7 +291,7 @@ func (c *NetworkClient) GetReview(address string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("invalid review address: %w", err)
 	}
 
-	method := reviewV1.METHOD_GET_REVIEW
+	method := reviewV2.METHOD_GET_REVIEW
 
 	return c.GetState(address, method, nil)
 }
@@ -337,7 +337,7 @@ func (c *NetworkClient) ListReviews(
 		return types.ContractOutput{}, fmt.Errorf("min_rating cannot be greater than max_rating")
 	}
 
-	method := reviewV1.METHOD_LIST_REVIEWS
+	method := reviewV2.METHOD_LIST_REVIEWS
 	data := map[string]interface{}{
 		"reviewer":         reviewer,
 		"reviewee":         reviewee,
@@ -348,7 +348,7 @@ func (c *NetworkClient) ListReviews(
 		"page":             page,
 		"limit":            limit,
 		"ascending":        asc,
-		"contract_version": reviewV1.REVIEW_CONTRACT_V1,
+		"contract_version": reviewV2.REVIEW_CONTRACT_V2,
 	}
 	if includeHidden != nil {
 		data["include_hidden"] = *includeHidden

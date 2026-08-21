@@ -28,7 +28,7 @@ extension MemberGetMember on TwoFinanceBlockchain {
   //   KeyManager.validateEDDSAPublicKeyHex(address);
 
   //   final to = address;
-  //   final contractVersion = MGM_CONTRACT_V1;
+  //   final contractVersion = MGM_CONTRACT_V2;
   //   final method = METHOD_ADD_MGM;
 
   //   final data = {
@@ -69,7 +69,7 @@ extension MemberGetMember on TwoFinanceBlockchain {
   //   KeyManager.validateEDDSAPublicKeyHex(from);
 
   //   final to = mgmAddress;
-  //   final contractVersion = MGM_CONTRACT_V1;
+  //   final contractVersion = MGM_CONTRACT_V2;
   //   final method = METHOD_UPDATE_MGM;
 
   //   final data = {
@@ -99,7 +99,7 @@ extension MemberGetMember on TwoFinanceBlockchain {
   //   KeyManager.validateEDDSAPublicKeyHex(from);
 
   //   final to = mgmAddress;
-  //   final contractVersion = MGM_CONTRACT_V1;
+  //   final contractVersion = MGM_CONTRACT_V2;
   //   final method = METHOD_PAUSE_MGM;
 
   //   final data = {"mgm_address": mgmAddress, "paused": pause};
@@ -124,7 +124,7 @@ extension MemberGetMember on TwoFinanceBlockchain {
   //   KeyManager.validateEDDSAPublicKeyHex(from);
 
   //   final to = mgmAddress;
-  //   final contractVersion = MGM_CONTRACT_V1;
+  //   final contractVersion = MGM_CONTRACT_V2;
   //   final method = METHOD_UNPAUSE_MGM;
 
   //   final data = {"mgm_address": mgmAddress, "paused": pause};

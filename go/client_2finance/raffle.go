@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/raffleV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/raffleV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
@@ -63,7 +63,7 @@ func (c *NetworkClient) AddRaffle(
 	}
 
 	to := address
-	method := raffleV1.METHOD_ADD_RAFFLE
+	method := raffleV2.METHOD_ADD_RAFFLE
 
 	data := map[string]interface{}{
 		"address":              address,
@@ -125,7 +125,7 @@ func (c *NetworkClient) UpdateRaffle(
 	}
 
 	to := address
-	method := raffleV1.METHOD_UPDATE_RAFFLE
+	method := raffleV2.METHOD_UPDATE_RAFFLE
 	data := map[string]interface{}{
 		"address":              address,
 		"token_address":        tokenAddress,
@@ -172,7 +172,7 @@ func (c *NetworkClient) PauseRaffle(address string, paused bool) (types.Contract
 	}
 
 	to := address
-	method := raffleV1.METHOD_PAUSE_RAFFLE
+	method := raffleV2.METHOD_PAUSE_RAFFLE
 	data := map[string]interface{}{"address": address, "paused": paused}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -203,7 +203,7 @@ func (c *NetworkClient) UnpauseRaffle(address string, paused bool) (types.Contra
 	}
 
 	to := address
-	method := raffleV1.METHOD_UNPAUSE_RAFFLE
+	method := raffleV2.METHOD_UNPAUSE_RAFFLE
 	data := map[string]interface{}{"address": address, "paused": paused}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -265,7 +265,7 @@ func (c *NetworkClient) EnterRaffle(address string, tickets int, payTokenAddress
 		c.chainId,
 		from,
 		address,
-		raffleV1.METHOD_ENTER_RAFFLE, // method constant
+		raffleV2.METHOD_ENTER_RAFFLE, // method constant
 		data,
 		version,
 		uuid7,
@@ -293,7 +293,7 @@ func (c *NetworkClient) DrawRaffle(address, revealSeed string) (types.ContractOu
 	}
 
 	to := address
-	method := raffleV1.METHOD_DRAW_RAFFLE
+	method := raffleV2.METHOD_DRAW_RAFFLE
 	data := map[string]interface{}{
 		"address":     address,
 		"reveal_seed": revealSeed,
@@ -328,7 +328,7 @@ func (c *NetworkClient) ClaimRaffle(address, prizeUUID string) (types.ContractOu
 	}
 
 	to := address
-	method := raffleV1.METHOD_CLAIM_RAFFLE
+	method := raffleV2.METHOD_CLAIM_RAFFLE
 	data := map[string]interface{}{"raffle_address": address, "prize_uuid": prizeUUID}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -374,7 +374,7 @@ func (c *NetworkClient) WithdrawRaffle(address, tokenAddress, amount, tokenType,
 	}
 
 	to := address
-	method := raffleV1.METHOD_WITHDRAW_RAFFLE
+	method := raffleV2.METHOD_WITHDRAW_RAFFLE
 	data := map[string]interface{}{"address": address, "token_address": tokenAddress, "amount": amount, "token_type": tokenType, "uuid": uuid}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -410,7 +410,7 @@ func (c *NetworkClient) AddRafflePrize(raffleAddress string, tokenAddress string
 	}
 
 	to := raffleAddress
-	method := raffleV1.METHOD_ADD_RAFFLE_PRIZE
+	method := raffleV2.METHOD_ADD_RAFFLE_PRIZE
 	data := map[string]interface{}{"amount": amount, "raffle_address": raffleAddress, "token_address": tokenAddress, "uuid_nfts": uuidNFTs}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -440,7 +440,7 @@ func (c *NetworkClient) RemoveRafflePrize(raffleAddress string, uuid string) (ty
 	}
 
 	to := raffleAddress
-	method := raffleV1.METHOD_REMOVE_RAFFLE_PRIZE
+	method := raffleV2.METHOD_REMOVE_RAFFLE_PRIZE
 	data := map[string]interface{}{"raffle_address": raffleAddress, "uuid": uuid}
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
@@ -466,7 +466,7 @@ func (c *NetworkClient) GetRaffle(address string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("invalid raffle address: %w", err)
 	}
 
-	method := raffleV1.METHOD_GET_RAFFLE
+	method := raffleV2.METHOD_GET_RAFFLE
 
 	return c.GetState(address, method, nil)
 }
@@ -498,7 +498,7 @@ func (c *NetworkClient) ListRaffles(owner, tokenAddress string, paused *bool, ac
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
-	method := raffleV1.METHOD_LIST_RAFFLES
+	method := raffleV2.METHOD_LIST_RAFFLES
 	data := map[string]interface{}{
 		"owner":         owner,
 		"page":          page,
@@ -537,13 +537,13 @@ func (c *NetworkClient) ListPrizes(raffleAddress string, page, limit int, asc bo
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
-	method := raffleV1.METHOD_LIST_PRIZES
+	method := raffleV2.METHOD_LIST_PRIZES
 	data := map[string]interface{}{
 		"raffle_address":   raffleAddress,
 		"page":             page,
 		"limit":            limit,
 		"ascending":        asc,
-		"contract_version": raffleV1.RAFFLE_CONTRACT_V1,
+		"contract_version": raffleV2.RAFFLE_CONTRACT_V2,
 	}
 
 	return c.GetState("", method, data)
@@ -561,11 +561,11 @@ func (c *NetworkClient) GetPrize(address string, prizeUUID string) (types.Contra
 		return types.ContractOutput{}, fmt.Errorf("prize UUID must be set")
 	}
 
-	method := raffleV1.METHOD_GET_PRIZE
+	method := raffleV2.METHOD_GET_PRIZE
 	data := map[string]interface{}{
 		"raffle_address":   address,
 		"prize_uuid":       prizeUUID,
-		"contract_version": raffleV1.RAFFLE_CONTRACT_V1,
+		"contract_version": raffleV2.RAFFLE_CONTRACT_V2,
 	}
 
 	return c.GetState(address, method, data)

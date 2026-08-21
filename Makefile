@@ -32,7 +32,7 @@ dart-test:
 	cd dart/sdk && dart analyze
 	cd dart/sdk && dart test
 	cd dart/auth && dart test
-	cd dart/blockchain && dart test test/two_finance_blockchain_client_unit_test.dart test/http_transport_test.dart test/spec_harness/spec_files_test.dart test/blockchain/utils test/blockchain/transaction/transaction_test.dart test/blockchain/log/log_test.dart test/blockchain/types/types_test.dart test/blockchain/keys/keys_test.dart test/blockchain/contract/lifecycle/lifecycle_test.dart test/blockchain/contract/walletV1/wallet_unit_test.dart test/wallet_manager/wallet_manager_test.dart
+	cd dart/blockchain && dart test test/two_finance_blockchain_client_unit_test.dart test/http_transport_test.dart test/spec_harness/spec_files_test.dart test/blockchain/utils test/blockchain/transaction/transaction_test.dart test/blockchain/log/log_test.dart test/blockchain/types/types_test.dart test/blockchain/keys/keys_test.dart test/blockchain/contract/lifecycle/lifecycle_test.dart test/blockchain/contract/walletV2/wallet_unit_test.dart test/wallet_manager/wallet_manager_test.dart
 
 dart-blockchain-e2e:
 	cd dart/blockchain && dart test

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/couponV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/couponV2"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
@@ -105,7 +105,7 @@ func (c *NetworkClient) AddCoupon(
 	}
 	// Deploy new coupon program
 	to := address
-	method := couponV1.METHOD_ADD_COUPON
+	method := couponV2.METHOD_ADD_COUPON
 	data := map[string]interface{}{
 		"address":           address, // optional, depends on your infra
 		"discount_type":     discountType,
@@ -179,7 +179,7 @@ func (c *NetworkClient) UpdateCoupon(
 	}
 
 	to := address
-	method := couponV1.METHOD_UPDATE_COUPON
+	method := couponV2.METHOD_UPDATE_COUPON
 
 	data := map[string]interface{}{
 		"address":         address,
@@ -222,7 +222,7 @@ func (c *NetworkClient) PauseCoupon(address string, pause bool) (types.ContractO
 	}
 
 	to := address
-	method := couponV1.METHOD_PAUSE_COUPON
+	method := couponV2.METHOD_PAUSE_COUPON
 
 	data := map[string]interface{}{
 		"address": address,
@@ -255,7 +255,7 @@ func (c *NetworkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 	}
 
 	to := address
-	method := couponV1.METHOD_UNPAUSE_COUPON
+	method := couponV2.METHOD_UNPAUSE_COUPON
 
 	data := map[string]interface{}{
 		"address": address,
@@ -298,7 +298,7 @@ func (c *NetworkClient) IssueVoucher(
 	}
 
 	to := address
-	method := couponV1.METHOD_ISSUE_VOUCHER
+	method := couponV2.METHOD_ISSUE_VOUCHER
 
 	data := map[string]interface{}{
 		"address":    address,
@@ -347,7 +347,7 @@ func (c *NetworkClient) RedeemVoucher(
 	}
 
 	to := address
-	method := couponV1.METHOD_REDEEM_VOUCHER
+	method := couponV2.METHOD_REDEEM_VOUCHER
 
 	data := map[string]interface{}{
 		"address":      address,
@@ -381,7 +381,7 @@ func (c *NetworkClient) GetCoupon(address string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("invalid coupon address: %w", err)
 	}
 
-	method := couponV1.METHOD_GET_COUPON
+	method := couponV2.METHOD_GET_COUPON
 
 	return c.GetState(address, method, nil)
 }
@@ -421,7 +421,7 @@ func (c *NetworkClient) ListCoupons(
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
-	method := couponV1.METHOD_LIST_COUPONS
+	method := couponV2.METHOD_LIST_COUPONS
 
 	data := map[string]interface{}{
 		"owner":            owner,
@@ -430,7 +430,7 @@ func (c *NetworkClient) ListCoupons(
 		"page":             page,
 		"limit":            limit,
 		"ascending":        ascending,
-		"contract_version": couponV1.COUPON_CONTRACT_V1,
+		"contract_version": couponV2.COUPON_CONTRACT_V2,
 		"token_address":    tokenAddress,
 	}
 

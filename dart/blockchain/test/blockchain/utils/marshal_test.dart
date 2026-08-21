@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:test/test.dart';
 import 'package:two_finance_blockchain/blockchain/utils/marshal.dart';
-import 'package:two_finance_blockchain/blockchain/contract/walletV1/models/wallet.dart';
-import 'package:two_finance_blockchain/blockchain/contract/walletV1/domain/wallet.dart';
+import 'package:two_finance_blockchain/blockchain/contract/walletV2/models/wallet.dart';
+import 'package:two_finance_blockchain/blockchain/contract/walletV2/domain/wallet.dart';
 import 'package:two_finance_blockchain/blockchain/log/log.dart';
 
 void main() {
@@ -20,26 +20,41 @@ void main() {
 
         expect(out.address, equals('pub1'));
         expect(out.publicKey, equals('pub2'));
-        expect(out.createdAt.toIso8601String(), equals('2026-03-03T10:00:00.000Z'));
-        expect(out.updatedAt.toIso8601String(), equals('2026-03-03T11:00:00.000Z'));
+        expect(
+          out.createdAt.toIso8601String(),
+          equals('2026-03-03T10:00:00.000Z'),
+        );
+        expect(
+          out.updatedAt.toIso8601String(),
+          equals('2026-03-03T11:00:00.000Z'),
+        );
       });
 
-      test('Map<dynamic, dynamic> -> WalletState (converte keys para String)', () {
-        final Map<dynamic, dynamic> obj = {
-          'address': 'pub1',
-          'public_key': 'pub2',
-          'created_at': '2026-03-03T12:00:00.000Z',
-          'updated_at': '2026-03-03T13:00:00.000Z',
-          1: 'ignored',
-        };
+      test(
+        'Map<dynamic, dynamic> -> WalletState (converte keys para String)',
+        () {
+          final Map<dynamic, dynamic> obj = {
+            'address': 'pub1',
+            'public_key': 'pub2',
+            'created_at': '2026-03-03T12:00:00.000Z',
+            'updated_at': '2026-03-03T13:00:00.000Z',
+            1: 'ignored',
+          };
 
-        final out = unmarshalState<WalletState>(obj, WalletState.fromJson);
+          final out = unmarshalState<WalletState>(obj, WalletState.fromJson);
 
-        expect(out.address, equals('pub1'));
-        expect(out.publicKey, equals('pub2'));
-        expect(out.createdAt.toIso8601String(), equals('2026-03-03T12:00:00.000Z'));
-        expect(out.updatedAt.toIso8601String(), equals('2026-03-03T13:00:00.000Z'));
-      });
+          expect(out.address, equals('pub1'));
+          expect(out.publicKey, equals('pub2'));
+          expect(
+            out.createdAt.toIso8601String(),
+            equals('2026-03-03T12:00:00.000Z'),
+          );
+          expect(
+            out.updatedAt.toIso8601String(),
+            equals('2026-03-03T13:00:00.000Z'),
+          );
+        },
+      );
 
       test('JSON string -> WalletState (sucesso)', () {
         final obj =
@@ -49,8 +64,14 @@ void main() {
 
         expect(out.address, equals('pub1'));
         expect(out.publicKey, equals('pub2'));
-        expect(out.createdAt.toIso8601String(), equals('2026-03-03T14:00:00.000Z'));
-        expect(out.updatedAt.toIso8601String(), equals('2026-03-03T15:00:00.000Z'));
+        expect(
+          out.createdAt.toIso8601String(),
+          equals('2026-03-03T14:00:00.000Z'),
+        );
+        expect(
+          out.updatedAt.toIso8601String(),
+          equals('2026-03-03T15:00:00.000Z'),
+        );
       });
 
       test('JSON string com espaços -> WalletState (sucesso)', () {
@@ -61,8 +82,14 @@ void main() {
 
         expect(out.address, equals('pub1'));
         expect(out.publicKey, equals('pub2'));
-        expect(out.createdAt.toIso8601String(), equals('2026-03-03T16:00:00.000Z'));
-        expect(out.updatedAt.toIso8601String(), equals('2026-03-03T17:00:00.000Z'));
+        expect(
+          out.createdAt.toIso8601String(),
+          equals('2026-03-03T16:00:00.000Z'),
+        );
+        expect(
+          out.updatedAt.toIso8601String(),
+          equals('2026-03-03T17:00:00.000Z'),
+        );
       });
 
       test('UTF-8 bytes (List<int>) -> WalletState (sucesso)', () {
@@ -74,17 +101,25 @@ void main() {
 
         expect(out.address, equals('pub1'));
         expect(out.publicKey, equals('pub2'));
-        expect(out.createdAt.toIso8601String(), equals('2026-03-03T18:00:00.000Z'));
-        expect(out.updatedAt.toIso8601String(), equals('2026-03-03T19:00:00.000Z'));
+        expect(
+          out.createdAt.toIso8601String(),
+          equals('2026-03-03T18:00:00.000Z'),
+        );
+        expect(
+          out.updatedAt.toIso8601String(),
+          equals('2026-03-03T19:00:00.000Z'),
+        );
       });
 
       test('obj == null -> erro', () {
         expect(
           () => unmarshalState<WalletState>(null, WalletState.fromJson),
           throwsA(
-            predicate((e) =>
-                e is Exception &&
-                e.toString().contains('unmarshalState: object is null')),
+            predicate(
+              (e) =>
+                  e is Exception &&
+                  e.toString().contains('unmarshalState: object is null'),
+            ),
           ),
         );
       });
@@ -93,9 +128,11 @@ void main() {
         expect(
           () => unmarshalState<WalletState>('   ', WalletState.fromJson),
           throwsA(
-            predicate((e) =>
-                e is Exception &&
-                e.toString().contains('unmarshalState: empty JSON string')),
+            predicate(
+              (e) =>
+                  e is Exception &&
+                  e.toString().contains('unmarshalState: empty JSON string'),
+            ),
           ),
         );
       });
@@ -104,9 +141,11 @@ void main() {
         expect(
           () => unmarshalState<WalletState>('[1,2,3]', WalletState.fromJson),
           throwsA(
-            predicate((e) =>
-                e is Exception &&
-                e.toString().contains('JSON did not decode to object')),
+            predicate(
+              (e) =>
+                  e is Exception &&
+                  e.toString().contains('JSON did not decode to object'),
+            ),
           ),
         );
       });
@@ -117,9 +156,11 @@ void main() {
         expect(
           () => unmarshalState<WalletState>(bytes, WalletState.fromJson),
           throwsA(
-            predicate((e) =>
-                e is Exception &&
-                e.toString().contains('bytes JSON did not decode to object')),
+            predicate(
+              (e) =>
+                  e is Exception &&
+                  e.toString().contains('bytes JSON did not decode to object'),
+            ),
           ),
         );
       });
@@ -128,9 +169,11 @@ void main() {
         expect(
           () => unmarshalState<WalletState>(42, WalletState.fromJson),
           throwsA(
-            predicate((e) =>
-                e is Exception &&
-                e.toString().contains('unsupported state object type')),
+            predicate(
+              (e) =>
+                  e is Exception &&
+                  e.toString().contains('unsupported state object type'),
+            ),
           ),
         );
       });
@@ -144,7 +187,7 @@ void main() {
           'transaction_hash': '0xabc',
           // event precisa ser String base64
           'event': base64Encode(utf8.encode(jsonEncode({'amount': '100'}))),
-          'contract_version': 'v1',
+          'contract_version': 'walletV2',
           'contract_address': '0xtoken',
         };
 
@@ -153,7 +196,7 @@ void main() {
         expect(out.logType, equals('TOKEN_MINT'));
         expect(out.logIndex, equals(10));
         expect(out.transactionHash, equals('0xabc'));
-        expect(out.contractVersion, equals('v1'));
+        expect(out.contractVersion, equals('walletV2'));
         expect(out.contractAddress, equals('0xtoken'));
 
         final ev = unmarshalEvent<Map<String, dynamic>>(
@@ -163,7 +206,6 @@ void main() {
 
         expect(ev['amount'], equals('100'));
       });
-      
 
       test('obj com chave nao-string -> Log (jsonEncode converte)', () {
         final obj = {
@@ -171,7 +213,9 @@ void main() {
           'log_type': 'TRANSFER',
           'log_index': 11,
           'transaction_hash': '0xdef',
-          'event': base64Encode(utf8.encode(jsonEncode({'from': '0x1', 'to': '0x2'}))),
+          'event': base64Encode(
+            utf8.encode(jsonEncode({'from': '0x1', 'to': '0x2'})),
+          ),
           'contract_version': 'v2',
           'contract_address': '0xcontract',
         };
@@ -197,9 +241,11 @@ void main() {
         expect(
           () => unmarshalLog<Log>([1, 2, 3], Log.fromJson),
           throwsA(
-            predicate((e) =>
-                e is Exception &&
-                e.toString().contains('marshal/unmarshal log')),
+            predicate(
+              (e) =>
+                  e is Exception &&
+                  e.toString().contains('marshal/unmarshal log'),
+            ),
           ),
         );
       });
@@ -209,9 +255,11 @@ void main() {
         expect(
           () => unmarshalLog<Log>(obj, Log.fromJson),
           throwsA(
-            predicate((e) =>
-                e is Exception &&
-                e.toString().contains('marshal/unmarshal log')),
+            predicate(
+              (e) =>
+                  e is Exception &&
+                  e.toString().contains('marshal/unmarshal log'),
+            ),
           ),
         );
       });
@@ -233,22 +281,22 @@ void main() {
         expect(
           () => unmarshalEvent<Wallet>('', Wallet.fromJson),
           throwsA(
-            predicate((e) =>
-                e is Exception && e.toString().contains('empty event')),
+            predicate(
+              (e) => e is Exception && e.toString().contains('empty event'),
+            ),
           ),
         );
       });
 
       test('event com JSON invalido -> erro', () {
-        final event = base64Encode(
-          utf8.encode('{"address":'),
-        );
+        final event = base64Encode(utf8.encode('{"address":'));
 
         expect(
           () => unmarshalEvent<Wallet>(event, Wallet.fromJson),
           throwsA(
-            predicate((e) =>
-                e is Exception && e.toString().contains('unmarshal event')),
+            predicate(
+              (e) => e is Exception && e.toString().contains('unmarshal event'),
+            ),
           ),
         );
       });
@@ -259,8 +307,9 @@ void main() {
         expect(
           () => unmarshalEvent<Wallet>(base64Encode(bytes), Wallet.fromJson),
           throwsA(
-            predicate((e) =>
-                e is Exception && e.toString().contains('unmarshal event')),
+            predicate(
+              (e) => e is Exception && e.toString().contains('unmarshal event'),
+            ),
           ),
         );
       });

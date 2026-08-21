@@ -3,8 +3,8 @@ package client_2finance
 import (
 	"time"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
 
 	"fmt"
 
@@ -58,7 +58,7 @@ func (c *NetworkClient) AddCashback(
 	}
 
 	to := address
-	method := cashbackV1.METHOD_ADD_CASHBACK
+	method := cashbackV2.METHOD_ADD_CASHBACK
 	data := map[string]interface{}{
 		"address":       address,
 		"owner":         owner,
@@ -117,7 +117,7 @@ func (c *NetworkClient) UpdateCashback(
 	}
 
 	to := address
-	method := cashbackV1.METHOD_UPDATE_CASHBACK
+	method := cashbackV2.METHOD_UPDATE_CASHBACK
 
 	data := map[string]interface{}{
 		"address":       address,
@@ -155,7 +155,7 @@ func (c *NetworkClient) PauseCashback(address string, pause bool) (types.Contrac
 	}
 
 	to := address
-	method := cashbackV1.METHOD_PAUSE_CASHBACK
+	method := cashbackV2.METHOD_PAUSE_CASHBACK
 
 	data := map[string]interface{}{
 		"address": address,
@@ -189,7 +189,7 @@ func (c *NetworkClient) UnpauseCashback(address string, pause bool) (types.Contr
 	}
 
 	to := address
-	method := cashbackV1.METHOD_UNPAUSE_CASHBACK
+	method := cashbackV2.METHOD_UNPAUSE_CASHBACK
 
 	data := map[string]interface{}{
 		"address": address,
@@ -237,7 +237,7 @@ func (c *NetworkClient) DepositCashbackFunds(address, tokenAddress, amount, toke
 	}
 
 	to := address
-	method := cashbackV1.METHOD_DEPOSIT_CASHBACK
+	method := cashbackV2.METHOD_DEPOSIT_CASHBACK
 
 	data := map[string]interface{}{
 		"address":       address,
@@ -293,7 +293,7 @@ func (c *NetworkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tok
 	}
 
 	to := address
-	method := cashbackV1.METHOD_WITHDRAW_CASHBACK
+	method := cashbackV2.METHOD_WITHDRAW_CASHBACK
 
 	data := map[string]interface{}{
 		"address":       address,
@@ -324,7 +324,7 @@ func (c *NetworkClient) GetCashback(address string) (types.ContractOutput, error
 		return types.ContractOutput{}, fmt.Errorf("invalid cashback address: %w", err)
 	}
 
-	method := cashbackV1.METHOD_GET_CASHBACK
+	method := cashbackV2.METHOD_GET_CASHBACK
 
 	return c.GetState(address, method, nil)
 }
@@ -365,7 +365,7 @@ func (c *NetworkClient) ListCashbacks(
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
-	method := cashbackV1.METHOD_LIST_CASHBACKS
+	method := cashbackV2.METHOD_LIST_CASHBACKS
 	data := map[string]interface{}{
 		"owner":            owner,
 		"program_type":     programType,
@@ -374,7 +374,7 @@ func (c *NetworkClient) ListCashbacks(
 		"limit":            limit,
 		"ascending":        ascending,
 		"token_address":    tokenAddress,
-		"contract_version": cashbackV1.CASHBACK_CONTRACT_V1,
+		"contract_version": cashbackV2.CASHBACK_CONTRACT_V2,
 	}
 
 	return c.GetState("", method, data)
@@ -406,7 +406,7 @@ func (c *NetworkClient) ClaimCashback(address, amount, tokenType, uuid string) (
 	}
 
 	to := address
-	method := cashbackV1.METHOD_CLAIM_CASHBACK
+	method := cashbackV2.METHOD_CLAIM_CASHBACK
 
 	data := map[string]interface{}{
 		"address":    address,

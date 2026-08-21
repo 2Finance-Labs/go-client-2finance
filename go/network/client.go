@@ -27,13 +27,16 @@ func (c *Client) Post(ctx context.Context, path string, body any, out any) error
 
 func (c *Client) VirtualMachine(ctx context.Context) (json.RawMessage, error) {
 	var response json.RawMessage
-	err := c.Get(ctx, "/v1/2finance-network/virtual-machine", &response)
+	err := c.Post(ctx, "/v2/2finance-network/query", map[string]any{
+		"method": "get_blocks",
+		"params": map[string]any{"page": 1, "limit": 1},
+	}, &response)
 	return response, err
 }
 
 func (c *Client) MarketCandles(ctx context.Context, market string, query string) (json.RawMessage, error) {
 	var response json.RawMessage
-	path := "/v1/2finance-network/markets/" + url.PathEscape(market) + "/candles"
+	path := "/v2/2finance-network/markets/" + url.PathEscape(market) + "/candles"
 	if query != "" {
 		path += "?" + query
 	}
@@ -43,13 +46,13 @@ func (c *Client) MarketCandles(ctx context.Context, market string, query string)
 
 func (c *Client) CreateProduct(ctx context.Context, productType string, request any) (json.RawMessage, error) {
 	var response json.RawMessage
-	err := c.Post(ctx, "/v1/2finance-network/products/"+url.PathEscape(productType), request, &response)
+	err := c.Post(ctx, "/v2/2finance-network/products/"+url.PathEscape(productType), request, &response)
 	return response, err
 }
 
 func (c *Client) Products(ctx context.Context, productType string) (json.RawMessage, error) {
 	var response json.RawMessage
-	err := c.Get(ctx, "/v1/2finance-network/products/"+url.PathEscape(productType), &response)
+	err := c.Get(ctx, "/v2/2finance-network/products/"+url.PathEscape(productType), &response)
 	return response, err
 }
 

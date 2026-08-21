@@ -6,11 +6,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
-	cashbackV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1/domain"
-	cashbackV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1/models"
-	tokenV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
-	tokenV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV2"
+	cashbackV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV2/domain"
+	cashbackV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV2/models"
+	tokenV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/domain"
+	tokenV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/tokenV2/models"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
@@ -44,18 +44,18 @@ func TestCashbackFlow(t *testing.T) {
 		owner.PublicKey,
 		6,
 		false,
-		tokenV1Domain.FUNGIBLE,
+		tokenV2Domain.FUNGIBLE,
 		false,
 	)
 
-	require.Equal(t, tokenV1Domain.FUNGIBLE, cashbackToken.TokenType, "cashback token must be fungible")
+	require.Equal(t, tokenV2Domain.FUNGIBLE, cashbackToken.TokenType, "cashback token must be fungible")
 
 	// ------------------
 	//   DEPLOY CASHBACK
 	// ------------------
 	useWallet(t, c, ownerSigner.Wallet)
 
-	deployedContract, err := c.DeployContract1(cashbackV1.CASHBACK_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(cashbackV2.CASHBACK_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract cashback: %v", err)
 	}
@@ -91,26 +91,26 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("GetTokenBalance owner before: %v", err)
 	}
 
-	var ownerBalanceBefore tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerBalanceBeforeOut.States[0].Object, &ownerBalanceBefore)
+	var ownerBalanceBefore tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](ownerBalanceBeforeOut.States[0].Object, &ownerBalanceBefore)
 	if err != nil {
 		t.Fatalf("UnmarshalState ownerBalanceBefore: %v", err)
 	}
 
-	var customerBalanceBefore tokenV1Models.BalanceStateModel
+	var customerBalanceBefore tokenV2Models.BalanceStateModel
 
 	customerBalanceBeforeOut, err := c.GetTokenBalance(cashbackToken.Address, customer.PublicKey)
 	if err != nil {
 		require.Contains(t, err.Error(), "record not found")
 
-		customerBalanceBefore = tokenV1Models.BalanceStateModel{
+		customerBalanceBefore = tokenV2Models.BalanceStateModel{
 			TokenAddress: cashbackToken.Address,
 			OwnerAddress: customer.PublicKey,
 			Amount:       "0",
-			TokenType:    tokenV1Domain.FUNGIBLE,
+			TokenType:    tokenV2Domain.FUNGIBLE,
 		}
 	} else {
-		err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](customerBalanceBeforeOut.States[0].Object, &customerBalanceBefore)
+		err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](customerBalanceBeforeOut.States[0].Object, &customerBalanceBefore)
 		if err != nil {
 			t.Fatalf("UnmarshalState customerBalanceBefore: %v", err)
 		}
@@ -146,9 +146,9 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("UnmarshalLog (AddCashback.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, cashbackV1Domain.CASHBACK_CREATED_LOG, addLog.LogType)
+	assert.Equal(t, cashbackV2Domain.CASHBACK_CREATED_LOG, addLog.LogType)
 
-	addEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](addLog.Event)
+	addEvent, err := utils.UnmarshalEvent[cashbackV2Domain.Cashback](addLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddCashback.Logs[0]): %v", err)
 	}
@@ -173,8 +173,8 @@ func TestCashbackFlow(t *testing.T) {
 	}
 	require.NotEmpty(t, getCashbackOut.States)
 
-	var cashbackState cashbackV1Models.CashbackStateModel
-	err = utils.UnmarshalState[cashbackV1Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
+	var cashbackState cashbackV2Models.CashbackStateModel
+	err = utils.UnmarshalState[cashbackV2Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetCashback.States[0]): %v", err)
 	}
@@ -219,9 +219,9 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("UnmarshalLog (UpdateCashback.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, cashbackV1Domain.CASHBACK_UPDATED_LOG, updateLog.LogType)
+	assert.Equal(t, cashbackV2Domain.CASHBACK_UPDATED_LOG, updateLog.LogType)
 
-	updateEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](updateLog.Event)
+	updateEvent, err := utils.UnmarshalEvent[cashbackV2Domain.Cashback](updateLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UpdateCashback.Logs[0]): %v", err)
 	}
@@ -234,7 +234,7 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("GetCashback after update: %v", err)
 	}
 
-	err = utils.UnmarshalState[cashbackV1Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
+	err = utils.UnmarshalState[cashbackV2Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetCashback after update): %v", err)
 	}
@@ -261,9 +261,9 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("UnmarshalLog (PauseCashback.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, cashbackV1Domain.CASHBACK_PAUSED_LOG, pauseLog.LogType)
+	assert.Equal(t, cashbackV2Domain.CASHBACK_PAUSED_LOG, pauseLog.LogType)
 
-	pauseEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](pauseLog.Event)
+	pauseEvent, err := utils.UnmarshalEvent[cashbackV2Domain.Cashback](pauseLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (PauseCashback.Logs[0]): %v", err)
 	}
@@ -276,7 +276,7 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("GetCashback after pause: %v", err)
 	}
 
-	err = utils.UnmarshalState[cashbackV1Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
+	err = utils.UnmarshalState[cashbackV2Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetCashback after pause): %v", err)
 	}
@@ -299,9 +299,9 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("UnmarshalLog (UnpauseCashback.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, cashbackV1Domain.CASHBACK_UNPAUSED_LOG, unpauseLog.LogType)
+	assert.Equal(t, cashbackV2Domain.CASHBACK_UNPAUSED_LOG, unpauseLog.LogType)
 
-	unpauseEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](unpauseLog.Event)
+	unpauseEvent, err := utils.UnmarshalEvent[cashbackV2Domain.Cashback](unpauseLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UnpauseCashback.Logs[0]): %v", err)
 	}
@@ -314,7 +314,7 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("GetCashback after unpause: %v", err)
 	}
 
-	err = utils.UnmarshalState[cashbackV1Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
+	err = utils.UnmarshalState[cashbackV2Models.CashbackStateModel](getCashbackOut.States[0].Object, &cashbackState)
 	if err != nil {
 		t.Fatalf("UnmarshalState (GetCashback after unpause): %v", err)
 	}
@@ -332,7 +332,7 @@ func TestCashbackFlow(t *testing.T) {
 		cashbackAddress,
 		cashbackToken.Address,
 		depositAmount,
-		tokenV1Domain.FUNGIBLE,
+		tokenV2Domain.FUNGIBLE,
 		"",
 	)
 	if err != nil {
@@ -345,9 +345,9 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("UnmarshalLog (DepositCashbackFunds.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, cashbackV1Domain.CASHBACK_DEPOSITED_LOG, depositLog.LogType)
+	assert.Equal(t, cashbackV2Domain.CASHBACK_DEPOSITED_LOG, depositLog.LogType)
 
-	depositEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](depositLog.Event)
+	depositEvent, err := utils.UnmarshalEvent[cashbackV2Domain.Cashback](depositLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (DepositCashbackFunds.Logs[0]): %v", err)
 	}
@@ -359,8 +359,8 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("GetTokenBalance owner after deposit: %v", err)
 	}
 
-	var ownerBalanceAfterDeposit tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerBalanceAfterDepositOut.States[0].Object, &ownerBalanceAfterDeposit)
+	var ownerBalanceAfterDeposit tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](ownerBalanceAfterDepositOut.States[0].Object, &ownerBalanceAfterDeposit)
 	if err != nil {
 		t.Fatalf("UnmarshalState ownerBalanceAfterDeposit: %v", err)
 	}
@@ -387,7 +387,7 @@ func TestCashbackFlow(t *testing.T) {
 	claimOut, err := c.ClaimCashback(
 		cashbackAddress,
 		claimAmount,
-		tokenV1Domain.FUNGIBLE,
+		tokenV2Domain.FUNGIBLE,
 		"",
 	)
 	if err != nil {
@@ -400,9 +400,9 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("UnmarshalLog (ClaimCashback.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, cashbackV1Domain.CASHBACK_CLAIMED_LOG, claimLog.LogType)
+	assert.Equal(t, cashbackV2Domain.CASHBACK_CLAIMED_LOG, claimLog.LogType)
 
-	claimEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](claimLog.Event)
+	claimEvent, err := utils.UnmarshalEvent[cashbackV2Domain.Cashback](claimLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (ClaimCashback.Logs[0]): %v", err)
 	}
@@ -414,8 +414,8 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("GetTokenBalance customer after claim: %v", err)
 	}
 
-	var customerBalanceAfterClaim tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](customerBalanceAfterClaimOut.States[0].Object, &customerBalanceAfterClaim)
+	var customerBalanceAfterClaim tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](customerBalanceAfterClaimOut.States[0].Object, &customerBalanceAfterClaim)
 	if err != nil {
 		t.Fatalf("UnmarshalState customerBalanceAfterClaim: %v", err)
 	}
@@ -440,7 +440,7 @@ func TestCashbackFlow(t *testing.T) {
 		cashbackAddress,
 		cashbackToken.Address,
 		withdrawAmount,
-		tokenV1Domain.FUNGIBLE,
+		tokenV2Domain.FUNGIBLE,
 		"",
 	)
 	if err != nil {
@@ -453,9 +453,9 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("UnmarshalLog (WithdrawCashbackFunds.Logs[0]): %v", err)
 	}
 
-	assert.Equal(t, cashbackV1Domain.CASHBACK_WITHDRAWN_LOG, withdrawLog.LogType)
+	assert.Equal(t, cashbackV2Domain.CASHBACK_WITHDRAWN_LOG, withdrawLog.LogType)
 
-	withdrawEvent, err := utils.UnmarshalEvent[cashbackV1Domain.Cashback](withdrawLog.Event)
+	withdrawEvent, err := utils.UnmarshalEvent[cashbackV2Domain.Cashback](withdrawLog.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (WithdrawCashbackFunds.Logs[0]): %v", err)
 	}
@@ -467,8 +467,8 @@ func TestCashbackFlow(t *testing.T) {
 		t.Fatalf("GetTokenBalance owner after withdraw: %v", err)
 	}
 
-	var ownerBalanceAfterWithdraw tokenV1Models.BalanceStateModel
-	err = utils.UnmarshalState[tokenV1Models.BalanceStateModel](ownerBalanceAfterWithdrawOut.States[0].Object, &ownerBalanceAfterWithdraw)
+	var ownerBalanceAfterWithdraw tokenV2Models.BalanceStateModel
+	err = utils.UnmarshalState[tokenV2Models.BalanceStateModel](ownerBalanceAfterWithdrawOut.States[0].Object, &ownerBalanceAfterWithdraw)
 	if err != nil {
 		t.Fatalf("UnmarshalState ownerBalanceAfterWithdraw: %v", err)
 	}
@@ -497,8 +497,8 @@ func TestCashbackFlow(t *testing.T) {
 	}
 	require.NotEmpty(t, listOut.States)
 
-	var cashbacks []cashbackV1Models.CashbackStateModel
-	err = utils.UnmarshalState[[]cashbackV1Models.CashbackStateModel](listOut.States[0].Object, &cashbacks)
+	var cashbacks []cashbackV2Models.CashbackStateModel
+	err = utils.UnmarshalState[[]cashbackV2Models.CashbackStateModel](listOut.States[0].Object, &cashbacks)
 	if err != nil {
 		t.Fatalf("UnmarshalState (ListCashbacks.States[0]): %v", err)
 	}

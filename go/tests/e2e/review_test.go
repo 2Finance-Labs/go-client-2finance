@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1"
-	reviewV1Domain "gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1/domain"
-	reviewV1Models "gitlab.com/2finance/2finance-network/blockchain/contract/reviewV1/models"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/reviewV2"
+	reviewV2Domain "gitlab.com/2finance/2finance-network/blockchain/contract/reviewV2/domain"
+	reviewV2Models "gitlab.com/2finance/2finance-network/blockchain/contract/reviewV2/models"
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
@@ -35,7 +35,7 @@ func TestReviewFlow(t *testing.T) {
 	// ------------------
 	useWallet(t, c, reviewerSigner.Wallet)
 
-	deployedContract, err := c.DeployContract1(reviewV1.REVIEW_CONTRACT_V1)
+	deployedContract, err := c.DeployContract1(reviewV2.REVIEW_CONTRACT_V2)
 	if err != nil {
 		t.Fatalf("DeployContract: %v", err)
 	}
@@ -83,9 +83,9 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (AddReview.Logs[0]): %v", err)
 	}
-	assert.Equal(t, reviewV1Domain.REVIEW_ADDED_LOG, unmarshalLogReview.LogType)
+	assert.Equal(t, reviewV2Domain.REVIEW_ADDED_LOG, unmarshalLogReview.LogType)
 
-	review, err := utils.UnmarshalEvent[reviewV1Domain.Review](unmarshalLogReview.Event)
+	review, err := utils.UnmarshalEvent[reviewV2Domain.Review](unmarshalLogReview.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (AddReview.Logs[0].Event): %v", err)
 	}
@@ -108,8 +108,8 @@ func TestReviewFlow(t *testing.T) {
 		t.Fatalf("GetReview: %v", err)
 	}
 
-	var reviewState reviewV1Models.ReviewStateModel
-	err = utils.UnmarshalState[reviewV1Models.ReviewStateModel](getReview.States[0].Object, &reviewState)
+	var reviewState reviewV2Models.ReviewStateModel
+	err = utils.UnmarshalState[reviewV2Models.ReviewStateModel](getReview.States[0].Object, &reviewState)
 	if err != nil {
 		t.Fatalf("UnmarshalState: %v", err)
 	}
@@ -154,9 +154,9 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (UpdateReview.Logs[0]): %v", err)
 	}
-	assert.Equal(t, reviewV1Domain.REVIEW_UPDATED_LOG, unmarshalLogUpdate.LogType)
+	assert.Equal(t, reviewV2Domain.REVIEW_UPDATED_LOG, unmarshalLogUpdate.LogType)
 
-	updatedReview, err := utils.UnmarshalEvent[reviewV1Domain.Review](unmarshalLogUpdate.Event)
+	updatedReview, err := utils.UnmarshalEvent[reviewV2Domain.Review](unmarshalLogUpdate.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (UpdateReview.Logs[0].Event): %v", err)
 	}
@@ -174,8 +174,8 @@ func TestReviewFlow(t *testing.T) {
 		t.Fatalf("GetReview (after update): %v", err)
 	}
 
-	var reviewState2 reviewV1Models.ReviewStateModel
-	err = utils.UnmarshalState[reviewV1Models.ReviewStateModel](getReview2.States[0].Object, &reviewState2)
+	var reviewState2 reviewV2Models.ReviewStateModel
+	err = utils.UnmarshalState[reviewV2Models.ReviewStateModel](getReview2.States[0].Object, &reviewState2)
 	if err != nil {
 		t.Fatalf("UnmarshalState (after update): %v", err)
 	}
@@ -206,9 +206,9 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (HideReview.Logs[0]): %v", err)
 	}
-	assert.Equal(t, reviewV1Domain.REVIEW_HIDDEN_LOG, unmarshalLogHide.LogType)
+	assert.Equal(t, reviewV2Domain.REVIEW_HIDDEN_LOG, unmarshalLogHide.LogType)
 
-	hiddenReview, err := utils.UnmarshalEvent[reviewV1Domain.Review](unmarshalLogHide.Event)
+	hiddenReview, err := utils.UnmarshalEvent[reviewV2Domain.Review](unmarshalLogHide.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (HideReview.Logs[0].Event): %v", err)
 	}
@@ -221,8 +221,8 @@ func TestReviewFlow(t *testing.T) {
 		t.Fatalf("GetReview (after hide): %v", err)
 	}
 
-	var reviewState3 reviewV1Models.ReviewStateModel
-	err = utils.UnmarshalState[reviewV1Models.ReviewStateModel](getReview3.States[0].Object, &reviewState3)
+	var reviewState3 reviewV2Models.ReviewStateModel
+	err = utils.UnmarshalState[reviewV2Models.ReviewStateModel](getReview3.States[0].Object, &reviewState3)
 	if err != nil {
 		t.Fatalf("UnmarshalState (after hide): %v", err)
 	}
@@ -257,9 +257,9 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (VoteHelpful.Logs[0]): %v", err)
 	}
-	assert.Equal(t, reviewV1Domain.REVIEW_HELPFUL_LOG, unmarshalLogVote.LogType)
+	assert.Equal(t, reviewV2Domain.REVIEW_HELPFUL_LOG, unmarshalLogVote.LogType)
 
-	votedReview, err := utils.UnmarshalEvent[reviewV1Domain.Vote](unmarshalLogVote.Event)
+	votedReview, err := utils.UnmarshalEvent[reviewV2Domain.Vote](unmarshalLogVote.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (VoteHelpful.Logs[0].Event): %v", err)
 	}
@@ -273,8 +273,8 @@ func TestReviewFlow(t *testing.T) {
 		t.Fatalf("GetReview (after helpful vote): %v", err)
 	}
 
-	var reviewState4 reviewV1Models.ReviewStateModel
-	err = utils.UnmarshalState[reviewV1Models.ReviewStateModel](getReview4.States[0].Object, &reviewState4)
+	var reviewState4 reviewV2Models.ReviewStateModel
+	err = utils.UnmarshalState[reviewV2Models.ReviewStateModel](getReview4.States[0].Object, &reviewState4)
 	if err != nil {
 		t.Fatalf("UnmarshalState (after helpful vote): %v", err)
 	}
@@ -310,9 +310,9 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (ReportReview.Logs[0]): %v", err)
 	}
-	assert.Equal(t, reviewV1Domain.REVIEW_REPORTED_LOG, unmarshalLogReport.LogType)
+	assert.Equal(t, reviewV2Domain.REVIEW_REPORTED_LOG, unmarshalLogReport.LogType)
 
-	reportedReview, err := utils.UnmarshalEvent[reviewV1Domain.Report](unmarshalLogReport.Event)
+	reportedReview, err := utils.UnmarshalEvent[reviewV2Domain.Report](unmarshalLogReport.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (ReportReview.Logs[0].Event): %v", err)
 	}
@@ -326,8 +326,8 @@ func TestReviewFlow(t *testing.T) {
 		t.Fatalf("GetReview (after report): %v", err)
 	}
 
-	var reviewState5 reviewV1Models.ReviewStateModel
-	err = utils.UnmarshalState[reviewV1Models.ReviewStateModel](getReview5.States[0].Object, &reviewState5)
+	var reviewState5 reviewV2Models.ReviewStateModel
+	err = utils.UnmarshalState[reviewV2Models.ReviewStateModel](getReview5.States[0].Object, &reviewState5)
 	if err != nil {
 		t.Fatalf("UnmarshalState (after report): %v", err)
 	}
@@ -351,7 +351,7 @@ func TestReviewFlow(t *testing.T) {
 	// ------------------
 	useWallet(t, c, reviewerSigner.Wallet)
 
-	moderateReview, err := c.ModerateReview(address, reviewV1Domain.MODERATE_STATUS_APPROVED, "ok")
+	moderateReview, err := c.ModerateReview(address, reviewV2Domain.MODERATE_STATUS_APPROVED, "ok")
 	if err != nil {
 		t.Fatalf("ModerateReview: %v", err)
 	}
@@ -360,15 +360,15 @@ func TestReviewFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnmarshalLog (ModerateReview.Logs[0]): %v", err)
 	}
-	assert.Equal(t, reviewV1Domain.REVIEW_MODERATED_LOG, unmarshalLogModerate.LogType)
+	assert.Equal(t, reviewV2Domain.REVIEW_MODERATED_LOG, unmarshalLogModerate.LogType)
 
-	moderatedReview, err := utils.UnmarshalEvent[reviewV1Domain.Moderation](unmarshalLogModerate.Event)
+	moderatedReview, err := utils.UnmarshalEvent[reviewV2Domain.Moderation](unmarshalLogModerate.Event)
 	if err != nil {
 		t.Fatalf("UnmarshalEvent (ModerateReview.Logs[0].Event): %v", err)
 	}
 
 	assert.Equal(t, address, moderatedReview.Address)
-	assert.Equal(t, reviewV1Domain.MODERATE_STATUS_APPROVED, moderatedReview.Action)
+	assert.Equal(t, reviewV2Domain.MODERATE_STATUS_APPROVED, moderatedReview.Action)
 	assert.Equal(t, "ok", moderatedReview.Note)
 
 	getReview6, err := c.GetReview(address)
@@ -376,14 +376,14 @@ func TestReviewFlow(t *testing.T) {
 		t.Fatalf("GetReview (after moderate): %v", err)
 	}
 
-	var reviewState6 reviewV1Models.ReviewStateModel
-	err = utils.UnmarshalState[reviewV1Models.ReviewStateModel](getReview6.States[0].Object, &reviewState6)
+	var reviewState6 reviewV2Models.ReviewStateModel
+	err = utils.UnmarshalState[reviewV2Models.ReviewStateModel](getReview6.States[0].Object, &reviewState6)
 	if err != nil {
 		t.Fatalf("UnmarshalState (after moderate): %v", err)
 	}
 
 	assert.Equal(t, address, reviewState6.Address)
-	assert.Equal(t, reviewV1Domain.MODERATE_STATUS_APPROVED, reviewState6.ModerationStatus)
+	assert.Equal(t, reviewV2Domain.MODERATE_STATUS_APPROVED, reviewState6.ModerationStatus)
 	assert.Equal(t, "ok", reviewState6.ModerationNote)
 	assert.Equal(t, 4, reviewState6.Rating)
 	assert.Equal(t, "Updated comment", reviewState6.Comment)
@@ -410,15 +410,15 @@ func TestReviewFlow(t *testing.T) {
 		t.Fatalf("ListReviews: %v", err)
 	}
 
-	var reviews []reviewV1Domain.Review
+	var reviews []reviewV2Domain.Review
 	for _, state := range listReviews.States {
-		var r reviewV1Models.ReviewStateModel
-		err = utils.UnmarshalState[reviewV1Models.ReviewStateModel](state.Object, &r)
+		var r reviewV2Models.ReviewStateModel
+		err = utils.UnmarshalState[reviewV2Models.ReviewStateModel](state.Object, &r)
 		if err != nil {
 			t.Fatalf("UnmarshalState (ListReviews): %v", err)
 		}
 
-		reviews = append(reviews, reviewV1Domain.Review{
+		reviews = append(reviews, reviewV2Domain.Review{
 			Address:     r.Address,
 			Reviewer:    r.Reviewer,
 			Reviewee:    r.Reviewee,

@@ -450,7 +450,7 @@ extension DropClient on TwoFinanceBlockchain {
         'page': page,
         'limit': limit,
         'ascending': ascending,
-        'contract_version': DROP_CONTRACT_V1,
+        'contract_version': DROP_CONTRACT_V2,
       },
     );
   }

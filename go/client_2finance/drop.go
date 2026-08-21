@@ -3,8 +3,8 @@ package client_2finance
 import (
 	"fmt"
 
-	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1"
-	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/inputs"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV2"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/dropV2/inputs"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/types"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
@@ -34,7 +34,7 @@ func (c *NetworkClient) NewDrop(in inputs.InputNewDrop) (types.ContractOutput, e
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
 
-	method := dropV1.METHOD_NEW_DROP
+	method := dropV2.METHOD_NEW_DROP
 	data := map[string]interface{}{
 		"address":                in.Address,
 		"program_address":        in.ProgramAddress,
@@ -74,7 +74,7 @@ func (c *NetworkClient) UpdateDropMetadata(
 
 	from := c.walletManager.OwnerAddress()
 
-	method := dropV1.METHOD_UPDATE_DROP_METADATA
+	method := dropV2.METHOD_UPDATE_DROP_METADATA
 	data := map[string]interface{}{
 		"address":                in.Address,
 		"program_address":        in.ProgramAddress,
@@ -112,7 +112,7 @@ func (c *NetworkClient) AllowOracles(address string, oracles map[string]bool) (t
 	}
 
 	from := c.walletManager.OwnerAddress()
-	method := dropV1.METHOD_ALLOW_ORACLES
+	method := dropV2.METHOD_ALLOW_ORACLES
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -133,7 +133,7 @@ func (c *NetworkClient) DisallowOracles(address string, oracles map[string]bool)
 	}
 
 	from := c.walletManager.OwnerAddress()
-	method := dropV1.METHOD_DISALLOW_ORACLES
+	method := dropV2.METHOD_DISALLOW_ORACLES
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -161,7 +161,7 @@ func (c *NetworkClient) DepositDrop(
 	}
 
 	from := c.walletManager.OwnerAddress()
-	method := dropV1.METHOD_DEPOSIT_DROP
+	method := dropV2.METHOD_DEPOSIT_DROP
 	version := uint8(1)
 
 	uuid7, err := utils.NewUUID7()
@@ -183,7 +183,7 @@ func (c *NetworkClient) ClaimDrop(address string) (types.ContractOutput, error) 
 	}
 
 	from := c.walletManager.OwnerAddress()
-	method := dropV1.METHOD_CLAIM_DROP
+	method := dropV2.METHOD_CLAIM_DROP
 	version := uint8(1)
 
 	uuid7, err := utils.NewUUID7()
@@ -213,7 +213,7 @@ func (c *NetworkClient) WithdrawDrop(
 	}
 
 	from := c.walletManager.OwnerAddress()
-	method := dropV1.METHOD_WITHDRAW_DROP
+	method := dropV2.METHOD_WITHDRAW_DROP
 	version := uint8(1)
 	uuid7, err := utils.NewUUID7()
 	if err != nil {
@@ -243,7 +243,7 @@ func (c *NetworkClient) PauseDrop(dropAddress string) (types.ContractOutput, err
 		return types.ContractOutput{}, fmt.Errorf("invalid drop address: %w", err)
 	}
 
-	method := dropV1.METHOD_PAUSE_DROP
+	method := dropV2.METHOD_PAUSE_DROP
 	// Evite "data nil" — seu backend já reclamou disso em outros métodos.
 	data := map[string]interface{}{
 		"address": dropAddress,
@@ -274,7 +274,7 @@ func (c *NetworkClient) UnpauseDrop(dropAddress string) (types.ContractOutput, e
 		return types.ContractOutput{}, fmt.Errorf("invalid drop address: %w", err)
 	}
 
-	method := dropV1.METHOD_UNPAUSE_DROP
+	method := dropV2.METHOD_UNPAUSE_DROP
 	data := map[string]interface{}{
 		"address": dropAddress,
 		"paused":  false,
@@ -306,7 +306,7 @@ func (c *NetworkClient) AttestParticipantEligibility(
 	}
 
 	from := c.walletManager.OwnerAddress()
-	method := dropV1.METHOD_ATTEST_ELIGIBILITY
+	method := dropV2.METHOD_ATTEST_ELIGIBILITY
 	version := uint8(1)
 
 	uuid7, err := utils.NewUUID7()
@@ -344,7 +344,7 @@ func (c *NetworkClient) ManuallyAttestParticipantEligibility(
 		return types.ContractOutput{}, fmt.Errorf("invalid wallet address: %w", err)
 	}
 
-	method := dropV1.METHOD_MANUAL_ATTEST_ELIGIBILITY
+	method := dropV2.METHOD_MANUAL_ATTEST_ELIGIBILITY
 	data := map[string]interface{}{
 		"wallet":   wallet,
 		"approved": approved,
@@ -389,7 +389,7 @@ func (c *NetworkClient) GetDrop(address string) (types.ContractOutput, error) {
 		return types.ContractOutput{}, fmt.Errorf("invalid drop address: %w", err)
 	}
 
-	method := dropV1.METHOD_GET_DROP
+	method := dropV2.METHOD_GET_DROP
 
 	contractOutput, err := c.GetState(address, method, nil)
 	if err != nil {
@@ -426,14 +426,14 @@ func (c *NetworkClient) ListDrops(
 		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
 	}
 
-	method := dropV1.METHOD_LIST_DROPS
+	method := dropV2.METHOD_LIST_DROPS
 
 	data := map[string]interface{}{
 		"owner":            owner,
 		"page":             page,
 		"limit":            limit,
 		"ascending":        ascending,
-		"contract_version": dropV1.DROP_CONTRACT_V1,
+		"contract_version": dropV2.DROP_CONTRACT_V2,
 	}
 
 	contractOutput, err := c.GetState("", method, data)
@@ -469,7 +469,7 @@ func (c *NetworkClient) LastClaimed(address string, wallet string) (types.Contra
 		return types.ContractOutput{}, fmt.Errorf("invalid wallet address: %w", err)
 	}
 
-	method := dropV1.METHOD_LAST_CLAIMED_DROP
+	method := dropV2.METHOD_LAST_CLAIMED_DROP
 
 	data := map[string]interface{}{
 		"wallet": wallet,

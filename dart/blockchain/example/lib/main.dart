@@ -12,10 +12,10 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:two_finance_blockchain/blockchain/keys/keys.dart';
 import 'package:two_finance_blockchain/blockchain/transaction/transaction.dart';
 import 'package:two_finance_blockchain/blockchain/types/types.dart';
-import 'package:two_finance_blockchain/blockchain/contract/walletV1/constants.dart';
-import 'package:two_finance_blockchain/blockchain/contract/tokenV1/domain/token.dart' as domain;
+import 'package:two_finance_blockchain/blockchain/contract/walletV2/constants.dart';
+import 'package:two_finance_blockchain/blockchain/contract/tokenV2/domain/token.dart' as domain;
 
-import 'package:two_finance_blockchain/blockchain/contract/walletV1/domain/wallet.dart' as domain;
+import 'package:two_finance_blockchain/blockchain/contract/walletV2/domain/wallet.dart' as domain;
 
 
 void main() {

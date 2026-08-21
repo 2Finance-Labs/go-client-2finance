@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.2finance.dev/sdk/error.v2.json",
+  "title": "2Finance API error",
+  "type": "object",
+  "properties": {
+    "error": { "type": "string" },
+    "message": { "type": "string" },
+    "code": { "type": "string" },
+    "details": {}
+  },
+  "additionalProperties": true
+}
