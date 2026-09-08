@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'service_client.dart';
+import 'models.dart';
 
 final class AuthClient {
   AuthClient(
@@ -129,6 +130,11 @@ final class NetworkClient {
   NetworkClient(this.service);
 
   final ServiceClient service;
+
+  Future<MarketDirectory> marketDirectory() async {
+    final payload = await service.get('/api/v2/exchange/market-directory');
+    return MarketDirectory.fromJson(Map<String, Object?>.from(payload! as Map));
+  }
 
   Future<Object?> virtualMachine() {
     return service.post('/v2/2finance-network/query', {

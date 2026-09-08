@@ -38,6 +38,20 @@ void main() {
     expect(idempotency['idempotency_key'], 'idem-001');
   });
 
+  test('parses canonical Market Directory fixture', () {
+    final directory = MarketDirectory.fromJson(
+      contractFixture('market-directory.json'),
+    );
+
+    expect(directory.markets.single.engineId, 'engine-btc-usdt-01');
+    expect(directory.markets.single.symbolId, 1);
+    expect(directory.markets.single.precision['amount'], 8);
+    expect(
+      directory.markets.single.endpoints['websocket'],
+      contains('/engines/'),
+    );
+  });
+
   test('shared SDK models parse contract fixtures', () {
     final error = SdkError.fromJson(contractFixture('error.json'));
     final pagination = PaginationResponse.fromJson(

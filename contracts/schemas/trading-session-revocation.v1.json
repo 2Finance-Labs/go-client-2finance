@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.2finance.com/trading-session-revocation.v1.json",
+  "title": "2Finance Trading Session Revocation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "payload", "authorization"],
+  "properties": {
+    "schema": { "const": "2finance.trading_session_revocation.v1" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "chain_id", "account", "session_id", "nonce", "expires_at_ms"],
+      "properties": {
+        "domain": { "const": "2finance.trading_session.revoke.v1" },
+        "chain_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "account": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "session_id": { "type": "string", "minLength": 16, "maxLength": 128 },
+        "nonce": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "expires_at_ms": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "public_key", "signature"],
+      "properties": {
+        "mode": { "const": "WALLET" },
+        "public_key": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "signature": { "type": "string", "pattern": "^[0-9a-f]{128}$" }
+      }
+    }
+  }
+}

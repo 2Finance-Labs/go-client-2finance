@@ -28,6 +28,7 @@ import {
   serviceURL,
   serviceURLs
 } from "../src/index.js";
+import type { MarketDirectory } from "../src/index.js";
 
 type DomainOperation = {
   name: string;
@@ -281,6 +282,7 @@ async function sdkSmoke(): Promise<void> {
 
   await client.network.virtualMachine();
   await client.network.marketCandles("BTC-USDT", "limit=10");
+  await client.network.marketDirectory();
   await client.network.bonds();
   await client.network.createBond({ symbol: "BOND1" });
   await client.network.loans();
@@ -428,6 +430,7 @@ async function behaviorSmoke(): Promise<void> {
     "GET https://analytics.example/portfolio-manager/balances/acct%2Fresolved",
     "GET https://analytics.example/portfolio-manager/balances/acct%2F1%20ok",
     "GET https://network.example/v2/2finance-network/products/bonds",
+    "GET https://network.example/api/v2/exchange/market-directory",
     "POST https://network.example/v2/2finance-network/products/bonds",
     "GET https://network.example/v2/2finance-network/products/loans",
     "POST https://network.example/v2/2finance-network/products/loans",
@@ -526,3 +529,10 @@ await sdkSmoke();
 await behaviorSmoke();
 contractFixtureSmoke();
 sharedModelsSmoke();
+
+const marketDirectory = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../contracts/examples/market-directory.json"), "utf8")
+) as MarketDirectory;
+assertEqual(marketDirectory.schema, "2finance.market_directory.v1", "market directory schema should be canonical");
+assertEqual(marketDirectory.markets[0].engine_id, "engine-btc-usdt-01", "market route should expose engine owner");
+assertEqual(marketDirectory.markets[0].precision.amount, 8, "market amount precision should be typed");

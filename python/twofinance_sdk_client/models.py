@@ -88,6 +88,66 @@ class ConfiguredServiceEntry:
 
 
 @dataclass(frozen=True)
+class MarketDefinition:
+    """Language binding for contracts/schemas/market-directory.v1.json."""
+
+    market_id: str
+    symbol: str
+    engine_id: str
+    symbol_id: int
+    route_epoch: int
+    chain: dict[str, str]
+    address: str
+    endpoints: dict[str, str]
+    status: str
+    precision: dict[str, int]
+    tick_size: str
+    step_size: str
+    limits: dict[str, dict[str, str | None]]
+    fees: dict[str, str]
+    capabilities: dict[str, Any]
+    raw: dict[str, Any]
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "MarketDefinition":
+        if payload.get("schema") != "2finance.market_definition.v1":
+            raise ValueError("unsupported 2Finance market definition schema")
+        return cls(
+            market_id=str(payload["market_id"]),
+            symbol=str(payload["symbol"]),
+            engine_id=str(payload["engine_id"]),
+            symbol_id=int(payload["symbol_id"]),
+            route_epoch=int(payload["route_epoch"]),
+            chain=dict(payload["chain"]),
+            address=str(payload["address"]),
+            endpoints=dict(payload["endpoints"]),
+            status=str(payload["status"]),
+            precision={key: int(value) for key, value in dict(payload["precision"]).items()},
+            tick_size=str(payload["tick_size"]),
+            step_size=str(payload["step_size"]),
+            limits={key: dict(value) for key, value in dict(payload["limits"]).items()},
+            fees={key: str(value) for key, value in dict(payload["fees"]).items()},
+            capabilities=dict(payload["capabilities"]),
+            raw=dict(payload),
+        )
+
+
+@dataclass(frozen=True)
+class MarketDirectory:
+    generated_at: str
+    markets: list[MarketDefinition]
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "MarketDirectory":
+        if payload.get("schema") != "2finance.market_directory.v1":
+            raise ValueError("unsupported 2Finance market directory schema")
+        return cls(
+            generated_at=str(payload["generated_at"]),
+            markets=[MarketDefinition.from_dict(dict(item)) for item in payload.get("markets", [])],
+        )
+
+
+@dataclass(frozen=True)
 class DomainOperation:
     name: str
     method: str

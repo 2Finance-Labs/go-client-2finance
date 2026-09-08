@@ -1,0 +1,30 @@
+{
+  "schema": "matchengine.order_command.v3",
+  "payload": {
+    "domain": "2finance.order.add.v1",
+    "chain_id": "2finance-testnet",
+    "account": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "engine_id": "engine-btc",
+    "symbol": "BTC/USDT",
+    "symbol_id": 1,
+    "route_epoch": 7,
+    "operation": "ADD",
+    "authorization_mode": "SESSION",
+    "side": "BUY",
+    "type": "LIMIT",
+    "amount": "0.01",
+    "price": "64000",
+    "time_in_force": "GTC",
+    "order_id": "",
+    "client_order_id": "order-1",
+    "idempotency_key": "order-1-add",
+    "session_id": "session-1",
+    "nonce": "42",
+    "expires_at_ms": 1788725000000
+  },
+  "authorization": {
+    "mode": "SESSION",
+    "public_key": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+    "signature": "e35ced593f24ef68142a0e2313470616d1ae7ed702ca68e998629646ba73a1185cd5edf77bffd584b5c3aa8779e5718f0934f6db0ece6ee62998ef1de6db5208"
+  }
+}

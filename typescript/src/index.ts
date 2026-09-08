@@ -762,6 +762,63 @@ export class KeyStoreClient extends ServiceClient {
   }
 }
 
+export type MarketRouteStatus = "pending" | "active" | "draining" | "migrating" | "halted" | "retired";
+
+export interface MarketRange {
+  min: string | null;
+  max: string | null;
+}
+
+export interface MarketDefinition {
+  schema: "2finance.market_definition.v1";
+  id: string;
+  market_id: string;
+  market: string;
+  symbol: string;
+  engine_id: string;
+  symbol_id: number;
+  route_epoch: number;
+  chain: { id: string; network: string; address: string };
+  address: string;
+  endpoints: {
+    http: string;
+    websocket: string;
+    orderbook_snapshot: string;
+    trades: string;
+    recovery: string;
+  };
+  status: MarketRouteStatus;
+  active: boolean;
+  environment: string;
+  protocol_version: string;
+  base: string;
+  quote: string;
+  base_id: string;
+  quote_id: string;
+  type: "spot";
+  spot: true;
+  precision: { amount: number; price: number; base: number; quote: number };
+  tick_size: string;
+  step_size: string;
+  limits: { amount: MarketRange; price: MarketRange; cost: MarketRange; notional: MarketRange };
+  fees: { maker: string; taker: string; asset_policy: "base" | "quote" | "received" | "native" };
+  capabilities: {
+    order_types: string[];
+    time_in_force: string[];
+    channels: string[];
+    operations: string[];
+    snapshot: boolean;
+    recovery: boolean;
+  };
+  freshness: { health: "healthy" | "degraded" | "stale" | "unknown"; last_sequence: number; observed_at: string };
+}
+
+export interface MarketDirectory {
+  schema: "2finance.market_directory.v1";
+  generated_at: string;
+  markets: MarketDefinition[];
+}
+
 export class NetworkClient extends ServiceClient {
   virtualMachine(): Promise<unknown> {
     return this.post("/v2/2finance-network/query", {
@@ -772,6 +829,10 @@ export class NetworkClient extends ServiceClient {
 
   marketCandles(market: string, query = ""): Promise<unknown> {
     return this.get(`/v2/2finance-network/markets/${encodeURIComponent(market)}/candles${query ? `?${query}` : ""}`);
+  }
+
+  marketDirectory(): Promise<MarketDirectory> {
+    return this.get("/api/v2/exchange/market-directory") as Promise<MarketDirectory>;
   }
 
   products(productType: string): Promise<unknown> {
@@ -898,6 +959,9 @@ export interface ProvidersClient {
 
 export interface MatchEngineOrderCommand {
   schema?: string;
+  market_id?: string;
+  engine_id?: string;
+  route_epoch?: number;
   message_type?: "ORDER";
   operation?: "ADD" | "MODIFY" | "REPLACE" | "DELETE" | "MITIGATE";
   order_type?: "LIMIT" | "MARKET" | "STOP" | "STOP_LIMIT" | "TRAILING_STOP" | "TRAILING_STOP_LIMIT";

@@ -90,7 +90,7 @@ void main() {
       expect(submitted['signature'], hasLength(128));
       final data = Map<String, dynamic>.from(submitted['data'] as Map);
       expect(data['runtime'], runtimeNativeGoV2);
-      expect(data['version'], runtimeVersionV2);
+      expect(data['version'], nativeGoRuntimeVersionV2);
       expect(data['payload'], {'contract_version': 'walletV2'});
 
       final status = await client.transactionFinalityV2(

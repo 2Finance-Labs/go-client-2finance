@@ -2,6 +2,11 @@
 
 This index groups behavior specs by the boundary they protect.
 
+## Exchange
+
+- `market-directory.md`: canonical market identity, one-engine/one-symbol
+  routing, trading rules, endpoints, and capabilities.
+
 ## SDK implementation
 
 - `implementation-matrix.md`: language-by-language SDK implementation status,

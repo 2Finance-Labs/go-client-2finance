@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.2finance.dev/exchange/market-directory.v1.json",
+  "title": "2Finance Market Directory V1",
+  "type": "object",
+  "required": ["schema", "generated_at", "markets"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "2finance.market_directory.v1" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "markets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/marketDefinition" }
+    }
+  },
+  "$defs": {
+    "decimal": {
+      "type": ["string", "null"],
+      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+    },
+    "range": {
+      "type": "object",
+      "required": ["min", "max"],
+      "additionalProperties": false,
+      "properties": {
+        "min": { "$ref": "#/$defs/decimal" },
+        "max": { "$ref": "#/$defs/decimal" }
+      }
+    },
+    "marketDefinition": {
+      "type": "object",
+      "required": [
+        "schema", "id", "market_id", "market", "symbol", "engine_id",
+        "symbol_id", "route_epoch", "chain", "address", "endpoints",
+        "status", "active", "environment", "protocol_version", "base",
+        "quote", "base_id", "quote_id", "precision", "tick_size",
+        "step_size", "limits", "fees", "capabilities", "freshness",
+        "type", "spot"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "2finance.market_definition.v1" },
+        "id": { "type": "string", "minLength": 1 },
+        "market_id": { "type": "string", "minLength": 1 },
+        "market": { "type": "string", "pattern": "^[A-Z0-9._-]+/[A-Z0-9._-]+$" },
+        "symbol": { "type": "string", "pattern": "^[A-Z0-9._-]+/[A-Z0-9._-]+$" },
+        "engine_id": { "type": "string", "minLength": 1 },
+        "symbol_id": { "type": "integer", "minimum": 1 },
+        "route_epoch": { "type": "integer", "minimum": 1 },
+        "chain": {
+          "type": "object",
+          "required": ["id", "network", "address"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "network": { "type": "string", "minLength": 1 },
+            "address": { "type": "string", "minLength": 1 }
+          }
+        },
+        "address": { "type": "string", "minLength": 1 },
+        "endpoints": {
+          "type": "object",
+          "required": ["http", "websocket", "orderbook_snapshot", "trades", "recovery"],
+          "additionalProperties": false,
+          "properties": {
+            "http": { "type": "string", "minLength": 1 },
+            "websocket": { "type": "string", "minLength": 1 },
+            "orderbook_snapshot": { "type": "string", "minLength": 1 },
+            "trades": { "type": "string", "minLength": 1 },
+            "recovery": { "type": "string", "minLength": 1 }
+          }
+        },
+        "status": {
+          "enum": ["pending", "active", "draining", "migrating", "halted", "retired"]
+        },
+        "active": { "type": "boolean" },
+        "environment": { "type": "string", "minLength": 1 },
+        "protocol_version": { "type": "string", "minLength": 1 },
+        "base": { "type": "string", "minLength": 1 },
+        "quote": { "type": "string", "minLength": 1 },
+        "base_id": { "type": "string", "minLength": 1 },
+        "quote_id": { "type": "string", "minLength": 1 },
+        "type": { "const": "spot" },
+        "spot": { "const": true },
+        "precision": {
+          "type": "object",
+          "required": ["amount", "price", "base", "quote"],
+          "additionalProperties": false,
+          "properties": {
+            "amount": { "type": "integer", "minimum": 0, "maximum": 18 },
+            "price": { "type": "integer", "minimum": 0, "maximum": 18 },
+            "base": { "type": "integer", "minimum": 0, "maximum": 18 },
+            "quote": { "type": "integer", "minimum": 0, "maximum": 18 }
+          }
+        },
+        "tick_size": { "type": "string", "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$" },
+        "step_size": { "type": "string", "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$" },
+        "limits": {
+          "type": "object",
+          "required": ["amount", "price", "cost", "notional"],
+          "additionalProperties": false,
+          "properties": {
+            "amount": { "$ref": "#/$defs/range" },
+            "price": { "$ref": "#/$defs/range" },
+            "cost": { "$ref": "#/$defs/range" },
+            "notional": { "$ref": "#/$defs/range" }
+          }
+        },
+        "fees": {
+          "type": "object",
+          "required": ["maker", "taker", "asset_policy"],
+          "additionalProperties": false,
+          "properties": {
+            "maker": { "type": "string", "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$" },
+            "taker": { "type": "string", "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$" },
+            "asset_policy": { "enum": ["base", "quote", "received", "native"] }
+          }
+        },
+        "capabilities": {
+          "type": "object",
+          "required": ["order_types", "time_in_force", "channels", "operations", "snapshot", "recovery"],
+          "additionalProperties": false,
+          "properties": {
+            "order_types": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "time_in_force": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "channels": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "operations": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "snapshot": { "type": "boolean" },
+            "recovery": { "type": "boolean" }
+          }
+        },
+        "freshness": {
+          "type": "object",
+          "required": ["health", "last_sequence", "observed_at"],
+          "additionalProperties": false,
+          "properties": {
+            "health": { "enum": ["healthy", "degraded", "stale", "unknown"] },
+            "last_sequence": { "type": "integer", "minimum": 0 },
+            "observed_at": { "type": "string", "format": "date-time" }
+          }
+        }
+      }
+    }
+  }
+}

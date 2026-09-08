@@ -10,6 +10,7 @@ from twofinance_sdk_client import (
     DEFAULT_SERVICE_CATALOG,
     DomainOperationsCatalog,
     IdempotencyRecord,
+    MarketDirectory,
     PaginationResponse,
     RequestOptions,
     ResolvedOperation,
@@ -96,6 +97,7 @@ class SDKTest(unittest.TestCase):
         idempotency = IdempotencyRecord.from_dict(load_contract_fixture("idempotency.json"))
         catalog = ServiceCatalog.from_dict(load_contract_fixture("service-catalog.json"))
         operations = DomainOperationsCatalog.from_dict(load_contract_fixture("domain-operations.json"))
+        market_directory = MarketDirectory.from_dict(load_contract_fixture("market-directory.json"))
 
         self.assertEqual(error.code, "HTTP_429")
         self.assertEqual(error.details["request_id"], "req_2finance_001")
@@ -104,6 +106,8 @@ class SDKTest(unittest.TestCase):
         self.assertEqual(idempotency.idempotency_key, "idem-001")
         self.assertEqual(catalog.services[0].name, "auth")
         self.assertEqual(operations.schema, "sdk.domain_operations.v2")
+        self.assertEqual(market_directory.markets[0].engine_id, "engine-btc-usdt-01")
+        self.assertEqual(market_directory.markets[0].precision["amount"], 8)
         self.assertEqual(operations.domains[0].operations[0].request_schema, "auth.login.request.v1")
         self.assertEqual(
             operations.operation("analytics", "balances").path,
@@ -137,6 +141,17 @@ class SDKTest(unittest.TestCase):
             resolved_risk.path,
             "/risk-manager/blackscholes?symbol=BTC%2FUSD&strike=100000&volatility=0.5",
         )
+
+    def test_network_client_returns_typed_market_directory(self):
+        client = TwoFinanceClient(SDKConfig(network_url="https://network.example"))
+
+        with patch(
+            "twofinance_sdk_client.service.urlopen",
+            lambda request: BytesResponse(load_contract_fixture("market-directory.json")),
+        ):
+            directory = client.network.market_directory()
+
+        self.assertEqual(directory.markets[0].engine_id, "engine-btc-usdt-01")
 
     def test_config_from_env(self):
         config = config_from_env(

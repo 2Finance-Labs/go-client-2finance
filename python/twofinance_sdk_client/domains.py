@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 from urllib.parse import quote
 
+from .models import MarketDirectory
 from .service import ServiceClient
 
 
@@ -238,6 +239,9 @@ class NetworkClient(ServiceClient):
     def market_candles(self, market: str, query: str = "") -> Any:
         suffix = f"?{query}" if query else ""
         return self.get(f"/v2/2finance-network/markets/{_path(market)}/candles{suffix}")
+
+    def market_directory(self) -> MarketDirectory:
+        return MarketDirectory.from_dict(self.get("/api/v2/exchange/market-directory"))
 
     def products(self, product_type: str) -> Any:
         return self.get(f"/v2/2finance-network/products/{_path(product_type)}")

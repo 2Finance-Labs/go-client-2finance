@@ -114,6 +114,91 @@ final class ConfiguredServiceEntry {
   final String url;
 }
 
+final class MarketDefinition {
+  const MarketDefinition({
+    required this.marketId,
+    required this.symbol,
+    required this.engineId,
+    required this.symbolId,
+    required this.routeEpoch,
+    required this.chain,
+    required this.address,
+    required this.endpoints,
+    required this.status,
+    required this.precision,
+    required this.tickSize,
+    required this.stepSize,
+    required this.limits,
+    required this.fees,
+    required this.capabilities,
+    required this.raw,
+  });
+
+  factory MarketDefinition.fromJson(Map<String, Object?> json) {
+    if (json['schema'] != '2finance.market_definition.v1') {
+      throw FormatException('unsupported 2Finance market definition schema');
+    }
+    return MarketDefinition(
+      marketId: json['market_id']! as String,
+      symbol: json['symbol']! as String,
+      engineId: json['engine_id']! as String,
+      symbolId: json['symbol_id']! as int,
+      routeEpoch: json['route_epoch']! as int,
+      chain: Map<String, Object?>.from(json['chain']! as Map),
+      address: json['address']! as String,
+      endpoints: Map<String, Object?>.from(json['endpoints']! as Map),
+      status: json['status']! as String,
+      precision: Map<String, Object?>.from(json['precision']! as Map),
+      tickSize: json['tick_size']! as String,
+      stepSize: json['step_size']! as String,
+      limits: Map<String, Object?>.from(json['limits']! as Map),
+      fees: Map<String, Object?>.from(json['fees']! as Map),
+      capabilities: Map<String, Object?>.from(json['capabilities']! as Map),
+      raw: Map<String, Object?>.from(json),
+    );
+  }
+
+  final String marketId;
+  final String symbol;
+  final String engineId;
+  final int symbolId;
+  final int routeEpoch;
+  final Map<String, Object?> chain;
+  final String address;
+  final Map<String, Object?> endpoints;
+  final String status;
+  final Map<String, Object?> precision;
+  final String tickSize;
+  final String stepSize;
+  final Map<String, Object?> limits;
+  final Map<String, Object?> fees;
+  final Map<String, Object?> capabilities;
+  final Map<String, Object?> raw;
+}
+
+final class MarketDirectory {
+  const MarketDirectory({required this.generatedAt, required this.markets});
+
+  factory MarketDirectory.fromJson(Map<String, Object?> json) {
+    if (json['schema'] != '2finance.market_directory.v1') {
+      throw FormatException('unsupported 2Finance market directory schema');
+    }
+    return MarketDirectory(
+      generatedAt: DateTime.parse(json['generated_at']! as String),
+      markets: (json['markets']! as List<Object?>)
+          .cast<Map<Object?, Object?>>()
+          .map(
+            (item) =>
+                MarketDefinition.fromJson(Map<String, Object?>.from(item)),
+          )
+          .toList(growable: false),
+    );
+  }
+
+  final DateTime generatedAt;
+  final List<MarketDefinition> markets;
+}
+
 const defaultServiceCatalog = ServiceCatalog(
   services: [
     ServiceCatalogEntry(name: 'auth', env: 'TWO_FINANCE_AUTH_URL'),

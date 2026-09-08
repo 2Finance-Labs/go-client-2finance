@@ -1,0 +1,62 @@
+{
+  "schema": "2finance.market_directory.v1",
+  "generated_at": "2026-09-06T12:00:00Z",
+  "markets": [
+    {
+      "schema": "2finance.market_definition.v1",
+      "id": "BTC/USDT",
+      "market_id": "BTC/USDT",
+      "market": "BTC/USDT",
+      "symbol": "BTC/USDT",
+      "engine_id": "engine-btc-usdt-01",
+      "symbol_id": 1,
+      "route_epoch": 7,
+      "chain": {
+        "id": "2finance-mainnet",
+        "network": "2finance",
+        "address": "2f1enginebtc"
+      },
+      "address": "2f1enginebtc",
+      "endpoints": {
+        "http": "https://api.2finance.com/api/v2/exchange",
+        "websocket": "wss://ws.2finance.com/engines/engine-btc-usdt-01",
+        "orderbook_snapshot": "/api/v2/exchange/markets/BTC/USDT/orderbook",
+        "trades": "/api/v2/exchange/markets/BTC/USDT/trades",
+        "recovery": "/api/v2/exchange/recovery/engine-btc-usdt-01"
+      },
+      "status": "active",
+      "active": true,
+      "environment": "production",
+      "protocol_version": "3",
+      "base": "BTC",
+      "quote": "USDT",
+      "base_id": "1",
+      "quote_id": "2",
+      "type": "spot",
+      "spot": true,
+      "precision": { "amount": 8, "price": 2, "base": 8, "quote": 6 },
+      "tick_size": "0.01",
+      "step_size": "0.00000001",
+      "limits": {
+        "amount": { "min": "0.00001", "max": "100" },
+        "price": { "min": "0.01", "max": "10000000" },
+        "cost": { "min": "5", "max": "1000000" },
+        "notional": { "min": "5", "max": "1000000" }
+      },
+      "fees": { "maker": "0.001", "taker": "0.002", "asset_policy": "received" },
+      "capabilities": {
+        "order_types": ["LIMIT", "MARKET"],
+        "time_in_force": ["GTC", "IOC", "FOK"],
+        "channels": ["BOOK", "TRADE", "TICKER"],
+        "operations": ["ORDER_SUBMIT", "ORDER_CANCEL"],
+        "snapshot": true,
+        "recovery": true
+      },
+      "freshness": {
+        "health": "healthy",
+        "last_sequence": 42,
+        "observed_at": "2026-09-06T12:00:00Z"
+      }
+    }
+  ]
+}

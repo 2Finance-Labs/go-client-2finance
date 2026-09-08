@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.2finance.com/trading-session-authorization.v1.json",
+  "title": "2Finance Trading Session Authorization v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "payload", "authorization"],
+  "properties": {
+    "schema": { "const": "2finance.trading_session_authorization.v1" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain", "chain_id", "account", "session_id", "session_public_key",
+        "allowed_symbols", "allowed_actions", "allowed_order_types",
+        "max_order_amount", "max_order_notional", "max_session_notional",
+        "issued_at_ms", "expires_at_ms", "nonce", "origin"
+      ],
+      "properties": {
+        "domain": { "const": "2finance.trading_session.v1" },
+        "chain_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "account": { "$ref": "#/$defs/publicKey" },
+        "session_id": { "type": "string", "minLength": 16, "maxLength": 128 },
+        "session_public_key": { "$ref": "#/$defs/publicKey" },
+        "allowed_symbols": {
+          "type": "array", "minItems": 1, "maxItems": 64, "uniqueItems": true,
+          "items": { "$ref": "#/$defs/symbol" }
+        },
+        "allowed_actions": {
+          "type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true,
+          "items": { "enum": ["order:submit", "order:cancel", "order:cancel_all"] }
+        },
+        "allowed_order_types": {
+          "type": "array", "minItems": 1, "maxItems": 2, "uniqueItems": true,
+          "items": { "enum": ["LIMIT", "MARKET"] }
+        },
+        "max_order_amount": { "$ref": "#/$defs/positiveDecimal" },
+        "max_order_notional": { "$ref": "#/$defs/positiveDecimal" },
+        "max_session_notional": { "$ref": "#/$defs/positiveDecimal" },
+        "issued_at_ms": { "type": "integer", "minimum": 1 },
+        "expires_at_ms": { "type": "integer", "minimum": 1 },
+        "nonce": { "$ref": "#/$defs/nonce" },
+        "origin": { "type": "string", "format": "uri", "maxLength": 512 }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "public_key", "signature"],
+      "properties": {
+        "mode": { "const": "WALLET" },
+        "public_key": { "$ref": "#/$defs/publicKey" },
+        "signature": { "type": "string", "pattern": "^[0-9a-f]{128}$" }
+      }
+    }
+  },
+  "$defs": {
+    "publicKey": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "symbol": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}/[A-Z0-9._-]{1,32}$" },
+    "positiveDecimal": { "type": "string", "pattern": "^(?:[1-9][0-9]*|0\\.[0-9]*[1-9]|[1-9][0-9]*\\.[0-9]*[1-9])$" },
+    "nonce": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

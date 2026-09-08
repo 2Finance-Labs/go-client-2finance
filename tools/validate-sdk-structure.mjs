@@ -133,12 +133,14 @@ for (const contract of [
   "contracts/schemas/pagination.v2.json",
   "contracts/schemas/request-options.v2.json",
   "contracts/schemas/service-catalog.v2.json",
+  "contracts/schemas/market-directory.v1.json",
   "contracts/examples/domain-operations.json",
   "contracts/examples/error.json",
   "contracts/examples/idempotency.json",
   "contracts/examples/pagination.json",
   "contracts/examples/request-options.json",
   "contracts/examples/service-catalog.json",
+  "contracts/examples/market-directory.json",
 ]) {
   exists(contract);
 }
@@ -146,6 +148,7 @@ for (const contract of [
 exists("docs/implementation-matrix.md");
 contains("README.MD", "docs/implementation-matrix.md");
 contains("docs/spec-index.md", "implementation-matrix.md");
+contains("docs/spec-index.md", "market-directory.md");
 
 for (const language of ["Go", "Dart", "TypeScript", "JavaScript", "Python", "PHP", "Java", "C++"]) {
   contains("docs/implementation-matrix.md", `| ${language} |`);

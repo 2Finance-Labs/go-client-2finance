@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.2finance.com/matchengine-order-command.v3.json",
+  "title": "2Finance MatchEngine signed order command v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "payload", "authorization"],
+  "properties": {
+    "schema": { "const": "matchengine.order_command.v3" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain", "chain_id", "account", "engine_id", "symbol", "symbol_id",
+        "route_epoch", "operation", "authorization_mode", "side", "type", "amount", "price",
+        "time_in_force", "order_id", "client_order_id", "idempotency_key",
+        "session_id", "nonce", "expires_at_ms"
+      ],
+      "properties": {
+        "domain": { "enum": ["2finance.order.add.v1", "2finance.order.cancel.v1", "2finance.order.cancel_all.v1"] },
+        "chain_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "account": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "engine_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "symbol": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}/[A-Z0-9._-]{1,32}$" },
+        "symbol_id": { "type": "integer", "minimum": 1 },
+        "route_epoch": { "type": "integer", "minimum": 1 },
+        "operation": { "enum": ["ADD", "CANCEL", "CANCEL_ALL"] },
+        "authorization_mode": { "enum": ["WALLET", "SESSION"] },
+        "side": { "enum": ["BUY", "SELL", "NONE"] },
+        "type": { "enum": ["LIMIT", "MARKET", "NONE"] },
+        "amount": { "$ref": "#/$defs/decimal" },
+        "price": { "$ref": "#/$defs/decimal" },
+        "time_in_force": { "enum": ["GTC", "IOC", "FOK", "NONE"] },
+        "order_id": { "type": "string", "maxLength": 128 },
+        "client_order_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "idempotency_key": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "session_id": { "type": "string", "maxLength": 128 },
+        "nonce": { "type": "string", "pattern": "^[1-9][0-9]{0,19}$" },
+        "expires_at_ms": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "public_key", "signature"],
+      "properties": {
+        "mode": { "enum": ["WALLET", "SESSION"] },
+        "public_key": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "signature": { "type": "string", "pattern": "^[0-9a-f]{128}$" }
+      }
+    }
+  },
+  "$defs": {
+    "decimal": { "type": "string", "pattern": "^(?:0|[1-9][0-9]*|0\\.[0-9]*[1-9]|[1-9][0-9]*\\.[0-9]*[1-9])$" }
+  }
+}

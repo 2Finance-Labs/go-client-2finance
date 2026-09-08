@@ -39,6 +39,8 @@ export 'infra/http/http_transport.dart';
 export 'infra/mqtt/mqtt_stub.dart' if (dart.library.io) 'infra/mqtt/mqtt.dart';
 export 'infra/transport/transport.dart';
 export 'protocol_v2.dart';
+export 'trading_authorization.dart';
+export 'wallet_connect_protocol.dart';
 export 'wallet_manager.dart';
 import 'wallet_manager.dart';
 

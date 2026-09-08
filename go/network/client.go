@@ -7,7 +7,13 @@ import (
 	"net/url"
 
 	"github.com/2Finance-Labs/2finance-sdk-client/internal/service"
+	exchangeapi "gitlab.com/2finance/2finance-network/infra/api/exchange"
 )
+
+// Reuse the authoritative backend binding; JSON Schema remains the
+// cross-language source of truth.
+type MarketDirectory = exchangeapi.MarketDirectory
+type MarketDefinition = exchangeapi.MarketDefinition
 
 type Client struct {
 	service *service.Client
@@ -41,6 +47,12 @@ func (c *Client) MarketCandles(ctx context.Context, market string, query string)
 		path += "?" + query
 	}
 	err := c.Get(ctx, path, &response)
+	return response, err
+}
+
+func (c *Client) MarketDirectory(ctx context.Context) (MarketDirectory, error) {
+	var response MarketDirectory
+	err := c.Get(ctx, "/api/v2/exchange/market-directory", &response)
 	return response, err
 }
 
